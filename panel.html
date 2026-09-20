@@ -268,6 +268,16 @@
         const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
 
         function getToken() { return sessionStorage.getItem('token') || ''; }
+function esAdmin() {
+    const usuario = JSON.parse(sessionStorage.getItem('usuario') || 'null');
+    return usuario && usuario.ruc === '80000000-0';
+}
+
+function verificarAdmin() {
+    if (!verificarSesion()) return false;
+    if (!esAdmin()) { window.location.href = 'mis-documentos.html'; return false; }
+    return true;
+}
 
         function verificarSesion() {
             const token = getToken();
