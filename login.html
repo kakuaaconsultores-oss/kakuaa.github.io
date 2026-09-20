@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión | Kakuaa Consultores</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a2a5e; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .login-card { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+    .login-card img { display: block; margin: 0 auto 20px; height: 60px; }
+    .login-card h1 { text-align: center; color: #1a2a5e; margin-bottom: 5px; font-size: 1.5rem; }
+    .login-card p.sub { text-align: center; color: #777; margin-bottom:  ight25px; font-size: 0.9rem; }
+    .login-card label { display: block; margin: 15px 0 5px; color: #333; font-weight: bold; font-size: 0.9rem; }
+    .login-card input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+    .login-card button { width: 100%; padding: 14px; background: #1a2a5e; color: white; border: none; border-radius: 6px; font-size: 1.1rem; cursor: pointer; margin-top: 20px; }
+    .login-card button:hover { background: #2c4a8f; }
+    .login-card .error { color: #d32f2f; text-align: center; margin-top:  ight15px; font-size: 0.9rem; display: none; }
+    .login-card .back { display: block; text-align: center; margin-top:  ight20px; color: #1a2a5e; text-decoration: none; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <img src="logo.png" alt="Kakuaa Consultores">
+    <h1>Iniciar Sesión</h1>
+    <p class="sub">Ingresá tu RUC y contraseña</p>
+    <form onsubmit="event.preventDefault(); iniciarSesion();">
+      <label>RUC</label>
+      <input type="text" id="ruc" placeholder="Ej: 80000000-0" required>
+      <label>Contraseña</label>
+      <input type="password" id="contrasena" placeholder="Tu contraseña" required>
+      <button type="submit">Entrar</button>
+    </form>
+    <div class="error" id="error"></div>
+    <a class="back" href="index.html">← Volver al inicio</a>
+  </div>
+
+  <script>
+    async function iniciarSesion() {
+      const ruc = document.getElementById('ruc').value.trim();
+      const contrasena = document.getElementById('contrasena').value;
+      const error = document.getElementById('error');
+
+      try {
+        const resp = await fetch('https://backend-ruc.onrender.com/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ruc, contrasena })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          error.style.display = 'block';
+          error.textContent = data.error || 'Error al iniciar sesión';
+          return;
+        }
+
+        // Guardar sesión
+        sessionStorage.setItem('usuario', JSON.stringify(data));
+        // Redirigir al panel
+        window.location.href = 'panel.html';
+      } catch (err) {
+        error.style.display = 'block';
+        error.textContent = 'No se pudo conectar al servidor. Intentá de nuevo.';
+      }
+    }
+  </script>
+</body>
+</html>
