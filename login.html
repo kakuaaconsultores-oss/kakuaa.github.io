@@ -1,69 +1,263 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar Sesión | Kakuaa Consultores</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a2a5e; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .login-card { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
-    .login-card img { display: block; margin: 0 auto 20px; height: 60px; }
-    .login-card h1 { text-align: center; color: #1a2a5e; margin-bottom: 5px; font-size: 1.5rem; }
-    .login-card p.sub { text-align: center; color: #777; margin-bottom:  ight25px; font-size: 0.9rem; }
-    .login-card label { display: block; margin: 15px 0 5px; color: #333; font-weight: bold; font-size: 0.9rem; }
-    .login-card input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-    .login-card button { width: 100%; padding: 14px; background: #1a2a5e; color: white; border: none; border-radius: 6px; font-size: 1.1rem; cursor: pointer; margin-top: 20px; }
-    .login-card button:hover { background: #2c4a8f; }
-    .login-card .error { color: #d32f2f; text-align: center; margin-top:  ight15px; font-size: 0.9rem; display: none; }
-    .login-card .back { display: block; text-align: center; margin-top:  ight20px; color: #1a2a5e; text-decoration: none; font-size: 0.9rem; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | Kakuaa Consultores</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a2a5e;
+            padding: 16px;
+        }
+        .login-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 36px 32px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .logo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+        .logo h1 {
+            color: #1a2a5e;
+            font-size: 1.3rem;
+            margin-top: 10px;
+        }
+        .logo p {
+            color: #888;
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+        .campo {
+            margin-bottom: 16px;
+        }
+        .campo label {
+            display: block;
+            font-size: 0.85rem;
+            color: #333;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .campo input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        .campo input:focus {
+            outline: none;
+            border-color: #2e9e5b;
+        }
+        .btn {
+            width: 100%;
+            padding: 13px;
+            background: #2e9e5b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 8px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .error {
+            background: #fdeaea;
+            color: #d9534f;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .error.visible { display: block; }
+        .olvidaste {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            background: none;
+            border: none;
+            color: #1a2a5e;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 0.85rem;
+            width: 100%;
+        }
+        .olvidaste:hover { color: #2e9e5b; }
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 12px;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        .volver:hover { color: #1a2a5e; }
+        .mensaje-ok {
+            background: #e6f7ee;
+            color: #2e9e5b;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .mensaje-ok.visible { display: block; }
+        .bloqueado { text-align: center; padding: 8px 0; }
+        .bloqueado p { color: #d9534f; font-size: 0.85rem; margin-bottom: 10px; }
+    </style>
 </head>
 <body>
-  <div class="login-card">
-    <img src="logo.png" alt="Kakuaa Consultores">
-    <h1>Iniciar Sesión</h1>
-    <p class="sub">Ingresá tu RUC y contraseña</p>
-    <form onsubmit="event.preventDefault(); iniciarSesion();">
-      <label>RUC</label>
-      <input type="text" id="ruc" placeholder="Ej: 80000000-0" required>
-      <label>Contraseña</label>
-      <input type="password" id="contrasena" placeholder="Tu contraseña" required>
-      <button type="submit">Entrar</button>
-    </form>
-    <div class="error" id="error"></div>
-    <a class="back" href="index.html">← Volver al inicio</a>
-  </div>
+    <div class="login-card">
+        <div class="logo">
+            <img src="logo.png" alt="Kakuaa Consultores" onerror="this.style.display='none'">
+            <h1>KAKUAA CONSULTORES</h1>
+            <p>Iniciá sesión con tu RUC</p>
+        </div>
 
-  <script>
-    async function iniciarSesion() {
-      const ruc = document.getElementById('ruc').value.trim();
-      const contrasena = document.getElementById('contrasena').value;
-      const error = document.getElementById('error');
+        <!-- Formulario de login -->
+        <div id="form-login">
+            <div class="error" id="error-login"></div>
+            <div class="campo">
+                <label>RUC</label>
+                <input type="text" id="ruc" placeholder="Ej: 80012345-6" autocomplete="username">
+            </div>
+            <div class="campo">
+                <label>Contraseña</label>
+                <input type="password" id="password" placeholder="Tu contraseña" autocomplete="current-password">
+            </div>
+            <button class="btn" id="btn-entrar" onclick="entrar()">Entrar</button>
+            <button class="olvidaste" onclick="mostrarReset()">¿Olvidó su contraseña?</button>
+            <a class="volver" href="index.html">← Volver al inicio</a>
+        </div>
 
-      try {
-        const resp = await fetch('https://backend-ruc.onrender.com/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ruc, contrasena })
-        });
-        const data = await resp.json();
+        <!-- Formulario de reset -->
+        <div id="form-reset" style="display:none;">
+            <div class="mensaje-ok" id="mensaje-reset"></div>
+            <div class="error" id="error-reset"></div>
+            <div class="campo">
+                <label>Ingresá tu RUC</label>
+                <input type="text" id="ruc-reset" placeholder="Ej: 80012345-6">
+            </div>
+            <button class="btn" onclick="solicitarReset()">Enviar solicitud</button>
+            <button class="olvidaste" onclick="volverLogin()">← Volver al login</button>
+        </div>
+    </div>
 
-        if (!resp.ok) {
-          error.style.display = 'block';
-          error.textContent = data.error || 'Error al iniciar sesión';
-          return;
+    <script>
+        const API = 'https://backend-ruc.onrender.com';
+
+        function mostrarError(el, msg) {
+            el.textContent = msg;
+            el.classList.add('visible');
         }
 
-        // Guardar sesión
-        sessionStorage.setItem('usuario', JSON.stringify(data));
-        // Redirigir al panel
-        window.location.href = 'panel.html';
-      } catch (err) {
-        error.style.display = 'block';
-        error.textContent = 'No se pudo conectar al servidor. Intentá de nuevo.';
-      }
-    }
-  </script>
+        function ocultarError(el) {
+            el.textContent = '';
+            el.classList.remove('visible');
+        }
+
+        async function entrar() {
+            const ruc = document.getElementById('ruc').value.trim();
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('error-login');
+            ocultarError(errorEl);
+            if (!ruc || !password) {
+                mostrarError(errorEl, 'Ingresá tu RUC y contraseña');
+                return;
+            }
+            try {
+                const resp = await fetch(API + '/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ruc, password })
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    // Guardar token (RUC) y redirigir según rol
+                    localStorage.setItem('token', ruc);
+                    if (ruc === '80000000-0') {
+                        window.location.href = 'panel.html';
+                    } else {
+                        window.location.href = 'mis-documentos.html';
+                    }
+                } else {
+                    mostrarError(errorEl, data.error || 'Error al iniciar sesión');
+                }
+            } catch (e) {
+                mostrarError(errorEl, 'No se pudo conectar al servidor. Intentá de nuevo.');
+            }
+        }
+
+        function mostrarReset() {
+            document.getElementById('form-login').style.display = 'none';
+            document.getElementById('form-reset').style.display = 'block';
+            ocultarError(document.getElementById('error-reset'));
+            ocultarError(document.getElementById('error-login'));
+        }
+
+        function volverLogin() {
+            document.getElementById('form-reset').style.display = 'none';
+            document.getElementById('form-login').style.display = 'block';
+        }
+
+        async function solicitarReset() {
+            const ruc = document.getElementById('ruc-reset').value.trim();
+            const errorEl = document.getElementById('error-reset');
+            const okEl = document.getElementById('mensaje-reset');
+            ocultarError(errorEl);
+            okEl.classList.remove('visible');
+            if (!ruc) {
+                mostrarError(errorEl, 'Ingresá tu RUC');
+                return;
+            }
+            try {
+                const resp = await fetch(API + '/api/solicitar-reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ruc })
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    okEl.textContent = 'Solicitud enviada. El administrador la revisará y te llegará un correo con tu nueva contraseña.';
+                    okEl.classList.add('visible');
+                    document.getElementById('ruc-reset').value = '';
+                } else {
+                    mostrarError(errorEl, data.error || 'Error al enviar la solicitud');
+                }
+            } catch (e) {
+                mostrarError(errorEl, 'No se pudo conectar al servidor. Intentá de nuevo.');
+            }
+        }
+
+        // Enter para enviar
+        document.getElementById('ruc').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') entrar();
+        });
+        document.getElementById('password').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') entrar();
+        });
+        document.getElementById('ruc-reset').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') solicitarReset();
+        });
+    </script>
 </body>
 </html>
