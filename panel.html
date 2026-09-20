@@ -1,373 +1,544 @@
-const API = 'https://backend-ruc.onrender.com';
-let usuarioSeleccionado = null;
-let docsActuales = [];
-let subsActuales = [];
-const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
-
-function getToken() {
-    return sessionStorage.getItem('token') || '';
-}
-
-function verificarSesion() {
-    const token = getToken();
-    if (!token) {
-        window.location.href = 'login.html';
-        return false;
-    }
-    return true;
-}
-
-// ===== TICKETS =====
-async function cargarTickets() {
-    if (!verificarSesion()) return;
-    const contenedor = document.getElementById('lista-tickets');
-    try {
-        const resp = await fetch(API + '/api/admin/tickets', {
-            headers: { 'Authorization': 'Bearer ' + getToken() }
-        });
-        if (resp.status === 401) { window.location.href = 'login.html'; return; }
-        const tickets = await resp.json();
-        if (tickets.length === 0) {
-            contenedor.innerHTML = '<div class="sin-tickets">No hay tickets pendientes.</div>';
-            return;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración | Kakuaa Consultores</title>
+    <style>
+        :root {
+            --azul: #1a2a5e;
+            --verde: #2e9e5b;
+            --gris-claro: #f4f6fa;
+            --gris-borde: #e2e6ee;
+            --texto: #2b2f36;
+            --texto-suave: #6b7280;
+            --rojo: #d9534f;
+            --amarillo: #f0ad4e;
         }
-        contenedor.innerHTML = '';
-        tickets.forEach(t => {
-            const div = document.createElement('div');
-            div.className = 'ticket ' + t.estado;
-            const badge = t.estado === 'pendiente' ? '<span class="badge badge-pendiente">Pendiente</span>'
-                : t.estado === 'aprobado' ? '<span class="badge badge-aprobado">Aprobado</span>'
-                : '<span class="badge badge-rechazado">Rechazado</span>';
-            let acciones = '';
-            if (t.estado === 'pendiente') {
-                acciones = `
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, Arial, sans-serif; }
+        body { background: var(--gris-claro); color: var(--texto); min-height: 100vh; }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: var(--azul);
+            color: #fff;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top:  ​0;
+            z-index:  ​100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header .logo { display: flex; align-items: center; gap:  ​12px; }
+        .header .logo img { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; }
+        .header .logo h1 { font-size: 1.1rem; font-weight: 700; }
+        .header .logo span { font-size: 0.75rem; opacity: 0.8; display: block; }
+        .header .usuario { display: flex; align-items: center; gap:  ​12px; }
+        .header .usuario .avatar-mini {
+            width: 36px; height:  ​36px; border-radius: 50%; background: var(--verde);
+            display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem;
+        }
+        .btn-cerrar {
+            background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;
+        }
+        .btn-cerrar:hover { background: rgba(255,255,255,0.25); }
+
+        /* ===== LAYOUT ===== */
+        .layout { display: flex; min-height: calc(100vh - 64px); }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 230px; background: #fff; border-right: 1px solid var(--gris-borde);
+            padding: 20px 14px; flex-shrink: 0;
+        }
+        .sidebar .nav-item {
+            display: flex; align-items: center; gap:  ​10px;
+            padding: 12px 14px; border-radius: 10px; cursor: pointer;
+            color: var(--texto-suave); font-weight: 600; font-size: 0.9rem; margin-bottom: 6px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .sidebar .nav-item:hover { background: var(--gris-claro); color: var(--azul); }
+        .sidebar .nav-item.activo { background: #e8f0fb; color: var(--azul); }
+
+        /* ===== CONTENIDO ===== */
+        .contenido { flex:  ​1; padding: 24px; overflow-y: auto; }
+        .vista { display: none; }
+        .vista.activa { display: block; }
+
+        .titulo-seccion { font-size: 1.3rem; font-weight: 700; color: var(--azul); margin-bottom:  ​4px; }
+        .subtitulo { color: var(--texto-suave); font-size: 0.9rem; margin-bottom: 20px; }
+
+        /* ===== TARJETAS ===== */
+        .grid-usuarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:  ​16px; }
+        .tarjeta-usuario {
+            background: #fff; border: 1px solid var(--gris-borde); border-radius: 14px;
+            padding: 18px; text-align: center; transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .tarjeta-usuario:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
+        .tarjeta-usuario .avatar {
+            width: 56px; height:  ​56px; border-radius: 50%; background: linear-gradient(135deg, var(--azul), var(--verde));
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; font-weight: 700; margin: 0 auto 12px;
+        }
+        .tarjeta-usuario h3 { font-size: 1rem; margin-bottom: 4px; color: var(--texto); }
+        .tarjeta-usuario p { font-size: 0.8rem; color: var(--texto-suave); margin-bottom:  ​2px; word-break: break-all; }
+        .tarjeta-usuario .estado { display: inline-block; margin-top: 8px; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .estado-activo { background: #e6f7ee; color: var(--verde); }
+        .estado-inactivo { background: #fdeaea; color: var(--rojo); }
+        .tarjeta-usuario .acciones { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
+
+        /* ===== BOTONES ===== */
+        .btn {
+            border: none; border-radius: 8px; padding: 9px 14px; cursor: pointer;
+            font-size: 0.8rem; font-weight: 600; transition: opacity 0.2s, transform 0.1s;
+        }
+        .btn:hover { opacity: 0.88; }
+        .btn:active { transform: scale(0.97); }
+        .btn-verde { background: var(--verde); color: #fff; }
+        .btn-azul { background: var(--azul); color: #fff; }
+        .btn-rojo { background: var(--rojo); color: #fff; }
+        .btn-amarillo { background: var(--amarillo); color: #fff; }
+        .btn-gris { background: var(--gris-claro); color: var(--texto); border: 1px solid var(--gris-borde); }
+        .btn-pequeno { padding: 6px 10px; font-size: 0.75rem; }
+
+        /* ===== FORMULARIOS ===== */
+        .form-fila { display: flex; gap:  ​10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .form-fila input, .form-fila select {
+            padding: 10px 12px; border: 1px solid var(--gris-borde); border-radius: 8px;
+            font-size: 0.9rem; flex: 1; min-width: 150px; outline: none; transition: border-color 0.2s;
+        }
+        .form-fila input:focus, .form-fila select:focus { border-color: var(--verde); }
+        .panel-form {
+            background: #fff; border: 1px solid var(--gris-borde); border-radius: 14px;
+            padding: 20px; margin-bottom: 24px;
+        }
+        .panel-form h3 { font-size: 1rem; color: var(--azul); margin-bottom:  ​14px; }
+
+        /* ===== TICKETS ===== */
+        .lista-tickets { display: flex; flex-direction: column; gap:  ​12px; }
+        .ticket {
+            background: #fff; border:  ​1px solid var(--gris-borde); border-radius: 12px;
+            padding: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:  ​12px;
+        }
+        .ticket .info { flex: 1; min-width: 220px; }
+        .ticket h4 { font-size: 0.95rem; margin-bottom: 4px; }
+        .ticket p { font-size: 0.8rem; color: var(--texto-suave); }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight:  ​700; }
+        .badge.pendiente { background: #fdf3e3; color: var(--amarillo); }
+        .badge.aprobado { background: #e6f7ee; color: var(--verde); }
+        .badge.rechazado { background: #fdeaea; color: var(--rojo); }
+        .ticket .acciones { display: flex; gap:  ​8px; align-items: center; flex-wrap: wrap; }
+        .ticket .acciones input { padding: 8px 10px; border: 1px solid var(--gris-borde); border-radius: 8px; font-size: 0.8rem; width: 180px; }
+
+        /* ===== DETALLE ===== */
+        .detalle-header { display: flex; align-items: center; gap:  ​12px; margin-bottom: 20px; }
+        .btn-volver { background: none; border: none; color: var(--azul); font-size: 0.9rem; cursor: pointer; font-weight: 600; }
+        .carpeta {
+            background: #fff; border:  ​1px solid var(--gris-borde); border-radius: 12px;
+            padding: 16px; margin-bottom: 14px;
+        }
+        .carpeta h4 { color: var(--azul); margin-bottom: 10px; font-size: 1rem; }
+        .doc-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; background: var(--gris-claro); margin-bottom: 6px; font-size: 0.85rem; }
+        .subcarpeta-chip { display: inline-flex; align-items: center; gap: 6px; background: #e8f0fb; color: var(--azul); padding: 4px 10px; border-radius: 16px; font-size: 0.75rem; margin:  ​4px; }
+
+        /* ===== MODAL ===== */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index:  ​200; }
+        .modal.visible { display: flex; }
+        .modal-contenido { background: #fff; border-radius: 14px; padding: 24px; width: 90%; max-width: 420px; }
+        .modal-contenido h3 { color: var(--azul); margin-bottom: 16px; }
+        .modal-contenido .form-fila { margin-bottom: 12px; }
+        .modal-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+
+        .oculto { display: none; }
+        .sin-datos { text-align: center; color: var(--texto-suave); padding: 40px; font-size:  ​0.9rem; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="logo">
+            <img src="logo.png" alt="Kakuaa" onerror="this.style.display='none'">
+            <div>
+                <h1>Kakuaa Consultores</h1>
+                <span>Panel de Administración</span>
+            </div>
+        </div>
+        <div class="usuario">
+            <div class="avatar-mini" id="avatar-admin">A</div>
+            <button class="btn-cerrar" onclick="cerrarSesion()">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar">
+            <div class="nav-item activo" data-vista="tickets" onclick="cambiarVista('tickets')">🎫 Tickets</div>
+            <div class="nav-item" data-vista="usuarios" onclick="cambiarVista('usuarios')">👥 Usuarios</div>
+            <div class="nav-item" data-vista="crear" onclick="cambiarVista('crear')">➕ Crear usuario</div>
+        </aside>
+
+        <!-- ===== CONTENIDO ===== -->
+        <main class="contenido">
+
+            <!-- VISTA TICKETS -->
+            <section class="vista activa" id="vista-tickets">
+                <h2 class="titulo-seccion">Tickets de recuperación</h2>
+                <p class="subtitulo">Solicitudes de reset de contraseña pendientes de aprobación.</p>
+                <div class="lista-tickets" id="tickets-container">
+                    <div class="sin-datos">Cargando...</div>
+                </div>
+            </section>
+
+            <!-- VISTA USUARIOS -->
+            <section class="vista" id="vista-usuarios">
+                <h2 class="titulo-seccion">Contribuyentes</h2>
+                <p class="subtitulo">Gestioná los usuarios registrados del sistema.</p>
+                <div class="grid-usuarios" id="grid-usuarios"></div>
+            </section>
+
+            <!-- VISTA CREAR USUARIO -->
+            <section class="vista" id="vista-crear">
+                <h2 class="titulo-seccion">Crear usuario</h2>
+                <p class="subtitulo">Registrá un nuevo contribuyente al sistema.</p>
+                <div class="panel-form">
+                    <h3>Datos del nuevo usuario</h3>
+                    <div class="form-fila">
+                        <input type="text" id="nuevo-ruc" placeholder="RUC (ej: 80012345-6)">
+                        <input type="email" id="nuevo-correo" placeholder="correo@ejemplo.com">
+                        <input type="text" id="nuevo-nombre" placeholder="Nombre del usuario">
+                        <input type="password" id="nuevo-contrasena" placeholder="Contraseña inicial">
+                        <button class="btn btn-verde" onclick="crearUsuario()">Crear usuario</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VISTA DETALLE (oculta, se llena dinámicamente) -->
+            <section class="vista" id="vista-detalle">
+                <div class="detalle-header">
+                    <button class="btn-volver" onclick="volverAUsuarios()">← Volver</button>
+                    <h2 class="titulo-seccion" id="info-usuario"></h2>
+                </div>
+                <div class="panel-form">
+                    <h3>Subir documento</h3>
+                    <div class="form-fila">
+                        <input type="file" id="archivo-subir">
+                        <select id="carpeta-subir"></select>
+                        <select id="subcarpeta-subir"></select>
+                        <button class="btn btn-verde" onclick="subirDocumento()">Subir</button>
+                    </div>
+                </div>
+                <div class="panel-form">
+                    <h3>Crear subcarpeta</h3>
+                    <div class="form-fila">
+                        <select id="carpeta-nueva-sub"></select>
+                        <input type="text" id="nombre-subcarpeta" placeholder="Nombre (ej: 2025)">
+                        <button class="btn btn-azul" onclick="crearSubcarpeta()">Crear</button>
+                    </div>
+                </div>
+                <div id="carpetas-usuario"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ===== MODAL EDITAR ===== -->
+    <div class="modal" id="modal-editar">
+        <div class="modal-contenido">
+            <h3>Editar usuario</h3>
+            <div class="form-fila"><input type="text" id="editar-ruc" placeholder="RUC"></div>
+            <div class="form-fila"><input type="email" id="editar-correo" placeholder="Correo"></div>
+            <div class="form-fila"><input type="text" id="editar-nombre" placeholder="Nombre"></div>
+            <div class="modal-acciones">
+                <button class="btn btn-gris" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn btn-verde" onclick="guardarEdicion()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'https://backend-ruc.onrender.com';
+        let usuarioSeleccionado = null;
+        let docsActuales = [];
+        let subsActuales = [];
+        const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
+
+        function getToken() { return sessionStorage.getItem('token') || ''; }
+
+        function verificarSesion() {
+            const token = getToken();
+            if (!token) { window.location.href = 'login.html'; return false; }
+            return true;
+        }
+
+        function cambiarVista(vista) {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('activo'));
+            document.querySelector('.nav-item[data-vista="' + vista + '"]').classList.add('activo');
+            document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
+            document.getElementById('vista-' + vista).classList.add('activa');
+            if (vista === 'tickets') cargarTickets();
+            if (vista === 'usuarios') cargarUsuarios();
+        }
+
+        // ===== TICKETS =====
+        async function cargarTickets() {
+            if (!verificarSesion()) return;
+            const contenedor = document.getElementById('tickets-container');
+            contenedor.innerHTML = '<div class="sin-datos">Cargando...</div>';
+            try {
+                const resp = await fetch(API + '/api/admin/tickets', {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                if (resp.status === 401) { window.location.href = 'login.html'; return; }
+                const tickets = await resp.json();
+                if (tickets.length === 0) {
+                    contenedor.innerHTML = '<div class="sin-datos">No hay tickets pendientes.</div>';
+                    return;
+                }
+                contenedor.innerHTML = '';
+                tickets.forEach(t => {
+                    const div = document.createElement('div');
+                    div.className = 'ticket';
+                    const badge = t.estado === 'pendiente' ? '<span class="badge pendiente">Pendiente</span>'
+                        : t.estado === 'aprobado' ? '<span class="badge aprobado">Aprobado</span>'
+                        : '<span class="badge rechazado">Rechazado</span>';
+                    let acciones = '';
+                    if (t.estado === 'pendiente') {
+                        acciones = `
+                            <input type="password" id="nueva-pass-${t.id}" placeholder="Nueva contraseña (mín 6)">
+                            <button class="btn btn-verde btn-pequeno" onclick="aprobarTicket(${t.id})">Aprobar</button>
+                            <button class="btn btn-rojo btn-pequeno" onclick="rechazarTicket(${t.id})">Rechazar</button>
+                        `;
+                    }
+                    div.innerHTML = `
+                        <div class="info">
+                            <h4>${t.nombre} <span style="color:#999;font-weight:400">(${t.ruc})</span></h4>
+                            <p>${t.correo}</p>
+                            <p style="font-size:0.75rem;color:#aaa">Solicitado: ${t.creado_en}</p>
+                        </div>
+                        <div class="acciones">${badge} ${acciones}</div>
+                    `;
+                    contenedor.appendChild(div);
+                });
+            } catch (e) {
+                contenedor.innerHTML = '<div class="sin-datos">Error al cargar tickets.</div>';
+            }
+        }
+
+        async function aprobarTicket(ticketId) {
+            const nuevaPass = document.getElementById('nueva-pass-' + ticketId).value;
+            if (!nuevaPass || nuevaPass.length < 6) { alert('Ingresá una contraseña de al menos 6 caracteres'); return; }
+            if (!confirm('¿Aprobar este ticket y enviar la nueva contraseña por correo?')) return;
+            const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/aprobar', {
+                method: 'POST',
+                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nueva_password: nuevaPass })
+            });
+            const data = await resp.json();
+            if (resp.ok) { alert('Ticket aprobado. Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.')); cargarTickets(); }
+            else { alert(data.error || 'Error al aprobar'); }
+        }
+
+        async function rechazarTicket(ticketId) {
+            if (!confirm('¿Rechazar este ticket?')) return;
+            const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/rechazar', {
+                method: 'POST',
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (resp.ok) { cargarTickets(); } else { alert('Error al rechazar'); }
+        }
+
+        // ===== USUARIOS =====
+        async function cargarUsuarios() {
+            if (!verificarSesion()) return;
+            const resp = await fetch(API + '/api/admin/usuarios', {
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (resp.status === 401) { window.location.href = 'login.html'; return; }
+            const usuarios = await resp.json();
+            const grid = document.getElementById('grid-usuarios');
+            grid.innerHTML = '';
+            usuarios.forEach(u => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta-usuario';
+                const inicial = (u.nombre || '?').charAt(0).toUpperCase();
+                const estado = u.activo ? '<span class="estado estado-activo">Activo</span>' : '<span class="estado estado-inactivo">Inactivo</span>';
+                tarjeta.innerHTML = `
+                    <div class="avatar">${inicial}</div>
+                    <h3>${u.nombre}</h3>
+                    <p>RUC: ${u.ruc}</p>
+                    <p>${u.correo}</p>
+                    ${estado}
                     <div class="acciones">
-                        <input type="password" id="nueva-pass-${t.id}" placeholder="Nueva contraseña (mín 6)">
-                        <button class="btn btn-small" onclick="aprobarTicket(${t.id})">Aprobar y enviar</button>
-                        <button class="btn btn-small btn-danger" onclick="rechazarTicket(${t.id})">Rechazar</button>
+                        <button class="btn btn-azul btn-pequeno" onclick="verDetalle(${u.id})">Ver carpeta</button>
+                        <button class="btn btn-gris btn-pequeno" onclick="abrirEditar(${u.id})">Editar</button>
+                        <button class="btn btn-amarillo btn-pequeno" onclick="resetearPass(${u.id})">Reset pass</button>
+                        <button class="btn ${u.activo ? 'btn-rojo' : 'btn-verde'} btn-pequeno" onclick="cambiarEstado(${u.id}, ${u.activo ? 0 : 1})">${u.activo ? 'Deshabilitar' : 'Habilitar'}</button>
                     </div>
                 `;
-            }
-            div.innerHTML = `
-                <div class="ticket-info">
-                    <div>
-                        <strong>${t.nombre}</strong> <span>(${t.ruc})</span><br>
-                        <span>${t.correo}</span>
-                    </div>
-                    ${badge}
-                </div>
-                <div style="font-size:0.8rem;color:#999;margin-top:6px;">Solicitado: ${t.creado_en}</div>
-                ${acciones}
+                grid.appendChild(tarjeta);
+            });
+        }
+
+        async function resetearPass(usuarioId) {
+            const nuevaPass = prompt('Ingresá la nueva contraseña (mínimo 6 caracteres):');
+            if (!nuevaPass || nuevaPass.length < 6) { alert('Contraseña inválida'); return; }
+            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/reset-password', {
+                method: 'POST',
+                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nueva_password: nuevaPass })
+            });
+            const data = await resp.json();
+            if (resp.ok) { alert('Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.')); }
+            else { alert(data.error || 'Error'); }
+        }
+
+        async function verDetalle(usuarioId) {
+            if (!verificarSesion()) return;
+            usuarioSeleccionado = usuarioId;
+            cambiarVista('detalle');
+            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/documentos', {
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (resp.status === 401) { window.location.href = 'login.html'; return; }
+            docsActuales = await resp.json();
+            const respSubs = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/subcarpetas', {
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            subsActuales = await respSubs.json();
+            const respUsu = await fetch(API + '/api/admin/usuarios', {
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            const usuarios = await respUsu.json();
+            const usu = usuarios.find(u => u.id === usuarioId);
+            document.getElementById('info-usuario').innerHTML = `
+                ${usu.nombre} <span style="font-size:0.8rem;color:#999;font-weight:400">(${usu.ruc})</span>
             `;
-            contenedor.appendChild(div);
-        });
-    } catch (e) {
-        contenedor.innerHTML = '<div class="sin-tickets">Error al cargar tickets.</div>';
-    }
-}
+            llenarSelectores();
+            renderizarCarpetas();
+        }
 
-async function aprobarTicket(ticketId) {
-    const nuevaPass = document.getElementById('nueva-pass-' + ticketId).value;
-    if (!nuevaPass || nuevaPass.length < 6) { alert('Ingresá una contraseña de al menos 6 caracteres'); return; }
-    if (!confirm('¿Aprobar este ticket y enviar la nueva contraseña por correo?')) return;
-    const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/aprobar', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nueva_password: nuevaPass })
-    });
-    const data = await resp.json();
-    if (resp.ok) { alert('Ticket aprobado. Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.')); cargarTickets(); }
-    else { alert(data.error || 'Error al aprobar'); }
-}
+        function volverAUsuarios() { cambiarVista('usuarios'); cargarUsuarios(); }
 
-async function rechazarTicket(ticketId) {
-    if (!confirm('¿Rechazar este ticket?')) return;
-    const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/rechazar', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
-    if (resp.ok) { cargarTickets(); } else { alert('Error al rechazar'); }
-}
+        function llenarSelectores() {
+            const selCarpeta = document.getElementById('carpeta-subir');
+            selCarpeta.innerHTML = '';
+            CARPETAS_FIJAS.forEach(c => {
+                const opt = document.createElement('option'); opt.value = c; opt.textContent = c; selCarpeta.appendChild(opt);
+            });
+            const selCarpetaNueva = document.getElementById('carpeta-nueva-sub');
+            selCarpetaNueva.innerHTML = '';
+            CARPETAS_FIJAS.forEach(c => {
+                const opt = document.createElement('option'); opt.value = c; opt.textContent = c; selCarpetaNueva.appendChild(opt);
+            });
+            actualizarSubcarpetasSelect();
+        }
 
-// ===== USUARIOS =====
-async function cargarUsuarios() {
-    if (!verificarSesion()) return;
-    const resp = await fetch(API + '/api/admin/usuarios', {
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
-    if (resp.status === 401) { window.location.href = 'login.html'; return; }
-    const usuarios = await resp.json();
-    const grid = document.getElementById('grid-usuarios');
-    grid.innerHTML = '';
-    usuarios.forEach(u => {
-        const tarjeta = document.createElement('div');
-        tarjeta.className = 'tarjeta-usuario';
-        const inicial = (u.nombre || '?').charAt(0).toUpperCase();
-        const estado = u.activo ? '<span class="estado estado-activo">Activo</span>' : '<span class="estado estado-inactivo">Inactivo</span>';
-        tarjeta.innerHTML = `
-            <div class="avatar">${inicial}</div>
-            <h3>${u.nombre}</h3>
-            <p>RUC: ${u.ruc}</p>
-            <p>${u.correo}</p>
-            ${estado}
-            <div class="acciones" style="margin-top:10px;">
-                <button class="btn btn-small" onclick="verDetalle(${u.id})">Ver carpeta</button>
-                <button class="btn btn-small" onclick="abrirEditar(${u.id})">Editar</button>
-                <button class="btn btn-small btn-warning" onclick="resetearPass(${u.id})">Reset pass</button>
-                <button class="btn btn-small btn-danger" onclick="cambiarEstado(${u.id}, ${u.activo ? 0 : 1})">${u.activo ? 'Deshabilitar' : 'Habilitar'}</button>
-            </div>
-        `;
-        grid.appendChild(tarjeta);
-    });
-}
+        function actualizarSubcarpetasSelect() {
+            const carpetaSel = document.getElementById('carpeta-subir').value;
+            const selSub = document.getElementById('subcarpeta-subir');
+            selSub.innerHTML = '';
+            const opt = document.createElement('option'); opt.value = ''; opt.textContent = '— Sin subcarpeta —'; selSub.appendChild(opt);
+            subsActuales.filter(s => s.carpeta === carpetaSel && s.padre === '').forEach(s => {
+                const o = document.createElement('option'); o.value = s.nombre; o.textContent = s.nombre; selSub.appendChild(o);
+            });
+        }
 
-async function resetearPass(usuarioId) {
-    const nuevaPass = prompt('Ingresá la nueva contraseña (mínimo 6 caracteres):');
-    if (!nuevaPass || nuevaPass.length < 6) { alert('Contraseña inválida'); return; }
-    const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/reset-password', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nueva_password: nuevaPass })
-    });
-    const data = await resp.json();
-    if (resp.ok) { alert('Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.')); }
-    else { alert(data.error || 'Error'); }
-}
-
-async function verDetalle(usuarioId) {
-    if (!verificarSesion()) return;
-    usuarioSeleccionado = usuarioId;
-    document.getElementById('vista-principal').classList.add('oculto');
-    document.getElementById('detalle-usuario').classList.remove('oculto');
-    const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/documentos', {
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
-    if (resp.status === 401) { window.location.href = 'login.html'; return; }
-    docsActuales = await resp.json();
-    const respSubs = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/subcarpetas', {
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
-    subsActuales = await respSubs.json();
-    const respUsu = await fetch(API + '/api/admin/usuarios', {
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
-    const usuarios = await respUsu.json();
-    const usu = usuarios.find(u => u.id === usuarioId);
-    document.getElementById('info-usuario').innerHTML = `
-        <h2>${usu.nombre}</h2>
-        <p><strong>RUC:</strong> ${usu.ruc}</p>
-        <p><strong>Correo:</strong> ${usu.correo}</p>
-        <p><strong>Estado:</strong> ${usu.activo ? 'Activo' : 'Inactivo'}</p>
-    `;
-    llenarSelectores();
-    renderizarCarpetas();
-}
-
-function llenarSelectores() {
-    const selCarpeta = document.getElementById('carpeta-subir');
-    selCarpeta.innerHTML = '';
-    CARPETAS_FIJAS.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        selCarpeta.appendChild(opt);
-    });
-    const selCarpetaNueva = document.getElementById('carpeta-nueva-sub');
-    selCarpetaNueva.innerHTML = '';
-    CARPETAS_FIJAS.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        selCarpetaNueva.appendChild(opt);
-    });
-    actualizarSubcarpetasSelect();
-}
-
-function actualizarSubcarpetasSelect() {
-    const carpetaSel = document.getElementById('carpeta-subir').value;
-    const selSub = document.getElementById('subcarpeta-subir');
-    selSub.innerHTML = '';
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = '— Sin subcarpeta —';
-    selSub.appendChild(opt);
-    subsActuales.filter(s => s.carpeta === carpetaSel && s.padre === '').forEach(s => {
-        const o = document.createElement('option');
-        o.value = s.nombre;
-        o.textContent = s.nombre;
-        selSub.appendChild(o);
-    });
-}
-
-function renderizarCarpetas() {
-    const contenedor = document.getElementById('carpetas-usuario');
-    contenedor.innerHTML = '';
-    CARPETAS_FIJAS.forEach(carpeta => {
-        const div = document.createElement('div');
-        div.className = 'carpeta';
-        const docsCarpeta = docsActuales.filter(d => d.carpeta === carpeta);
-        const subsCarpeta = subsActuales.filter(s => s.carpeta === carpeta && s.padre === '');
-        let html = `<h4>📁 ${carpeta}</h4>`;
-        html += `<div class="subcarpetas">`;
-        subsCarpeta.forEach(s => {
-            html += `<span class="subcarpeta">${s.nombre} <button onclick="eliminarSubcarpeta('${s.nombre}')">✕</button></span>`;
-        });
-        html += `</div>`;
-        html += `<div class="docs">`;
-        docsCarpeta.filter(d => d.subcarpeta === '' && d.subcarpeta2 === '').forEach(d => {
-            html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-small" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-small btn-danger" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
-        });
-        html += `</div>`;
-        subsCarpeta.forEach(s => {
-            const docsSub = docsCarpeta.filter(d => d.subcarpeta === s.nombre && d.subcarpeta2 === '');
-            const subsHijas = subsActuales.filter(x => x.carpeta === carpeta && x.padre === s.nombre);
-            if (docsSub.length > 0 || subsHijas.length > 0) {
-                html += `<div style="margin-left:16px;margin-top:8px;"><strong>↳ ${s.nombre}:</strong>`;
-                subsHijas.forEach(h => {
-                    html += `<div style="margin-left:16px;margin-top:4px;"><em>↳ ${h.nombre}</em></div>`;
+        function renderizarCarpetas() {
+            const contenedor = document.getElementById('carpetas-usuario');
+            contenedor.innerHTML = '';
+            CARPETAS_FIJAS.forEach(carpeta => {
+                const div = document.createElement('div'); div.className = 'carpeta';
+                const docsCarpeta = docsActuales.filter(d => d.carpeta === carpeta);
+                const subsCarpeta = subsActuales.filter(s => s.carpeta === carpeta && s.padre === '');
+                let html = `<h4>📁 ${carpeta}</h4>`;
+                subsCarpeta.forEach(s => {
+                    html += `<span class="subcarpeta-chip">${s.nombre} <button class="btn btn-rojo btn-pequeno" style="padding:2px 6px" onclick="eliminarSubcarpeta('${s.nombre}')">✕</button></span>`;
                 });
-                docsSub.forEach(d => {
-                    html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-small" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-small btn-danger" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
+                html += `<div style="margin-top:8px">`;
+                docsCarpeta.filter(d => d.subcarpeta === '' && d.subcarpeta2 === '').forEach(d => {
+                    html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
                 });
                 html += `</div>`;
-            }
-        });
-        div.innerHTML = html;
-        contenedor.appendChild(div);
-    });
-}
+                subsCarpeta.forEach(s => {
+                    const docsSub = docsCarpeta.filter(d => d.subcarpeta === s.nombre && d.subcarpeta2 === '');
+                    const subsHijas = subsActuales.filter(x => x.carpeta === carpeta && x.padre === s.nombre);
+                    if (docsSub.length > 0 || subsHijas.length > 0) {
+                        html += `<div style="margin-left:16px;margin-top:8px;"><strong>↳ ${s.nombre}:</strong>`;
+                        subsHijas.forEach(h => {
+                            html += `<div style="margin-left:16px;margin-top:4px;"><em>↳ ${h.nombre}</em></div>`;
+                        });
+                        docsSub.forEach(d => {
+                            html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
+                        });
+                        html += `</div>`;
+                    }
+                });
+                div.innerHTML = html;
+                contenedor.appendChild(div);
+            });
+        }
 
-async function subirDocumento() {
-    const archivo = document.getElementById('archivo-subir').files[0];
-    if (!archivo) { alert('Elegí un archivo'); return; }
-    const carpeta = document.getElementById('carpeta-subir').value;
-    const subcarpeta = document.getElementById('subcarpeta-subir').value;
-    const formData = new FormData();
-    formData.append('archivo', archivo);
-    formData.append('carpeta', carpeta);
-    formData.append('subcarpeta', subcarpeta);
-    formData.append('subcarpeta2', '');
-    const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/documentos', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken() },
-        body: formData
-    });
-    if (resp.ok) { verDetalle(usuarioSeleccionado); } else { alert('Error al subir'); }
-}
+        async function subirDocumento() {
+            const archivo = document.getElementById('archivo-subir').files[0];
+            if (!archivo) { alert('Elegí un archivo'); return; }
+            const carpeta = document.getElementById('carpeta-subir').value;
+            const subcarpeta = document.getElementById('subcarpeta-subir').value;
+            const formData = new FormData();
+            formData.append('archivo', archivo);
+            formData.append('carpeta', carpeta);
+            formData.append('subcarpeta', subcarpeta);
+            formData.append('subcarpeta2', '');
+            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/documentos', {
+                method: 'POST',
+                headers:: { 'Authorization': 'Bearer ' + getToken() },
+                body: formData
+            });
+            if (resp.ok) { verDetalle(usuarioSeleccionado); } else { alert('Error al subir'); }
+        }
 
-async function crearSubcarpeta() {
-    const carpeta = document.getElementById('carpeta-nueva-sub').value;
-    const nombre = document.getElementById('nombre-subcarpeta').value.trim();
-    if (!nombre) { alert('Ingresá el nombre'); return; }
-    const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ carpeta, nombre, padre: '' })
-    });
-    if (resp.ok) { document.getElementById('nombre-subcarpeta').value = ''; verDetalle(usuarioSeleccionado); } else { alert('Esa subcarpeta ya existe'); }
-}
+        async function crearSubcarpeta() {
+            const carpeta = document.getElementById('carpeta-nueva-sub').value;
+            const nombre = document.getElementById('nombre-subcarpeta').value.trim();
+            if (!nombre) { alert('Ingresá el nombre'); return; }
+            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas', {
+                method: 'POST',
+                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ carpeta, nombre, padre: '' })
+            });
+            if (resp.ok) { document.getElementById('nombre-subcarpeta').value = ''; verDetalle(usuarioSeleccionado); } else { alert('Esa subcarpeta ya existe'); }
+        }
 
-async function eliminarSubcarpeta(nombre) {
-    if (!confirm('¿Eliminar la subcarpeta y sus documentos?')) return;
-    const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas/' + encodeURIComponent(nombre), {
-        method: 'DELETE',
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
-    if (resp.ok) { verDetalle(usuarioSeleccionado); }
-}
+        async function eliminarSubcarpeta(nombre) {
+            if (!confirm('¿Eliminar la subcarpeta y sus documentos?')) return;
+            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas/' + encodeURIComponent(nombre), {
+                method: 'DELETE',
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (resp.ok) { verDetalle(usuarioSeleccionado); }
+        }
 
-async function eliminarDoc(docId) {
-    if (!confirm('¿Eliminar este documento?')) return;
-    const resp = await fetch(API + '/api/admin/documentos/' + docId, {
-        method: 'DELETE',
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
-    if (resp.ok) { verDetalle(usuarioSeleccionado); }
-}
+        async function eliminarDoc(docId) {
+            if (!confirm('¿Eliminar este documento?')) return;
+            const resp = await fetch(API + '/api/admin/documentos/' + docId, {
+                method: 'DELETE',
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (resp.ok) { verDetalle(usuarioSeleccionado); }
+        }
 
-async function descargarDoc(docId) {
-    const resp = await fetch(API + '/api/mis-documentos/' + docId + '/descargar', {
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
-    if (!resp.ok) { alert('No autorizado'); return; }
-    const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-}
+        async function descargarDoc(docId) {
+            const resp = await fetch(API + '/api/mis-documentos/' + docId + '/descargar', {
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (!resp.ok) { alert('No autorizado'); return; }
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = ''; document.body.appendChild(a); a.click(); a.remove();
+        }
 
-async function crearUsuario() {
-    const ruc = document.getElementById('nuevo-ruc').value.trim();
-    const correo = document.getElementById('nuevo-correo').value.trim();
-    const nombre = document.getElementById('nuevo-nombre').value.trim();
-    const contrasena = document.getElementById('nuevo-contrasena').value;
-    if (!ruc || !correo || !nombre || !contrasena) { alert('Completá todos los campos'); return; }
-    const resp = await fetch(API + '/api/admin/usuarios', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ruc, correo, nombre, contrasena })
-    });
-    if (resp.ok) { alert('Usuario creado'); cargarUsuarios(); document.getElementById('nuevo-ruc').value = ''; document.getElementById('nuevo-correo').value = ''; document.getElementById('nuevo-nombre').value = ''; document.getElementById('nuevo-contrasena').value = ''; }
-    else { alert('El RUC o correo ya existe'); }
-}
-
-let usuarioEditando = null;
-function abrirEditar(usuarioId) {
-    usuarioEditando = usuarioId;
-    document.getElementById('modal-editar').style.display = 'flex';
-    fetch(API + '/api/admin/usuarios', {
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    }).then(r => r.json()).then(usuarios => {
-        const u = usuarios.find(x => x.id === usuarioId);
-        document.getElementById('editar-ruc').value = u.ruc;
-        document.getElementById('editar-correo').value = u.correo;
-        document.getElementById('editar-nombre').value = u.nombre;
-    });
-}
-
-function cerrarModal() { document.getElementById('modal-editar').style.display = 'none'; }
-
-async function guardarEdicion() {
-    const ruc = document.getElementById('editar-ruc').value.trim();
-    const correo = document.getElementById('editar-correo').value.trim();
-    const nombre = document.getElementById('editar-nombre').value.trim();
-    const resp = await fetch(API + '/api/admin/usuarios/' + usuarioEditando, {
-        method: 'PUT',
-        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ruc, correo, nombre })
-    });
-    if (resp.ok) { cerrarModal(); cargarUsuarios(); } else { alert('El RUC o correo ya existe'); }
-}
-
-async function cambiarEstado(usuarioId, activo) {
-    const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/estado', {
-        method: 'PUT',
-        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activo: Boolean(activo) })
-    });
-    if (resp.ok) { cargarUsuarios(); }
-}
-
-function volverAtras() {
-    document.getElementById('detalle-usuario').classList.add('oculto');
-    document.getElementById('vista-principal').classList.remove('oculto');
-    cargarUsuarios();
-}
-
-function cerrarSesion() {
-    fetch(API + '/api/logout', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    }).catch(() => {});
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('usuario_nombre');
-    window.location.href = 'login.html';
-}
-
-document.getElementById('carpeta-subir').addEventListener('change', actualizarSubcarpetasSelect);
-cargarTickets();
-cargarUsuarios();
+        async function crearUsuario()
