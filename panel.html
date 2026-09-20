@@ -335,7 +335,7 @@
             if (!confirm('¿Aprobar este ticket y enviar la nueva contraseña por correo?')) return;
             const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/aprobar', {
                 method: 'POST',
-                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nueva_password: nuevaPass })
             });
             const data = await resp.json();
@@ -347,7 +347,7 @@
             if (!confirm('¿Rechazar este ticket?')) return;
             const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/rechazar', {
                 method: 'POST',
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             if (resp.ok) { cargarTickets(); } else { alert('Error al rechazar'); }
         }
@@ -356,7 +356,7 @@
         async function cargarUsuarios() {
             if (!verificarSesion()) return;
             const resp = await fetch(API + '/api/admin/usuarios', {
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             if (resp.status === 401) { window.location.href = 'login.html'; return; }
             const usuarios = await resp.json();
@@ -389,7 +389,7 @@
             if (!nuevaPass || nuevaPass.length < 6) { alert('Contraseña inválida'); return; }
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/reset-password', {
                 method: 'POST',
-                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nueva_password: nuevaPass })
             });
             const data = await resp.json();
@@ -402,16 +402,16 @@
             usuarioSeleccionado = usuarioId;
             cambiarVista('detalle');
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/documentos', {
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             if (resp.status === 401) { window.location.href = 'login.html'; return; }
             docsActuales = await resp.json();
             const respSubs = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/subcarpetas', {
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             subsActuales = await respSubs.json();
             const respUsu = await fetch(API + '/api/admin/usuarios', {
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             const usuarios = await respUsu.json();
             const usu = usuarios.find(u => u.id === usuarioId);
@@ -495,7 +495,7 @@
             formData.append('subcarpeta2', '');
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/documentos', {
                 method: 'POST',
-                headers:: { 'Authorization': 'Bearer ' + getToken() },
+                headers: { 'Authorization': 'Bearer ' + getToken() },
                 body: formData
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); } else { alert('Error al subir'); }
@@ -507,7 +507,7 @@
             if (!nombre) { alert('Ingresá el nombre'); return; }
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas', {
                 method: 'POST',
-                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ carpeta, nombre, padre: '' })
             });
             if (resp.ok) { document.getElementById('nombre-subcarpeta').value = ''; verDetalle(usuarioSeleccionado); } else { alert('Esa subcarpeta ya existe'); }
@@ -517,7 +517,7 @@
             if (!confirm('¿Eliminar la subcarpeta y sus documentos?')) return;
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas/' + encodeURIComponent(nombre), {
                 method: 'DELETE',
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); }
         }
@@ -526,14 +526,14 @@
             if (!confirm('¿Eliminar este documento?')) return;
             const resp = await fetch(API + '/api/admin/documentos/' + docId, {
                 method: 'DELETE',
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); }
         }
 
         async function descargarDoc(docId) {
             const resp = await fetch(API + '/api/mis-documentos/' + docId + '/descargar', {
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             if (!resp.ok) { alert('No autorizado'); return; }
             const blob = await resp.blob();
@@ -550,7 +550,7 @@
             if (!ruc || !correo || !nombre || !contrasena) { alert('Completá todos los campos'); return; }
             const resp = await fetch(API + '/api/admin/usuarios', {
                 method: 'POST',
-                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ruc, correo, nombre, contrasena })
             });
             if (resp.ok) { alert('Usuario creado'); cargarUsuarios(); document.getElementById('nuevo-ruc').value = ''; document.getElementById('nuevo-correo').value = ''; document.getElementById('nuevo-nombre').value = ''; document.getElementById('nuevo-contrasena').value = ''; }
@@ -562,7 +562,7 @@
             usuarioEditando = usuarioId;
             document.getElementById('modal-editar').classList.add('visible');
             fetch(API + '/api/admin/usuarios', {
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             }).then(r => r.json()).then(usuarios => {
                 const u = usuarios.find(x => x.id === usuarioId);
                 document.getElementById('editar-ruc').value = u.ruc;
@@ -579,7 +579,7 @@
             const nombre = document.getElementById('editar-nombre').value.trim();
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioEditando, {
                 method: 'PUT',
-                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ruc, correo, nombre })
             });
             if (resp.ok) { cerrarModal(); cargarUsuarios(); } else { alert('El RUC o correo ya existe'); }
@@ -588,7 +588,7 @@
         async function cambiarEstado(usuarioId, activo) {
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/estado', {
                 method: 'PUT',
-                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ activo: Boolean(activo) })
             });
             if (resp.ok) { cargarUsuarios(); }
@@ -597,7 +597,7 @@
         function cerrarSesion() {
             fetch(API + '/api/logout', {
                 method: 'POST',
-                headers:: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             }).catch(() => {});
             sessionStorage.removeItem('token');
             sessionStorage.removeItem('usuario_nombre');
