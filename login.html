@@ -99,4 +99,38 @@
             }
         }
 
-       
+       "function mostrarReset() { document.getElementById('form-login').style.display = 'none'; document.getElementById('form-reset').style.display = 'block'; ocultarError(document.getElementById('error-reset')); ocultarError(document.getElementById('error-login')); }"
+        function volverLogin() { document.getElementById('form-reset').style.display = 'none'; document.getElementById('form-login').style.display = 'block'; }
+
+        async function solicitarReset() {
+            const ruc = document.getElementById('ruc-reset').value.trim();
+            const errorEl = document.getElementById('error-reset');
+            const okEl = document.getElementById('mensaje-reset');
+            ocultarError(errorEl);
+            okEl.classList.remove('visible');
+            if (!ruc) { mostrarError(errorEl, 'Ingresá tu RUC'); return; }
+            try {
+                const resp = await fetch(API + '/api/solicitar-reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ruc })
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    okEl.textContent = 'Solicitud enviada. El administrador la revisará y te llegará un correo con tu nueva contraseña.';
+                    okEl.classList.add('visible');
+                    document.getElementById('ruc-reset').value = '';
+                } else {
+                    mostrarError(errorEl, data.error || 'Error al enviar la solicitud');
+                }
+            } catch (e) {
+                mostrarError(errorEl, 'No se pudo conectar al servidor. Intentá de nuevo.');
+            }
+        }
+
+        document.getElementById('ruc').addEventListener('keydown', function(e) { if (e.key === 'Enter') entrar(); });
+        document.getElementById('password').addEventListener('keydown', function(e) { if (e.key === 'Enter') entrar(); });
+        document.getElementById('ruc-reset').addEventListener('keydown', function(e) { if (e.key === 'Enter') solicitarReset(); });
+    </script>
+</body>
+</html>
