@@ -274,7 +274,7 @@ function esAdmin() {
 }
 
 function verificarAdmin() {
-    if (!verificarSesion()) return false;
+    if (!verificarAdmin()) return false;
     if (!esAdmin()) { window.location.href = 'mis-documentos.html'; return false; }
     return true;
 }
@@ -296,7 +296,7 @@ function verificarAdmin() {
 
         // ===== TICKETS =====
         async function cargarTickets() {
-            if (!verificarSesion()) return;
+            if (!verificarAdmin()) return;
             const contenedor = document.getElementById('tickets-container');
             contenedor.innerHTML = '<div class="sin-datos">Cargando...</div>';
             try {
@@ -364,7 +364,7 @@ function verificarAdmin() {
 
         // ===== USUARIOS =====
         async function cargarUsuarios() {
-            if (!verificarSesion()) return;
+            if (!verificarAdmin()) return;
             const resp = await fetch(API + '/api/admin/usuarios', {
                 headers: { 'Authorization': 'Bearer ' + getToken() }
             });
@@ -408,7 +408,7 @@ function verificarAdmin() {
         }
 
         async function verDetalle(usuarioId) {
-            if (!verificarSesion()) return;
+            if (!verificarAdmin()) return;
             usuarioSeleccionado = usuarioId;
             cambiarVista('detalle');
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/documentos', {
