@@ -120,37 +120,39 @@
 
   <!-- Script del buscador de RUC -->
   <script>
-    async function consultarRUC() {
-      const ruc = document.getElementById('ruc-input').value.trim();
-      const resultado = document.getElementById('resultado');
+  async function consultarRUC() {
+  const ruc = document.getElementById('ruc-input').value.trim();
+  const resultado = document.getElementById('resultado');
 
-      if (!ruc) {
-        alert('Por favor ingresá un RUC');
-        return;
-      }
+  if (!ruc) {
+    alert('Por favor ingresá un RUC');
+    return;
+  }
 
-      resultado.style.display = 'block';
-      resultado.innerHTML = '<p>Cargando...</p>';
+  resultado.style.display = 'block';
+  resultado.innerHTML = '<p>Cargando...</p>';
 
-      try {
-        const resp = await fetch('https://backend-ruc.onrender.com/api/ruc?ruc=' + encodeURIComponent(ruc));
-        const data = await resp.json()).data;
+  try {
+    const resp = await fetch('https://backend-ruc.onrender.com/api/ruc?ruc=' + encodeURIComponent(ruc));
+    const json = await resp.json();
+    // La API devuelve los datos dentro de "data"
+    const data = json.data || json;
 
-        if (data.error) {
-          resultado.innerHTML = '<p style="color:red;">Error: ' + data.error + '</p>';
-        } else {
-          resultado.innerHTML =
-            '<p><strong>RUC:</strong> ' + (data.ruc || '-') + '</p>' +
-            '<p><strong>Razón Social:</strong> ' + (data.razonSocial || '-') + '</p>' +
-            '<p><strong>Nombre Fantasía:</strong> ' + (data.nombreFantasia || '-') + '</p>' +
-            '<p><strong>Estado:</strong> ' + (data.estado || '-') + '</p>' +
-            '<p><strong>Categoría:</strong> ' + (data.categoria || '-') + '</p>';
-        }
-      } catch (err) {
-        resultado.innerHTML = '<p style="color:red;">No se pudo conectar al servidor. Verificá que el backend esté activo.</p>';
-      }
+    if (data.error || json.error) {
+      resultado.innerHTML = '<p style="color:red;">Error: ' + (data.error || json.error) + '</p>';
+    } else {
+      resultado.innerHTML =
+        '<p><strong>RUC:</strong> ' + (data.ruc || '-') + '</p>' +
+        '<p><strong>Razón Social:</strong> ' + (data.razonSocial || '-') + '</p>' +
+        '<p><strong>Nombre Fantasía:</strong> ' + (data.nombreFantasia || '-') + '</p>' +
+        '<p><strong>Estado:</strong> ' + (data.estado || '-') + '</p>' +
+        '<p><strong>Categoría:</strong> ' + (data.categoria || '-') + '</p>';
     }
-  </script>
+  } catch (err) {
+    resultado.innerHTML = '<p style="color:red;">No se pudo conectar al servidor. Verificá que el backend esté activo.</p>';
+  }
+}
+</script>
 
 </body>
 </html>
