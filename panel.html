@@ -542,3 +542,70 @@
         }
 
         async function crearUsuario()
+        {
+            const ruc = document.getElementById('nuevo-ruc').value.trim();
+            const correo = document.getElementById('nuevo-correo').value.trim();
+            const nombre = document.getElementById('nuevo-nombre').value.trim();
+            const contrasena = document.getElementById('nuevo-contrasena').value;
+            if (!ruc || !correo || !nombre || !contrasena) { alert('Completá todos los campos'); return; }
+            const resp = await fetch(API + '/api/admin/usuarios', {
+                method: 'POST',
+                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ruc, correo, nombre, contrasena })
+            });
+            if (resp.ok) { alert('Usuario creado'); cargarUsuarios(); document.getElementById('nuevo-ruc').value = ''; document.getElementById('nuevo-correo').value = ''; document.getElementById('nuevo-nombre').value = ''; document.getElementById('nuevo-contrasena').value = ''; }
+            else { alert('El RUC o correo ya existe'); }
+        }
+
+        let usuarioEditando = null;
+        function abrirEditar(usuarioId) {
+            usuarioEditando = usuarioId;
+            document.getElementById('modal-editar').classList.add('visible');
+            fetch(API + '/api/admin/usuarios', {
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            }).then(r => r.json()).then(usuarios => {
+                const u = usuarios.find(x => x.id === usuarioId);
+                document.getElementById('editar-ruc').value = u.ruc;
+                document.getElementById('editar-correo').value = u.correo;
+                document.getElementById('editar-nombre').value = u.nombre;
+            });
+        }
+
+        function cerrarModal() { document.getElementById('modal-editar').classList.remove('visible'); }
+
+        async function guardarEdicion() {
+            const ruc = document.getElementById('editar-ruc').value.trim();
+            const correo = document.getElementById('editar-correo').value.trim();
+            const nombre = document.getElementById('editar-nombre').value.trim();
+            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioEditando, {
+                method: 'PUT',
+                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ruc, correo, nombre })
+            });
+            if (resp.ok) { cerrarModal(); cargarUsuarios(); } else { alert('El RUC o correo ya existe'); }
+        }
+
+        async function cambiarEstado(usuarioId, activo) {
+            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/estado', {
+                method: 'PUT',
+                headers:: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activo: Boolean(activo) })
+            });
+            if (resp.ok) { cargarUsuarios(); }
+        }
+
+        function cerrarSesion() {
+            fetch(API + '/api/logout', {
+                method: 'POST',
+                headers:: { 'Authorization': 'Bearer ' + getToken() }
+            }).catch(() => {});
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('usuario_nombre');
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('carpeta-subir').addEventListener('change', actualizarSubcarpetasSelect);
+        cargarTickets();
+    </script>
+</body>
+</html>
