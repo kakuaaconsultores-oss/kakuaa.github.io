@@ -57,8 +57,7 @@
                     body: JSON.stringify({ ruc, password })
                 });
                 const data = await resp.json();
-
-                if (resp.ok) {
+        if (resp.ok) {
     sessionStorage.setItem('token', data.token);
     sessionStorage.setItem('usuario', JSON.stringify(data.usuario));
 
@@ -70,6 +69,8 @@
     } else {
         window.location.href = 'mis-documentos.html';  // Contribuyente
     }
+} else {
+    msg.textContent = data.error || 'Error al iniciar sesión';
 }
                 } else {
                     msg.textContent = data.error || 'Error al iniciar sesión';
