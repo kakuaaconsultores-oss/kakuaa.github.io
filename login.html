@@ -59,15 +59,18 @@
                 const data = await resp.json();
 
                 if (resp.ok) {
-                    sessionStorage.setItem('token', data.token);
-                    sessionStorage.setItem('usuario', JSON.stringify(data.usuario));
+    sessionStorage.setItem('token', data.token);
+    sessionStorage.setItem('usuario', JSON.stringify(data.usuario));
 
-                    // Si debe cambiar la contraseña, redirigí a la pantalla obligatoria
-                    if (data.debe_cambiar) {
-                        window.location.href = 'cambiar-password.html';
-                    } else {
-                        window.location.href = 'panel.html';
-                    }
+    // Si debe cambiar la contraseña, redirigí a la pantalla obligatoria
+    if (data.debe_cambiar) {
+        window.location.href = 'cambiar-password.html';
+    } else if (data.usuario.ruc === '80000000-0') {
+        window.location.href = 'panel.html';  // Admin
+    } else {
+        window.location.href = 'mis-documentos.html';  // Contribuyente
+    }
+}
                 } else {
                     msg.textContent = data.error || 'Error al iniciar sesión';
                 }
