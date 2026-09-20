@@ -274,7 +274,7 @@ function esAdmin() {
 }
 
 function verificarAdmin() {
-    if (!verificarAdmin()) return false;
+    if (!verificarSesion()) return false;
     if (!esAdmin()) { window.location.href = 'mis-documentos.html'; return false; }
     return true;
 }
