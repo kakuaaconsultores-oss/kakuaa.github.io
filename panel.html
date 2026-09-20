@@ -13,6 +13,7 @@
         .btn { background: #2e9e5b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
         .btn:hover { opacity: 0.9; }
         .btn-danger { background: #d9534f; }
+        .btn-warning { background: #f0ad4e; }
         .btn-small { padding: 4px 10px; font-size: 0.8rem; }
         .container { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
         .card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
@@ -44,6 +45,21 @@
         .oculto { display: none; }
         .volver { background: none; border: none; color: #1a2a5e; cursor: pointer; font-size: 0.9rem; margin-bottom: 12px; text-decoration: underline; }
         .select-carpeta { padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+        /* Estilos tickets */
+        .ticket { border: 1px solid #e0e4ee; border-radius: 8px; padding: 14px; margin-bottom: 12px; background: #f8f9fc; }
+        .ticket.pendiente { border-left: 4px solid #f0ad4e; }
+        .ticket.aprobado { border-left: 4px solid #2e9e5b; }
+        .ticket.rechazado { border-left: 4px solid #d9534f; opacity: 0.7; }
+        .ticket .ticket-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .ticket .ticket-info strong { color: #1a2a5e; }
+        .ticket .ticket-info span { color: #666; font-size: 0.85rem; }
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .badge-pendiente { background: #fdf3e3; color: #b8860b; }
+        .badge-aprobado { background: #e6f7ee; color: #2e9e5b; }
+        .badge-rechazado { background: #fdeaea; color: #d9534f; }
+        .ticket .acciones { margin-top: 10px; }
+        .ticket input[type="password"] { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem; margin-right: 8px; width: 180px; }
+        .sin-tickets { color: #888; font-size: 0.9rem; padding: 12px 0; }
     </style>
 </head>
 <body>
@@ -56,6 +72,14 @@
     </header>
 
     <div class="container">
+        <!-- Tickets de recuperación -->
+        <div class="card">
+            <h2>🔑 Tickets de recuperación de contraseña</h2>
+            <div id="lista-tickets">
+                <div class="sin-tickets">Cargando tickets...</div>
+            </div>
+        </div>
+
         <div id="vista-principal">
             <div class="card">
                 <h2>Crear usuario</h2>
@@ -106,15 +130,9 @@
     <div class="modal" id="modal-editar">
         <div class="modal-content">
             <h3>Editar usuario</h3>
-            <div class="form-row">
-                <input type="text" id="editar-ruc" placeholder="RUC">
-            </div>
-            <div class="form-row">
-                <input type="text" id="editar-correo" placeholder="Correo">
-            </div>
-            <div class="form-row">
-                <input type="text" id="editar-nombre" placeholder="Nombre">
-            </div>
+            <div class="form-row"><input type="text" id="editar-ruc" placeholder="RUC"></div>
+            <div class="form-row"><input type="text" id="editar-correo" placeholder="Correo"></div>
+            <div class="form-row"><input type="text" id="editar-nombre" placeholder="Nombre"></div>
             <div class="modal-actions">
                 <button class="btn btn-danger" onclick="cerrarModal()">Cancelar</button>
                 <button class="btn" onclick="guardarEdicion()">Guardar</button>
@@ -132,6 +150,84 @@
 
         function getToken() { return RUC_ADMIN; }
 
+        // ===== TICKETS DE RECUPERACIÓN =====
+        async function cargarTickets() {
+            const contenedor = document.getElementById('lista-tickets');
+            try {
+                const resp = await fetch(API + '/api/admin/tickets', {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                const tickets = await resp.json();
+                if (tickets.length === 0) {
+                    contenedor.innerHTML = '<div class="sin-tickets">No hay tickets pendientes.</div>';
+                    return;
+                }
+                contenedor.innerHTML = '';
+                tickets.forEach(t => {
+                    const div = document.createElement('div');
+                    div.className = 'ticket ' + t.estado;
+                    const badge = t.estado === 'pendiente' ? '<span class="badge badge-pendiente">Pendiente</span>'
+                        : t.estado === 'aprobado' ? '<span class="badge badge-aprobado">Aprobado</span>'
+                        : '<span class="badge badge-rechazado">Rechazado</span>';
+                    let acciones = '';
+                    if (t.estado === 'pendiente') {
+                        acciones = `
+                            <div class="acciones">
+                                <input type="password" id="nueva-pass-${t.id}" placeholder="Nueva contraseña (mín 6)">
+                                <button class="btn btn-small" onclick="aprobarTicket(${t.id})">Aprobar y enviar</button>
+                                <button class="btn btn-small btn-danger" onclick="rechazarTicket(${t.id})">Rechazar</button>
+                            </div>
+                        `;
+                    }
+                    div.innerHTML = `
+                        <div class="ticket-info">
+                            <div>
+                                <strong>${t.nombre}</strong> <span>(${t.ruc})</span><br>
+                                <span>${t.correo}</span>
+                            </div>
+                            ${badge}
+                        </div>
+                        <div style="font-size:0.8rem;color:#999;margin-top:6px;">Solicitado: ${t.creado_en}</div>
+                        ${acciones}
+                    `;
+                    contenedor.appendChild(div);
+                });
+            } catch (e) {
+                contenedor.innerHTML = '<div class="sin-tickets">Error al cargar tickets.</div>';
+            }
+        }
+
+        async function aprobarTicket(ticketId) {
+            const nuevaPass = document.getElementById('nueva-pass-' + ticketId).value;
+            if (!nuevaPass || nuevaPass.length < 6) {
+                alert('Ingresá una contraseña de al menos 6 caracteres');
+                return;
+            }
+            if (!confirm('¿Aprobar este ticket y enviar la nueva contraseña por correo?')) return;
+            const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/aprobar', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nueva_password: nuevaPass })
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+                alert('Ticket aprobado. Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.'));
+                cargarTickets();
+            } else {
+                alert(data.error || 'Error al aprobar');
+            }
+        }
+
+        async function rechazarTicket(ticketId) {
+            if (!confirm('¿Rechazar este ticket?')) return;
+            const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/rechazar', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (resp.ok) { cargarTickets(); } else { alert('Error al rechazar'); }
+        }
+
+        // ===== USUARIOS =====
         async function cargarUsuarios() {
             const resp = await fetch(API + '/api/admin/usuarios', {
                 headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -153,11 +249,28 @@
                     <div class="acciones" style="margin-top:10px;">
                         <button class="btn btn-small" onclick="verDetalle(${u.id})">Ver carpeta</button>
                         <button class="btn btn-small" onclick="abrirEditar(${u.id})">Editar</button>
+                        <button class="btn btn-small btn-warning" onclick="resetearPass(${u.id})">Reset pass</button>
                         <button class="btn btn-small btn-danger" onclick="cambiarEstado(${u.id}, ${u.activo ? 0 : 1})">${u.activo ? 'Deshabilitar' : 'Habilitar'}</button>
                     </div>
                 `;
                 grid.appendChild(tarjeta);
             });
+        }
+
+        async function resetearPass(usuarioId) {
+            const nuevaPass = prompt('Ingresá la nueva contraseña (mínimo 6 caracteres):');
+            if (!nuevaPass || nuevaPass.length < 6) { alert('Contraseña inválida'); return; }
+            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/reset-password', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nueva_password: nuevaPass })
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+                alert('Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.'));
+            } else {
+                alert(data.error || 'Error');
+            }
         }
 
         async function verDetalle(usuarioId) {
@@ -215,7 +328,7 @@
             opt.value = '';
             opt.textContent = '— Sin subcarpeta —';
             selSub.appendChild(opt);
-            subsActuales.filter(s => s.carpeta === carpetaSel).forEach(s => {
+            subsActuales.filter(s => s.carpeta === carpetaSel && s.padre === '').forEach(s => {
                 const o = document.createElement('option');
                 o.value = s.nombre;
                 o.textContent = s.nombre;
@@ -230,7 +343,7 @@
                 const div = document.createElement('div');
                 div.className = 'carpeta';
                 const docsCarpeta = docsActuales.filter(d => d.carpeta === carpeta);
-                const subsCarpeta = subsActuales.filter(s => s.carpeta === carpeta);
+                const subsCarpeta = subsActuales.filter(s => s.carpeta === carpeta && s.padre === '');
                 let html = `<h4>📁 ${carpeta}</h4>`;
                 html += `<div class="subcarpetas">`;
                 subsCarpeta.forEach(s => {
@@ -238,14 +351,18 @@
                 });
                 html += `</div>`;
                 html += `<div class="docs">`;
-                docsCarpeta.filter(d => d.subcarpeta === '').forEach(d => {
+                docsCarpeta.filter(d => d.subcarpeta === '' && d.subcarpeta2 === '').forEach(d => {
                     html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-small" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-small btn-danger" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
                 });
                 html += `</div>`;
                 subsCarpeta.forEach(s => {
-                    const docsSub = docsCarpeta.filter(d => d.subcarpeta === s.nombre);
-                    if (docsSub.length > 0) {
+                    const docsSub = docsCarpeta.filter(d => d.subcarpeta === s.nombre && d.subcarpeta2 === '');
+                    const subsHijas = subsActuales.filter(x => x.carpeta === carpeta && x.padre === s.nombre);
+                    if (docsSub.length > 0 || subsHijas.length > 0) {
                         html += `<div style="margin-left:16px;margin-top:8px;"><strong>↳ ${s.nombre}:</strong>`;
+                        subsHijas.forEach(h => {
+                            html += `<div style="margin-left:16px;margin-top:4px;"><em>↳ ${h.nombre}</em></div>`;
+                        });
                         docsSub.forEach(d => {
                             html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-small" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-small btn-danger" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
                         });
@@ -266,6 +383,7 @@
             formData.append('archivo', archivo);
             formData.append('carpeta', carpeta);
             formData.append('subcarpeta', subcarpeta);
+            formData.append('subcarpeta2', '');
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/documentos', {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + getToken() },
@@ -281,7 +399,7 @@
             const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas', {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ carpeta, nombre })
+                body: JSON.stringify({ carpeta, nombre, padre: '' })
             });
             if (resp.ok) { document.getElementById('nombre-subcarpeta').value = ''; verDetalle(usuarioSeleccionado); } else { alert('Esa subcarpeta ya existe'); }
         }
@@ -388,6 +506,7 @@
         function cerrarSesion() { window.location.href = 'login.html'; }
 
         document.getElementById('carpeta-subir').addEventListener('change', actualizarSubcarpetasSelect);
+        cargarTickets();
         cargarUsuarios();
     </script>
 </body>
