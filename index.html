@@ -134,7 +134,7 @@
 
       try {
         const resp = await fetch('https://backend-ruc.onrender.com/api/ruc?ruc=' + encodeURIComponent(ruc));
-        const data = await resp.json();
+        const data = await resp.json()).data;
 
         if (data.error) {
           resultado.innerHTML = '<p style="color:red;">Error: ' + data.error + '</p>';
