@@ -153,6 +153,36 @@
         .modal-contenido .form-fila { margin-bottom: 12px; }
         .modal-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 
+        /* ===== SUPERADMIN DASHBOARD ===== */
+        .metricas { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; margin-bottom:22px; }
+        .metrica { background:#fff; border:1px solid var(--gris-borde); border-radius:14px; padding:18px; }
+        .metrica .etiqueta { color:var(--texto-suave); font-size:.78rem; font-weight:600; }
+        .metrica .valor { color:var(--azul); font-size:1.65rem; font-weight:800; margin-top:5px; }
+        .metrica .detalle { color:var(--texto-suave); font-size:.76rem; margin-top:5px; }
+        .dashboard-grid { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(280px,.8fr); gap:16px; }
+        .tabla-panel { background:#fff; border:1px solid var(--gris-borde); border-radius:14px; padding:18px; overflow:auto; }
+        .tabla-panel h3 { color:var(--azul); font-size:1rem; margin-bottom:14px; }
+        table { width:100%; border-collapse:collapse; font-size:.82rem; }
+        th,td { padding:10px 8px; border-bottom:1px solid var(--gris-borde); text-align:left; white-space:nowrap; }
+        th { color:var(--texto-suave); font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; }
+        .progreso { width:100%; height:8px; background:#edf0f5; border-radius:99px; overflow:hidden; }
+        .progreso > span { display:block; height:100%; background:var(--verde); border-radius:99px; }
+        .prioridad-urgente { color:#b42318; font-weight:800; }
+        .prioridad-alta { color:#c56b00; font-weight:800; }
+        .prioridad-media { color:var(--azul); font-weight:700; }
+        .prioridad-baja { color:var(--texto-suave); font-weight:700; }
+        .estado-tarea { padding:4px 9px; border-radius:999px; font-size:.7rem; font-weight:700; background:#eef2f7; }
+        .estado-tarea.en_progreso { background:#e8f0fb; color:var(--azul); }
+        .estado-tarea.completada { background:#e6f7ee; color:var(--verde); }
+        .estado-tarea.bloqueada { background:#fdeaea; color:var(--rojo); }
+        .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .form-grid .full { grid-column:1/-1; }
+        .form-grid input,.form-grid select,.form-grid textarea { width:100%; padding:10px 12px; border:1px solid var(--gris-borde); border-radius:8px; font-size:.88rem; outline:none; }
+        .form-grid textarea { min-height:80px; resize:vertical; }
+        .form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus { border-color:var(--verde); }
+        .acciones-tarea { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+        @media (max-width:800px) { .dashboard-grid,.form-grid { grid-template-columns:1fr; } .sidebar { width:190px; } .contenido { padding:16px; } }
+
         .oculto { display: none; }
         .sin-datos { text-align: center; color: var(--texto-suave); padding: 40px; font-size:  ​0.9rem; }
     </style>
@@ -177,7 +207,9 @@
     <div class="layout">
         <!-- ===== SIDEBAR ===== -->
         <aside class="sidebar">
-            <div class="nav-item activo" data-vista="resumen" onclick="cambiarVista('resumen')">📊 Resumen</div>
+            <div class="nav-item activo" data-vista="dashboard" onclick="cambiarVista('dashboard')">📊 Dashboard</div>
+            <div class="nav-item" data-vista="tareas" onclick="cambiarVista('tareas')">📝 Tareas</div>
+            <div class="nav-item" data-vista="facturacion" onclick="cambiarVista('facturacion')">💰 Facturación</div>
             <div class="nav-item" data-vista="tickets" onclick="cambiarVista('tickets')">🎫 Tickets</div>
             <div class="nav-item" data-vista="usuarios" onclick="cambiarVista('usuarios')">👥 Usuarios</div>
             <div class="nav-item" data-vista="crear" onclick="cambiarVista('crear')">➕ Crear usuario</div>
@@ -218,8 +250,63 @@
                 </div>
             </section>
 
+            <!-- DASHBOARD SUPERADMIN -->
+            <section class="vista activa" id="vista-dashboard">
+                <h2 class="titulo-seccion">Dashboard ejecutivo</h2>
+                <p class="subtitulo">Clientes, facturación, horas de trabajo, tareas y tickets en un solo lugar.</p>
+                <div class="metricas">
+                    <div class="metrica"><div class="etiqueta">Clientes totales</div><div class="valor" id="m-clientes-total">—</div><div class="detalle" id="m-clientes-activos">— activos</div></div>
+                    <div class="metrica"><div class="etiqueta">Facturación total</div><div class="valor" id="m-facturacion">—</div><div class="detalle">Facturas no anuladas</div></div>
+                    <div class="metrica"><div class="etiqueta">Horas invertidas</div><div class="valor" id="m-horas">—</div><div class="detalle">Tracking de tareas</div></div>
+                    <div class="metrica"><div class="etiqueta">Tareas</div><div class="valor" id="m-tareas">—</div><div class="detalle" id="m-tareas-detalle">—</div></div>
+                    <div class="metrica"><div class="etiqueta">Tickets</div><div class="valor" id="m-tickets">—</div><div class="detalle" id="m-tickets-detalle">— pendientes</div></div>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="tabla-panel"><h3>Horas y facturación por cliente</h3><div id="tabla-clientes-dashboard"><div class="sin-datos">Cargando...</div></div></div>
+                    <div class="tabla-panel"><h3>Prioridad y avance de tareas</h3><div id="resumen-tareas-dashboard"><div class="sin-datos">Cargando...</div></div></div>
+                </div>
+            </section>
+
+            <!-- TAREAS -->
+            <section class="vista" id="vista-tareas">
+                <h2 class="titulo-seccion">Tareas y seguimiento</h2>
+                <p class="subtitulo">Asigná trabajo a ADMIN/OPERATIVO, ordená por prioridad y medí el tiempo real invertido.</p>
+                <div class="panel-form" id="form-tarea-panel">
+                    <h3>Nueva tarea</h3>
+                    <div class="form-grid">
+                        <select id="tarea-cliente"><option value="">Seleccioná un cliente</option></select>
+                        <select id="tarea-asignado"><option value="">Sin asignar</option></select>
+                        <input id="tarea-titulo" class="full" type="text" placeholder="Título de la tarea">
+                        <textarea id="tarea-descripcion" class="full" placeholder="Descripción / instrucciones"></textarea>
+                        <select id="tarea-prioridad"><option value="urgente">Urgente</option><option value="alta">Alta</option><option value="media" selected>Media</option><option value="baja">Baja</option></select>
+                        <input id="tarea-fecha" type="date">
+                        <button class="btn btn-verde" onclick="crearTarea()">Crear y asignar tarea</button>
+                    </div>
+                </div>
+                <div class="tabla-panel"><h3>Cola de trabajo</h3><div id="lista-tareas"><div class="sin-datos">Cargando...</div></div></div>
+            </section>
+
+            <!-- FACTURACION -->
+            <section class="vista" id="vista-facturacion">
+                <h2 class="titulo-seccion">Facturación por cliente</h2>
+                <p class="subtitulo">Registrá las facturas emitidas/cobradas para alimentar el indicador financiero del dashboard.</p>
+                <div class="panel-form">
+                    <h3>Registrar factura</h3>
+                    <div class="form-grid">
+                        <select id="fact-cliente"><option value="">Seleccioná un cliente</option></select>
+                        <input id="fact-numero" type="text" placeholder="N.º de factura">
+                        <input id="fact-fecha" type="date">
+                        <input id="fact-monto" type="number" min="0" step="0.01" placeholder="Monto en G.">
+                        <input id="fact-concepto" class="full" type="text" placeholder="Concepto / servicio">
+                        <select id="fact-estado"><option value="emitida">Emitida</option><option value="cobrada">Cobrada</option><option value="anulada">Anulada</option></select>
+                        <button class="btn btn-verde" onclick="registrarFactura()">Registrar factura</button>
+                    </div>
+                </div>
+                <div class="tabla-panel"><h3>Historial</h3><div id="lista-facturacion"><div class="sin-datos">Cargando...</div></div></div>
+            </section>
+
             <!-- VISTA TICKETS -->
-            <section class="vista activa" id="vista-tickets">
+            <section class="vista" id="vista-tickets">
                 <h2 class="titulo-seccion">Tickets de recuperación</h2>
                 <p class="subtitulo">Solicitudes de reset de contraseña pendientes de aprobación.</p>
                 <div class="lista-tickets" id="tickets-container">
@@ -377,6 +464,10 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 usuario.rol === 'superadmin' ? 'Centro de Control SUPERADMIN' :
                 usuario.rol === 'admin' ? 'Panel de Administración' : 'Panel Operativo';
 
+            const tareasNav = document.querySelector('[data-vista="tareas"]');
+            const factNav = document.querySelector('[data-vista="facturacion"]');
+            if (tareasNav) tareasNav.style.display = ['superadmin','admin','operativo'].includes(usuario.rol) ? 'flex' : 'none';
+            if (factNav) factNav.style.display = esAdmin() ? 'flex' : 'none';
             const seguridad = document.querySelector('[data-vista="seguridad"]');
             if (seguridad) seguridad.style.display = esSuperAdmin() ? 'flex' : 'none';
         }
@@ -394,8 +485,74 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             if (!objetivo) return;
             objetivo.classList.add('activa');
 
+            if (vista === 'dashboard') cargarDashboard();
+            if (vista === 'tareas') { prepararCatalogos(); cargarTareas(); }
+            if (vista === 'facturacion') { prepararCatalogos(); cargarFacturacion(); }
             if (vista === 'tickets') cargarTickets();
             if (vista === 'usuarios') cargarUsuarios();
+        }
+
+        function formatoGuarani(valor) {
+            return new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0 }).format(Number(valor || 0)) + ' G.';
+        }
+        function horasTexto(horas) { return Number(horas || 0).toFixed(2) + ' h'; }
+        async function cargarDashboard() {
+            if (!esAdmin()) return;
+            try {
+                const resp=await fetchApi(API+'/api/admin/dashboard');
+                if(resp.status===401){window.location.href='login.html';return;}
+                const d=await resp.json();
+                document.getElementById('m-clientes-total').textContent=d.clientes.total;
+                document.getElementById('m-clientes-activos').textContent=d.clientes.activos+' activos';
+                document.getElementById('m-facturacion').textContent=formatoGuarani(d.facturacion_total);
+                document.getElementById('m-horas').textContent=horasTexto(d.horas_totales);
+                document.getElementById('m-tareas').textContent=d.tareas.total;
+                document.getElementById('m-tareas-detalle').textContent=d.tareas.en_progreso+' en progreso · '+d.tareas.completadas+' completadas';
+                document.getElementById('m-tickets').textContent=d.tickets.total;
+                document.getElementById('m-tickets-detalle').textContent=d.tickets.pendientes+' pendientes · '+d.tickets.resueltos+' resueltos';
+                const rows=d.por_cliente||[];
+                let html='<table><thead><tr><th>Cliente</th><th>Horas</th><th>Facturación</th><th>Tareas</th></tr></thead><tbody>';
+                rows.forEach(c=>{html+='<tr><td><strong>'+escapeHtml(c.nombre)+'</strong><br><span style="color:#999">'+escapeHtml(c.ruc)+'</span></td><td>'+horasTexto(c.horas)+'</td><td>'+formatoGuarani(c.facturacion)+'</td><td>'+c.tareas+'</td></tr>';});
+                html+='</tbody></table>';
+                document.getElementById('tabla-clientes-dashboard').innerHTML=rows.length?html:'<div class="sin-datos">Todavía no hay clientes.</div>';
+                const t=d.tareas||{}, total=Math.max(1,Number(t.total||0)), pct=Math.min(100,Math.round((Number(t.completadas||0)/total)*100));
+                document.getElementById('resumen-tareas-dashboard').innerHTML='<p style="font-size:.85rem;margin-bottom:12px"><strong>'+ (t.completadas||0) +'</strong> completadas de <strong>'+ (t.total||0) +'</strong></p><div class="progreso"><span style="width:'+pct+'%"></span></div><p style="font-size:.8rem;color:var(--texto-suave);margin-top:12px">'+(t.en_progreso||0)+' en progreso · '+(t.pendientes||0)+' pendientes · '+(t.bloqueadas||0)+' bloqueadas</p>';
+            } catch(e) {
+                document.getElementById('tabla-clientes-dashboard').innerHTML='<div class="sin-datos">No se pudo cargar el dashboard.</div>';
+            }
+        }
+        async function prepararCatalogos() {
+            if(!esAdmin()) return;
+            const cr=await fetchApi(API+'/api/admin/clientes'), ur=await fetchApi(API+'/api/admin/usuarios');
+            const clientes=cr.ok?await cr.json():[], usuarios=ur.ok?await ur.json():[];
+            const staff=usuarios.filter(u=>['admin','operativo'].includes(u.rol)&&u.activo);
+            ['tarea-cliente','fact-cliente'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">Seleccioná un cliente</option>'+clientes.map(c=>'<option value="'+c.id+'">'+escapeHtml(c.nombre)+' — '+escapeHtml(c.ruc)+'</option>').join('');});
+            const as=document.getElementById('tarea-asignado');if(as)as.innerHTML='<option value="">Sin asignar</option>'+staff.map(u=>'<option value="'+u.id+'">'+escapeHtml(u.nombre)+' — '+u.rol.toUpperCase()+'</option>').join('');
+        }
+        async function cargarTareas() {
+            const cont=document.getElementById('lista-tareas');if(!cont)return;
+            try{
+                const r=await fetchApi(API+'/api/admin/tareas');if(!r.ok){cont.innerHTML='<div class="sin-datos">No se pudieron cargar las tareas.</div>';return;}
+                const tareas=await r.json();let html='<table><thead><tr><th>Prioridad</th><th>Cliente</th><th>Tarea</th><th>Responsable</th><th>Estado</th><th>Fecha límite</th><th>Acción</th></tr></thead><tbody>';
+                tareas.forEach(t=>{const action=t.estado==='en_progreso'?'<button class="btn btn-amarillo btn-pequeno" onclick="detenerTarea('+t.id+')">⏹ Detener</button>':(t.estado!=='completada'&&t.estado!=='cancelada'?'<button class="btn btn-verde btn-pequeno" onclick="iniciarTarea('+t.id+')">▶ Iniciar</button>':'');const complete=esAdmin()&&t.estado!=='completada'&&t.estado!=='cancelada'?'<button class="btn btn-azul btn-pequeno" onclick="completarTarea('+t.id+')">✓ Completar</button>':'';html+='<tr><td><span class="prioridad-'+t.prioridad+'">'+escapeHtml(t.prioridad.toUpperCase())+'</span></td><td>'+escapeHtml(t.cliente_nombre)+'</td><td><strong>'+escapeHtml(t.titulo)+'</strong><br><span style="color:#999">'+escapeHtml(t.descripcion||'')+'</span></td><td>'+escapeHtml(t.asignado_nombre||'Sin asignar')+'</td><td><span class="estado-tarea '+t.estado+'">'+escapeHtml(t.estado.replace('_',' '))+'</span></td><td>'+escapeHtml(t.fecha_limite||'—')+'</td><td class="acciones-tarea">'+action+complete+'</td></tr>';});
+                html+='</tbody></table>';cont.innerHTML=tareas.length?html:'<div class="sin-datos">No hay tareas registradas.</div>';
+            }catch(e){cont.innerHTML='<div class="sin-datos">Error al cargar tareas.</div>';}
+        }
+        async function crearTarea(){
+            const payload={cliente_id:document.getElementById('tarea-cliente').value,titulo:document.getElementById('tarea-titulo').value.trim(),descripcion:document.getElementById('tarea-descripcion').value.trim(),prioridad:document.getElementById('tarea-prioridad').value,fecha_limite:document.getElementById('tarea-fecha').value,asignado_id:document.getElementById('tarea-asignado').value};
+            if(!payload.cliente_id||!payload.titulo){alert('Seleccioná cliente y título.');return;}
+            const r=await fetchApi(API+'/api/admin/tareas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo crear la tarea.');return;}
+            document.getElementById('tarea-titulo').value='';document.getElementById('tarea-descripcion').value='';document.getElementById('tarea-fecha').value='';cargarTareas();cargarDashboard();
+        }
+        async function iniciarTarea(id){const r=await fetchApi(API+'/api/admin/tareas/'+id+'/iniciar',{method:'POST'}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo iniciar.');return;}cargarTareas();cargarDashboard();}
+        async function detenerTarea(id){const r=await fetchApi(API+'/api/admin/tareas/'+id+'/detener',{method:'POST'}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo detener.');return;}cargarTareas();cargarDashboard();}
+        async function completarTarea(id){const r=await fetchApi(API+'/api/admin/tareas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'completada'})}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo completar.');return;}cargarTareas();cargarDashboard();}
+        async function cargarFacturacion(){
+            const cont=document.getElementById('lista-facturacion');if(!cont)return;const r=await fetchApi(API+'/api/admin/facturacion');if(!r.ok){cont.innerHTML='<div class="sin-datos">No se pudo cargar.</div>';return;}const rows=await r.json();let html='<table><thead><tr><th>Fecha</th><th>Factura</th><th>Cliente</th><th>Concepto</th><th>Monto</th><th>Estado</th></tr></thead><tbody>';rows.forEach(f=>{html+='<tr><td>'+escapeHtml(f.fecha)+'</td><td>'+escapeHtml(f.numero)+'</td><td>'+escapeHtml(f.cliente_nombre)+'</td><td>'+escapeHtml(f.concepto)+'</td><td>'+formatoGuarani(f.monto)+'</td><td>'+escapeHtml(f.estado)+'</td></tr>';});html+='</tbody></table>';cont.innerHTML=rows.length?html:'<div class="sin-datos">No hay facturas registradas.</div>';
+        }
+        async function registrarFactura(){
+            const payload={cliente_id:document.getElementById('fact-cliente').value,numero:document.getElementById('fact-numero').value.trim(),fecha:document.getElementById('fact-fecha').value,monto:document.getElementById('fact-monto').value,concepto:document.getElementById('fact-concepto').value.trim(),estado:document.getElementById('fact-estado').value};
+            if(!payload.cliente_id||!payload.numero||!payload.monto||!payload.concepto){alert('Completá cliente, factura, monto y concepto.');return;}const r=await fetchApi(API+'/api/admin/facturacion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo registrar.');return;}document.getElementById('fact-numero').value='';document.getElementById('fact-monto').value='';document.getElementById('fact-concepto').value='';cargarFacturacion();cargarDashboard();
         }
 
         // ===== TICKETS =====
