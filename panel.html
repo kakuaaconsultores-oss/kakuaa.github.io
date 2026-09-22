@@ -258,6 +258,8 @@
                     <div class="metrica"><div class="etiqueta">Clientes totales</div><div class="valor" id="m-clientes-total">—</div><div class="detalle" id="m-clientes-activos">— activos</div></div>
                     <div class="metrica"><div class="etiqueta">Facturación total</div><div class="valor" id="m-facturacion">—</div><div class="detalle">Facturas no anuladas</div></div>
                     <div class="metrica"><div class="etiqueta">Horas invertidas</div><div class="valor" id="m-horas">—</div><div class="detalle">Tracking de tareas</div></div>
+                    <div class="metrica"><div class="etiqueta">Costo personal estimado</div><div class="valor" id="m-costo-personal">—</div><div class="detalle">Según horas y costo/hora</div></div>
+                    <div class="metrica"><div class="etiqueta">Margen estimado</div><div class="valor" id="m-margen">—</div><div class="detalle">Facturación menos costo personal</div></div>
                     <div class="metrica"><div class="etiqueta">Tareas</div><div class="valor" id="m-tareas">—</div><div class="detalle" id="m-tareas-detalle">—</div></div>
                     <div class="metrica"><div class="etiqueta">Tickets</div><div class="valor" id="m-tickets">—</div><div class="detalle" id="m-tickets-detalle">— pendientes</div></div>
                 </div>
@@ -286,6 +288,49 @@
                 <div class="tabla-panel"><h3>Cola de trabajo</h3><div id="lista-tareas"><div class="sin-datos">Cargando...</div></div></div>
             </section>
 
+            <!-- ARTICULOS -->
+            <section class="vista" id="vista-articulos">
+                <h2 class="titulo-seccion">Artículos / servicios</h2>
+                <p class="subtitulo">Catálogo de servicios que luego podrán facturarse mediante una tarifa vigente.</p>
+                <div class="panel-form"><h3>Nuevo artículo</h3><div class="form-grid">
+                    <input id="art-codigo" placeholder="Código / SKU">
+                    <input id="art-nombre" placeholder="Nombre del servicio">
+                    <input id="art-unidad" value="servicio" placeholder="Unidad">
+                    <input id="art-descripcion" class="full" placeholder="Descripción">
+                    <button class="btn btn-verde" onclick="crearArticulo()">Crear artículo</button>
+                </div></div>
+                <div class="tabla-panel"><h3>Catálogo</h3><div id="lista-articulos">Cargando...</div></div>
+            </section>
+
+            <!-- TARIFAS -->
+            <section class="vista" id="vista-tarifas">
+                <h2 class="titulo-seccion">Tarifas y vigencias</h2>
+                <p class="subtitulo">Cada artículo puede tener una tarifa con vigencia y un porcentaje manual de actualización al vencimiento.</p>
+                <div class="panel-form"><h3>Nueva tarifa</h3><div class="form-grid">
+                    <select id="tar-articulo"><option value="">Seleccioná un artículo</option></select>
+                    <input id="tar-precio" type="number" min="0" step="0.01" placeholder="Precio G.">
+                    <input id="tar-desde" type="date">
+                    <input id="tar-hasta" type="date">
+                    <input id="tar-ajuste" type="number" step="0.01" placeholder="Actualización al vencer (%) — ej. 3.5">
+                    <button class="btn btn-verde" onclick="crearTarifa()">Guardar tarifa</button>
+                </div></div>
+                <div class="tabla-panel"><h3>Vigencias</h3><div id="lista-tarifas">Cargando...</div></div>
+            </section>
+
+            <!-- COSTOS PERSONA -->
+            <section class="vista" id="vista-costos">
+                <h2 class="titulo-seccion">Costos por persona</h2>
+                <p class="subtitulo">Definí el costo interno por hora de cada ADMIN/OPERATIVO. El cálculo se vincula automáticamente al tracking.</p>
+                <div class="panel-form"><h3>Nuevo costo horario</h3><div class="form-grid">
+                    <select id="costo-persona"><option value="">Seleccioná una persona</option></select>
+                    <input id="costo-hora" type="number" min="0" step="0.01" placeholder="Costo por hora G.">
+                    <input id="costo-desde" type="date">
+                    <input id="costo-hasta" type="date" placeholder="Opcional">
+                    <button class="btn btn-verde" onclick="crearCostoPersona()">Guardar costo</button>
+                </div></div>
+                <div class="tabla-panel"><h3>Costos y horas</h3><div id="lista-costos">Cargando...</div></div>
+            </section>
+
             <!-- FACTURACION -->
             <section class="vista" id="vista-facturacion">
                 <h2 class="titulo-seccion">Facturación por cliente</h2>
@@ -294,7 +339,10 @@
                     <h3>Registrar factura</h3>
                     <div class="form-grid">
                         <select id="fact-cliente"><option value="">Seleccioná un cliente</option></select>
+                        <select id="fact-articulo"><option value="">Artículo / servicio (opcional)</option></select>
+                        <input id="fact-cantidad" type="number" min="0.01" step="0.01" value="1" placeholder="Cantidad">
                         <input id="fact-numero" type="text" placeholder="N.º de factura">
+                        <div id="fact-tarifa-info" class="detalle full">Seleccioná un artículo y fecha para calcular la tarifa.</div>
                         <input id="fact-fecha" type="date">
                         <input id="fact-monto" type="number" min="0" step="0.01" placeholder="Monto en G.">
                         <input id="fact-concepto" class="full" type="text" placeholder="Concepto / servicio">
@@ -466,6 +514,12 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
 
             const dashboardNav = document.querySelector('[data-vista="dashboard"]');
             const tareasNav = document.querySelector('[data-vista="tareas"]');
+            const artNav = document.querySelector('[data-vista="articulos"]');
+            const tarNav = document.querySelector('[data-vista="tarifas"]');
+            const costNav = document.querySelector('[data-vista="costos"]');
+            if (artNav) artNav.style.display = esAdmin() ? 'flex' : 'none';
+            if (tarNav) tarNav.style.display = esAdmin() ? 'flex' : 'none';
+            if (costNav) costNav.style.display = esAdmin() ? 'flex' : 'none';
             const factNav = document.querySelector('[data-vista="facturacion"]');
             if (dashboardNav) dashboardNav.style.display = esAdmin() ? 'flex' : 'none';
             if (tareasNav) tareasNav.style.display = ['superadmin','admin','operativo'].includes(usuario.rol) ? 'flex' : 'none';
@@ -490,6 +544,9 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             objetivo.classList.add('activa');
 
             if (vista === 'dashboard') cargarDashboard();
+            if (vista === 'articulos') { prepararCatalogos(); cargarArticulos(); }
+            if (vista === 'tarifas') { prepararCatalogos(); cargarTarifas(); }
+            if (vista === 'costos') { prepararCatalogos(); cargarCostosPersona(); }
             if (vista === 'tareas') { prepararCatalogos(); cargarTareas(); }
             if (vista === 'facturacion') { prepararCatalogos(); cargarFacturacion(); }
             if (vista === 'tickets') cargarTickets();
@@ -510,6 +567,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 document.getElementById('m-clientes-activos').textContent=d.clientes.activos+' activos';
                 document.getElementById('m-facturacion').textContent=formatoGuarani(d.facturacion_total);
                 document.getElementById('m-horas').textContent=horasTexto(d.horas_totales);
+                document.getElementById('m-costo-personal').textContent=formatoGuarani(d.costo_personal_total);
+                document.getElementById('m-margen').textContent=formatoGuarani(d.margen_estimado);
                 document.getElementById('m-tareas').textContent=d.tareas.total;
                 document.getElementById('m-tareas-detalle').textContent=d.tareas.en_progreso+' en progreso · '+d.tareas.completadas+' completadas';
                 document.getElementById('m-tickets').textContent=d.tickets.total;
@@ -557,6 +616,42 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
         async function registrarFactura(){
             const payload={cliente_id:document.getElementById('fact-cliente').value,numero:document.getElementById('fact-numero').value.trim(),fecha:document.getElementById('fact-fecha').value,monto:document.getElementById('fact-monto').value,concepto:document.getElementById('fact-concepto').value.trim(),estado:document.getElementById('fact-estado').value};
             if(!payload.cliente_id||!payload.numero||!payload.monto||!payload.concepto){alert('Completá cliente, factura, monto y concepto.');return;}const r=await fetchApi(API+'/api/admin/facturacion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo registrar.');return;}document.getElementById('fact-numero').value='';document.getElementById('fact-monto').value='';document.getElementById('fact-concepto').value='';cargarFacturacion();cargarDashboard();
+        }
+
+        async function cargarArticulos() {
+            const cont=document.getElementById('lista-articulos'); if(!cont)return;
+            const r=await fetchApi(API+'/api/admin/articulos'); if(!r.ok){cont.innerHTML='No se pudo cargar.';return;}
+            const rows=await r.json();
+            cont.innerHTML=rows.length?'<table><thead><tr><th>Código</th><th>Artículo</th><th>Unidad</th><th>Tarifas</th><th>Última tarifa</th><th>Estado</th></tr></thead><tbody>'+rows.map(a=>'<tr><td>'+escapeHtml(a.codigo)+'</td><td><strong>'+escapeHtml(a.nombre)+'</strong><br><span style="color:#999">'+escapeHtml(a.descripcion||'')+'</span></td><td>'+escapeHtml(a.unidad)+'</td><td>'+a.tarifas+'</td><td>'+formatoGuarani(a.ultima_tarifa)+'</td><td>'+ (a.activo?'Activo':'Inactivo')+'</td></tr>').join('')+'</tbody></table>':'<div class="sin-datos">No hay artículos.</div>';
+        }
+        async function cargarTarifas() {
+            const cont=document.getElementById('lista-tarifas'); if(!cont)return;
+            const r=await fetchApi(API+'/api/admin/tarifas'); if(!r.ok){cont.innerHTML='No se pudo cargar.';return;}
+            const rows=await r.json();
+            cont.innerHTML=rows.length?'<table><thead><tr><th>Artículo</th><th>Precio</th><th>Vigencia</th><th>Actualización</th><th>Estado</th><th></th></tr></thead><tbody>'+rows.map(t=>'<tr><td>'+escapeHtml(t.codigo)+' — '+escapeHtml(t.articulo_nombre)+'</td><td>'+formatoGuarani(t.precio)+'</td><td>'+escapeHtml(t.vigencia_desde)+' → '+escapeHtml(t.vigencia_hasta)+'</td><td>'+Number(t.ajuste_vencimiento||0).toFixed(2)+'%</td><td>'+ (t.vigencia_hasta < new Date().toISOString().slice(0,10)?'<span class="prioridad-urgente">VENCIDA</span>':'Vigente')+'</td><td><button class="btn btn-azul btn-pequeno" onclick="renovarTarifa('+t.id+')">Renovar</button></td></tr>').join('')+'</tbody></table>':'<div class="sin-datos">No hay tarifas.</div>';
+        }
+        async function crearArticulo(){
+            const payload={codigo:document.getElementById('art-codigo').value.trim(),nombre:document.getElementById('art-nombre').value.trim(),unidad:document.getElementById('art-unidad').value.trim(),descripcion:document.getElementById('art-descripcion').value.trim()};
+            const r=await fetchApi(API+'/api/admin/articulos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo crear.');return;}['art-codigo','art-nombre','art-descripcion'].forEach(id=>document.getElementById(id).value='');cargarArticulos();prepararCatalogos();
+        }
+        async function crearTarifa(){
+            const payload={articulo_id:document.getElementById('tar-articulo').value,precio:document.getElementById('tar-precio').value,vigencia_desde:document.getElementById('tar-desde').value,vigencia_hasta:document.getElementById('tar-hasta').value,ajuste_vencimiento:document.getElementById('tar-ajuste').value||0};
+            const r=await fetchApi(API+'/api/admin/tarifas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar.');return;}alert('Tarifa guardada. Siguiente precio sugerido: '+formatoGuarani(d.precio_sugerido_siguiente));cargarTarifas();prepararCatalogos();
+        }
+        async function renovarTarifa(id){
+            const ajuste=prompt('Porcentaje de actualización para la nueva vigencia:', '3.5');if(ajuste===null)return;
+            const desde=prompt('Nueva vigencia desde (AAAA-MM-DD):', new Date().toISOString().slice(0,10));if(!desde)return;
+            const hasta=prompt('Nueva vigencia hasta (AAAA-MM-DD):', desde.slice(0,4)+'-12-31');if(!hasta)return;
+            const r=await fetchApi(API+'/api/admin/tarifas/'+id+'/renovar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ajuste_vencimiento:ajuste,vigencia_desde:desde,vigencia_hasta:hasta})}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo renovar.');return;}alert('Nueva tarifa creada: '+formatoGuarani(d.precio));cargarTarifas();
+        }
+        async function cargarCostosPersona(){
+            const cont=document.getElementById('lista-costos');if(!cont)return;
+            const r=await fetchApi(API+'/api/admin/costos-persona/resumen');if(!r.ok){cont.innerHTML='No se pudo cargar.';return;}const rows=await r.json();
+            cont.innerHTML=rows.length?'<table><thead><tr><th>Persona</th><th>Rol</th><th>Horas</th><th>Costo estimado</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.nombre)+'</td><td>'+escapeHtml(x.rol.toUpperCase())+'</td><td>'+horasTexto(x.horas)+'</td><td>'+formatoGuarani(x.costo_estimado)+'</td></tr>').join('')+'</tbody></table>':'<div class="sin-datos">No hay horas registradas.</div>';
+        }
+        async function crearCostoPersona(){
+            const payload={usuario_id:document.getElementById('costo-persona').value,costo_hora:document.getElementById('costo-hora').value,vigencia_desde:document.getElementById('costo-desde').value,vigencia_hasta:document.getElementById('costo-hasta').value};
+            const r=await fetchApi(API+'/api/admin/costos-persona',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar.');return;}document.getElementById('costo-hora').value='';cargarCostosPersona();cargarDashboard();
         }
 
         // ===== TICKETS =====
