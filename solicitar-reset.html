@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recuperar contraseña | Kakuaa Consultores</title>
+<style>
+:root{--azul:#1a2a5e;--verde:#2e9e5b;--gris:#f4f6fa;--borde:#e2e6ee;--rojo:#d9534f}
+*{box-sizing:border-box;font-family:'Segoe UI',system-ui,Arial,sans-serif}
+body{margin:0;background:var(--gris);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.tarjeta{background:#fff;border-radius:16px;padding:38px;width:90%;max-width:420px;box-shadow:0 10px 40px rgba(0,0,0,.1);text-align:center}
+h1{font-size:1.35rem;color:var(--azul);margin:0 0 10px}
+p{color:#6b7280;font-size:.9rem;line-height:1.5}
+input{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;font-size:.95rem;margin:12px 0;outline:none}
+input:focus{border-color:var(--verde)}
+button{width:100%;border:0;border-radius:10px;padding:13px;background:var(--verde);color:#fff;font-size:1rem;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6;cursor:not-allowed}
+.mensaje{min-height:22px;margin-top:12px;font-size:.85rem}
+.error{color:var(--rojo)} .ok{color:var(--verde)}
+a{display:inline-block;margin-top:18px;color:var(--azul);font-size:.85rem;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="tarjeta">
+<div style="font-size:2.5rem;margin-bottom:10px">🔑</div>
+<h1>Recuperar contraseña</h1>
+<p>Ingresá tu RUC. Se generará una solicitud para que un administrador revise el restablecimiento.</p>
+<input id="ruc" type="text" placeholder="RUC">
+<button id="btn" onclick="solicitarReset()">Solicitar recuperación</button>
+<div id="mensaje" class="mensaje"></div>
+<a href="login.html">Volver al inicio de sesión</a>
+</div>
+<script>
+const API='https://backend-ruc.onrender.com';
+async function solicitarReset(){
+ const ruc=document.getElementById('ruc').value.trim();
+ const msg=document.getElementById('mensaje'),btn=document.getElementById('btn');
+ msg.textContent='';
+ if(!ruc){msg.textContent='Ingresá tu RUC';msg.className='mensaje error';return}
+ btn.disabled=true;
+ try{
+  const resp=await fetch(API+'/api/solicitar-reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ruc})});
+  const data=await resp.json();
+  msg.textContent=data.message||data.error||'No se pudo procesar la solicitud.';
+  msg.className='mensaje '+(resp.ok?'ok':'error');
+ }catch(e){
+  msg.textContent='No se pudo conectar al servidor. Intentá de nuevo.';
+  msg.className='mensaje error';
+ }finally{btn.disabled=false}
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter')solicitarReset()});
+</script>
+</body>
+</html>
