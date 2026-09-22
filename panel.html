@@ -165,7 +165,7 @@
             <img src="logo.png" alt="Kakuaa" onerror="this.style.display='none'">
             <div>
                 <h1>Kakuaa Consultores</h1>
-                <span>Panel de Administración</span>
+                <span id="rol-panel">Panel de Administración</span>
             </div>
         </div>
         <div class="usuario">
@@ -214,6 +214,25 @@
                         <input type="password" id="nuevo-contrasena" placeholder="Contraseña inicial">
                         <button class="btn btn-verde" onclick="crearUsuario()">Crear usuario</button>
                     </div>
+                </div>
+            </section>
+
+            <section class="vista" id="vista-seguridad">
+                <h2 class="titulo-seccion">Seguridad del sistema</h2>
+                <p class="subtitulo">Configuración y controles reservados para el SUPERADMIN.</p>
+                <div class="panel-form">
+                    <h3>Autenticación</h3>
+                    <p style="color:var(--texto-suave);font-size:.9rem;line-height:1.6">
+                    Usuario + contraseña + código OTP de 4 dígitos. El OTP tiene una vigencia de 1 minuto,
+                    admite hasta 5 intentos y el último código solicitado invalida los anteriores.
+                    </p>
+                </div>
+                <div class="panel-form">
+                    <h3>Roles preparados</h3>
+                    <p style="color:var(--texto-suave);font-size:.9rem;line-height:1.6">
+                    SUPERADMIN → ADMIN → OPERATIVO → CONTRIBUYENTE.
+                    El SUPERADMIN es único y no puede crearse un segundo mediante la gestión de usuarios.
+                    </p>
                 </div>
             </section>
 
@@ -286,6 +305,8 @@ function verificarAdmin() {
         }
 
         function cambiarVista(vista) {
+            if (vista === "seguridad" && !esSuperAdmin()) return;
+            if (vista === "resumen") {
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('activo'));
             document.querySelector('.nav-item[data-vista="' + vista + '"]').classList.add('activo');
             document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
@@ -615,6 +636,8 @@ function verificarAdmin() {
         }
 
         document.getElementById('carpeta-subir').addEventListener('change', actualizarSubcarpetasSelect);
+        configurarPanel();
+        cambiarVista('resumen');
         cargarTickets();
     </script>
 </body>
