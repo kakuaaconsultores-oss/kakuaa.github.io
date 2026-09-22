@@ -730,7 +730,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 
             }).catch(() => {});
             sessionStorage.removeItem('csrf_token');
-            sessionStorage.removeItem('csrf_token');
+            sessionStorage.removeItem('usuario');
             window.location.href = 'login.html';
         }
 
