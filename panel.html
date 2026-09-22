@@ -165,7 +165,7 @@
             <img src="logo.png" alt="Kakuaa" onerror="this.style.display='none'">
             <div>
                 <h1>Kakuaa Consultores</h1>
-                <span>Panel de Administración</span>
+                <span id="rol-panel">Panel de Administración</span>
             </div>
         </div>
         <div class="usuario">
@@ -177,13 +177,46 @@
     <div class="layout">
         <!-- ===== SIDEBAR ===== -->
         <aside class="sidebar">
-            <div class="nav-item activo" data-vista="tickets" onclick="cambiarVista('tickets')">🎫 Tickets</div>
+            <div class="nav-item activo" data-vista="resumen" onclick="cambiarVista('resumen')">📊 Resumen</div>
+            <div class="nav-item" data-vista="tickets" onclick="cambiarVista('tickets')">🎫 Tickets</div>
             <div class="nav-item" data-vista="usuarios" onclick="cambiarVista('usuarios')">👥 Usuarios</div>
             <div class="nav-item" data-vista="crear" onclick="cambiarVista('crear')">➕ Crear usuario</div>
+            <div class="nav-item" data-vista="seguridad" onclick="cambiarVista('seguridad')">🔐 Seguridad</div>
         </aside>
 
         <!-- ===== CONTENIDO ===== -->
         <main class="contenido">
+
+            <!-- VISTA RESUMEN -->
+            <section class="vista" id="vista-resumen">
+                <h2 class="titulo-seccion">Centro de Control</h2>
+                <p class="subtitulo">Resumen general de la operación y acceso rápido a las funciones administrativas.</p>
+                <div class="grid-usuarios">
+                    <div class="tarjeta-usuario">
+                        <div class="avatar">SA</div>
+                        <h3 id="resumen-rol">SUPERADMIN</h3>
+                        <p>Acceso integral al sistema</p>
+                    </div>
+                    <div class="tarjeta-usuario">
+                        <div class="avatar">U</div>
+                        <h3>Usuarios</h3>
+                        <p>Gestioná cuentas, roles y accesos.</p>
+                        <button class="btn btn-azul btn-pequeno" onclick="cambiarVista('usuarios')">Ver usuarios</button>
+                    </div>
+                    <div class="tarjeta-usuario">
+                        <div class="avatar">T</div>
+                        <h3>Tickets</h3>
+                        <p>Solicitudes de recuperación pendientes.</p>
+                        <button class="btn btn-azul btn-pequeno" onclick="cambiarVista('tickets')">Ver tickets</button>
+                    </div>
+                    <div class="tarjeta-usuario">
+                        <div class="avatar">S</div>
+                        <h3>Seguridad</h3>
+                        <p>Autenticación, OTP y controles de acceso.</p>
+                        <button class="btn btn-gris btn-pequeno" onclick="cambiarVista('seguridad')">Ver seguridad</button>
+                    </div>
+                </div>
+            </section>
 
             <!-- VISTA TICKETS -->
             <section class="vista activa" id="vista-tickets">
@@ -208,12 +241,33 @@
                 <div class="panel-form">
                     <h3>Datos del nuevo usuario</h3>
                     <div class="form-fila">
+                        <input type="text" id="nuevo-usuario" placeholder="Usuario de acceso">
                         <input type="text" id="nuevo-ruc" placeholder="RUC (ej: 80012345-6)">
+                        <select id="nuevo-rol"><option value="contribuyente">Contribuyente</option><option value="operativo">Operativo</option><option value="admin">Administrador</option></select>
                         <input type="email" id="nuevo-correo" placeholder="correo@ejemplo.com">
                         <input type="text" id="nuevo-nombre" placeholder="Nombre del usuario">
                         <input type="password" id="nuevo-contrasena" placeholder="Contraseña inicial">
                         <button class="btn btn-verde" onclick="crearUsuario()">Crear usuario</button>
                     </div>
+                </div>
+            </section>
+
+            <section class="vista" id="vista-seguridad">
+                <h2 class="titulo-seccion">Seguridad del sistema</h2>
+                <p class="subtitulo">Configuración y controles reservados para el SUPERADMIN.</p>
+                <div class="panel-form">
+                    <h3>Autenticación</h3>
+                    <p style="color:var(--texto-suave);font-size:.9rem;line-height:1.6">
+                    Usuario + contraseña + código OTP de 4 dígitos. El OTP tiene una vigencia de 1 minuto,
+                    admite hasta 5 intentos y el último código solicitado invalida los anteriores.
+                    </p>
+                </div>
+                <div class="panel-form">
+                    <h3>Roles preparados</h3>
+                    <p style="color:var(--texto-suave);font-size:.9rem;line-height:1.6">
+                    SUPERADMIN → ADMIN → OPERATIVO → CONTRIBUYENTE.
+                    El SUPERADMIN es único y no puede crearse un segundo mediante la gestión de usuarios.
+                    </p>
                 </div>
             </section>
 
@@ -262,34 +316,84 @@
 
     <script>
         const API = 'https://backend-ruc.onrender.com';
+function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=sessionStorage.getItem('csrf_token')||''; if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
+
         let usuarioSeleccionado = null;
         let docsActuales = [];
         let subsActuales = [];
         const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
 
-        function getToken() { return sessionStorage.getItem('token') || ''; }
-function esAdmin() {
-    const usuario = JSON.parse(sessionStorage.getItem('usuario') || 'null');
-    return usuario && usuario.ruc === '80000000-0';
-}
+        
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
 
-function verificarAdmin() {
-    if (!verificarSesion()) return false;
-    if (!esAdmin()) { window.location.href = 'mis-documentos.html'; return false; }
-    return true;
-}
+        function usuarioActual() {
+            try { return JSON.parse(sessionStorage.getItem('usuario') || 'null'); }
+            catch (_) { return null; }
+        }
 
-        function verificarSesion() {
-            const token = getToken();
-            if (!token) { window.location.href = 'login.html'; return false; }
+        function esAdmin() {
+            const usuario = usuarioActual();
+            return !!usuario && ['superadmin', 'admin'].includes(usuario.rol);
+        }
+
+        function esSuperAdmin() {
+            const usuario = usuarioActual();
+            return !!usuario && usuario.rol === 'superadmin';
+        }
+
+        function verificarAdmin() {
+            if (!verificarSesion()) return false;
+            if (!esAdmin()) {
+                window.location.href = 'mis-documentos.html';
+                return false;
+            }
             return true;
         }
 
+        function verificarSesion() {
+            const usuario = sessionStorage.getItem('usuario'); if (!usuario) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+
+        function configurarPanel() {
+            const usuario = usuarioActual();
+            if (!usuario) {
+                window.location.href = 'login.html';
+                return;
+            }
+            document.getElementById('avatar-admin').textContent = (usuario.nombre || usuario.usuario || 'U').charAt(0).toUpperCase();
+            document.getElementById('rol-panel').textContent =
+                usuario.rol === 'superadmin' ? 'Centro de Control SUPERADMIN' :
+                usuario.rol === 'admin' ? 'Panel de Administración' : 'Panel Operativo';
+
+            const seguridad = document.querySelector('[data-vista="seguridad"]');
+            if (seguridad) seguridad.style.display = esSuperAdmin() ? 'flex' : 'none';
+        }
+
         function cambiarVista(vista) {
+            if (vista === 'seguridad' && !esSuperAdmin()) return;
+            if (!verificarSesion()) return;
+
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('activo'));
-            document.querySelector('.nav-item[data-vista="' + vista + '"]').classList.add('activo');
+            const nav = document.querySelector('.nav-item[data-vista="' + vista + '"]');
+            if (nav) nav.classList.add('activo');
+
             document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
-            document.getElementById('vista-' + vista).classList.add('activa');
+            const objetivo = document.getElementById('vista-' + vista);
+            if (!objetivo) return;
+            objetivo.classList.add('activa');
+
             if (vista === 'tickets') cargarTickets();
             if (vista === 'usuarios') cargarUsuarios();
         }
@@ -300,8 +404,8 @@ function verificarAdmin() {
             const contenedor = document.getElementById('tickets-container');
             contenedor.innerHTML = '<div class="sin-datos">Cargando...</div>';
             try {
-                const resp = await fetch(API + '/api/admin/tickets', {
-                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                const resp = await fetchApi(API + '/api/admin/tickets', {
+                    
                 });
                 if (resp.status === 401) { window.location.href = 'login.html'; return; }
                 const tickets = await resp.json();
@@ -319,16 +423,15 @@ function verificarAdmin() {
                     let acciones = '';
                     if (t.estado === 'pendiente') {
                         acciones = `
-                            <input type="password" id="nueva-pass-${t.id}" placeholder="Nueva contraseña (mín 6)">
-                            <button class="btn btn-verde btn-pequeno" onclick="aprobarTicket(${t.id})">Aprobar</button>
+                            <button class="btn btn-verde btn-pequeno" onclick="aprobarTicket(${t.id})">Aprobar y enviar enlace</button>
                             <button class="btn btn-rojo btn-pequeno" onclick="rechazarTicket(${t.id})">Rechazar</button>
                         `;
                     }
                     div.innerHTML = `
                         <div class="info">
-                            <h4>${t.nombre} <span style="color:#999;font-weight:400">(${t.ruc})</span></h4>
-                            <p>${t.correo}</p>
-                            <p style="font-size:0.75rem;color:#aaa">Solicitado: ${t.creado_en}</p>
+                            <h4>${escapeHtml(t.nombre)} <span style="color:#999;font-weight:400">(${escapeHtml(t.ruc)})</span></h4>
+                            <p>${escapeHtml(t.correo)}</p>
+                            <p style="font-size:0.75rem;color:#aaa">Solicitado: ${escapeHtml(t.creado_en)}</p>
                         </div>
                         <div class="acciones">${badge} ${acciones}</div>
                     `;
@@ -340,24 +443,25 @@ function verificarAdmin() {
         }
 
         async function aprobarTicket(ticketId) {
-            const nuevaPass = document.getElementById('nueva-pass-' + ticketId).value;
-            if (!nuevaPass || nuevaPass.length < 6) { alert('Ingresá una contraseña de al menos 6 caracteres'); return; }
-            if (!confirm('¿Aprobar este ticket y enviar la nueva contraseña por correo?')) return;
-            const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/aprobar', {
+            if (!confirm('¿Aprobar este ticket? Se generará un enlace de restablecimiento de un solo uso y se enviará al correo del contribuyente.')) return;
+            const resp = await fetchApi(API + '/api/admin/tickets/' + ticketId + '/aprobar', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nueva_password: nuevaPass })
+                
             });
             const data = await resp.json();
-            if (resp.ok) { alert('Ticket aprobado. Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.')); cargarTickets(); }
-            else { alert(data.error || 'Error al aprobar'); }
+            if (resp.ok) {
+                alert(data.message || 'Ticket aprobado y enlace de recuperación enviado.');
+                cargarTickets();
+            } else {
+                alert(data.error || 'Error al aprobar');
+            }
         }
 
         async function rechazarTicket(ticketId) {
             if (!confirm('¿Rechazar este ticket?')) return;
-            const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/rechazar', {
+            const resp = await fetchApi(API + '/api/admin/tickets/' + ticketId + '/rechazar', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             });
             if (resp.ok) { cargarTickets(); } else { alert('Error al rechazar'); }
         }
@@ -365,8 +469,8 @@ function verificarAdmin() {
         // ===== USUARIOS =====
         async function cargarUsuarios() {
             if (!verificarAdmin()) return;
-            const resp = await fetch(API + '/api/admin/usuarios', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const resp = await fetchApi(API + '/api/admin/usuarios', {
+                
             });
             if (resp.status === 401) { window.location.href = 'login.html'; return; }
             const usuarios = await resp.json();
@@ -379,14 +483,15 @@ function verificarAdmin() {
                 const estado = u.activo ? '<span class="estado estado-activo">Activo</span>' : '<span class="estado estado-inactivo">Inactivo</span>';
                 tarjeta.innerHTML = `
                     <div class="avatar">${inicial}</div>
-                    <h3>${u.nombre}</h3>
-                    <p>RUC: ${u.ruc}</p>
-                    <p>${u.correo}</p>
+                    <h3>${escapeHtml(u.nombre)}</h3>
+                    <p>RUC: ${escapeHtml(u.ruc)}</p>
+                    <p>${escapeHtml(u.correo)}</p>
+                    <p><strong>Rol: ${escapeHtml((u.rol || 'contribuyente').toUpperCase())}</strong></p>
+                    ${u.rol !== 'superadmin' ? '<select id="rol-' + u.id + '" style="padding:6px;border:1px solid var(--gris-borde);border-radius:8px"><option value="contribuyente" '+(u.rol==='contribuyente'?'selected':'')+'>Contribuyente</option><option value="operativo" '+(u.rol==='operativo'?'selected':'')+'>Operativo</option><option value="admin" '+(u.rol==='admin'?'selected':'')+'>Administrador</option></select><button class="btn btn-azul btn-pequeno" onclick="cambiarRol('+u.id+')">Guardar rol</button>' : ''}
                     ${estado}
                     <div class="acciones">
                         <button class="btn btn-azul btn-pequeno" onclick="verDetalle(${u.id})">Ver carpeta</button>
                         <button class="btn btn-gris btn-pequeno" onclick="abrirEditar(${u.id})">Editar</button>
-                        <button class="btn btn-amarillo btn-pequeno" onclick="resetearPass(${u.id})">Reset pass</button>
                         <button class="btn ${u.activo ? 'btn-rojo' : 'btn-verde'} btn-pequeno" onclick="cambiarEstado(${u.id}, ${u.activo ? 0 : 1})">${u.activo ? 'Deshabilitar' : 'Habilitar'}</button>
                     </div>
                 `;
@@ -394,39 +499,26 @@ function verificarAdmin() {
             });
         }
 
-        async function resetearPass(usuarioId) {
-            const nuevaPass = prompt('Ingresá la nueva contraseña (mínimo 6 caracteres):');
-            if (!nuevaPass || nuevaPass.length < 6) { alert('Contraseña inválida'); return; }
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/reset-password', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nueva_password: nuevaPass })
-            });
-            const data = await resp.json();
-            if (resp.ok) { alert('Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.')); }
-            else { alert(data.error || 'Error'); }
-        }
-
         async function verDetalle(usuarioId) {
             if (!verificarAdmin()) return;
             usuarioSeleccionado = usuarioId;
             cambiarVista('detalle');
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/documentos', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/documentos', {
+                
             });
             if (resp.status === 401) { window.location.href = 'login.html'; return; }
             docsActuales = await resp.json();
-            const respSubs = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/subcarpetas', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const respSubs = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/subcarpetas', {
+                
             });
             subsActuales = await respSubs.json();
-            const respUsu = await fetch(API + '/api/admin/usuarios', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const respUsu = await fetchApi(API + '/api/admin/usuarios', {
+                
             });
             const usuarios = await respUsu.json();
             const usu = usuarios.find(u => u.id === usuarioId);
             document.getElementById('info-usuario').innerHTML = `
-                ${usu.nombre} <span style="font-size:0.8rem;color:#999;font-weight:400">(${usu.ruc})</span>
+                ${escapeHtml(usu.nombre)} <span style="font-size:0.8rem;color:#999;font-weight:400">(${escapeHtml(usu.ruc)})</span>
             `;
             llenarSelectores();
             renderizarCarpetas();
@@ -465,25 +557,25 @@ function verificarAdmin() {
                 const div = document.createElement('div'); div.className = 'carpeta';
                 const docsCarpeta = docsActuales.filter(d => d.carpeta === carpeta);
                 const subsCarpeta = subsActuales.filter(s => s.carpeta === carpeta && s.padre === '');
-                let html = `<h4>📁 ${carpeta}</h4>`;
+                let html = `<h4>📁 ${escapeHtml(carpeta)}</h4>`;
                 subsCarpeta.forEach(s => {
-                    html += `<span class="subcarpeta-chip">${s.nombre} <button class="btn btn-rojo btn-pequeno" style="padding:2px 6px" onclick="eliminarSubcarpeta('${s.nombre}')">✕</button></span>`;
+                    html += `<span class="subcarpeta-chip">${escapeHtml(s.nombre)} <button class="btn btn-rojo btn-pequeno" style="padding:2px 6px" onclick="eliminarSubcarpeta(decodeURIComponent('${encodeURIComponent(s.nombre)}'))">✕</button></span>`;
                 });
                 html += `<div style="margin-top:8px">`;
                 docsCarpeta.filter(d => d.subcarpeta === '' && d.subcarpeta2 === '').forEach(d => {
-                    html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
+                    html += `<div class="doc-item"><span>${escapeHtml(d.nombre_archivo)}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
                 });
                 html += `</div>`;
                 subsCarpeta.forEach(s => {
                     const docsSub = docsCarpeta.filter(d => d.subcarpeta === s.nombre && d.subcarpeta2 === '');
                     const subsHijas = subsActuales.filter(x => x.carpeta === carpeta && x.padre === s.nombre);
                     if (docsSub.length > 0 || subsHijas.length > 0) {
-                        html += `<div style="margin-left:16px;margin-top:8px;"><strong>↳ ${s.nombre}:</strong>`;
+                        html += `<div style="margin-left:16px;margin-top:8px;"><strong>↳ ${escapeHtml(s.nombre)}:</strong>`;
                         subsHijas.forEach(h => {
-                            html += `<div style="margin-left:16px;margin-top:4px;"><em>↳ ${h.nombre}</em></div>`;
+                            html += `<div style="margin-left:16px;margin-top:4px;"><em>↳ ${escapeHtml(h.nombre)}</em></div>`;
                         });
                         docsSub.forEach(d => {
-                            html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
+                            html += `<div class="doc-item"><span>${escapeHtml(d.nombre_archivo)}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
                         });
                         html += `</div>`;
                     }
@@ -503,9 +595,9 @@ function verificarAdmin() {
             formData.append('carpeta', carpeta);
             formData.append('subcarpeta', subcarpeta);
             formData.append('subcarpeta2', '');
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/documentos', {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/documentos', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken() },
+                ,
                 body: formData
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); } else { alert('Error al subir'); }
@@ -515,9 +607,9 @@ function verificarAdmin() {
             const carpeta = document.getElementById('carpeta-nueva-sub').value;
             const nombre = document.getElementById('nombre-subcarpeta').value.trim();
             if (!nombre) { alert('Ingresá el nombre'); return; }
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas', {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ carpeta, nombre, padre: '' })
             });
             if (resp.ok) { document.getElementById('nombre-subcarpeta').value = ''; verDetalle(usuarioSeleccionado); } else { alert('Esa subcarpeta ya existe'); }
@@ -525,25 +617,25 @@ function verificarAdmin() {
 
         async function eliminarSubcarpeta(nombre) {
             if (!confirm('¿Eliminar la subcarpeta y sus documentos?')) return;
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas/' + encodeURIComponent(nombre), {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas/' + encodeURIComponent(nombre), {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); }
         }
 
         async function eliminarDoc(docId) {
             if (!confirm('¿Eliminar este documento?')) return;
-            const resp = await fetch(API + '/api/admin/documentos/' + docId, {
+            const resp = await fetchApi(API + '/api/admin/documentos/' + docId, {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); }
         }
 
         async function descargarDoc(docId) {
-            const resp = await fetch(API + '/api/mis-documentos/' + docId + '/descargar', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const resp = await fetchApi(API + '/api/mis-documentos/' + docId + '/descargar', {
+                
             });
             if (!resp.ok) { alert('No autorizado'); return; }
             const blob = await resp.blob();
@@ -553,17 +645,19 @@ function verificarAdmin() {
 
         async function crearUsuario()
         {
+            const usuario = document.getElementById('nuevo-usuario').value.trim();
             const ruc = document.getElementById('nuevo-ruc').value.trim();
+            const rol = document.getElementById('nuevo-rol').value;
             const correo = document.getElementById('nuevo-correo').value.trim();
             const nombre = document.getElementById('nuevo-nombre').value.trim();
             const contrasena = document.getElementById('nuevo-contrasena').value;
-            if (!ruc || !correo || !nombre || !contrasena) { alert('Completá todos los campos'); return; }
-            const resp = await fetch(API + '/api/admin/usuarios', {
+            if (!usuario || !ruc || !correo || !nombre || !contrasena) { alert('Completá todos los campos'); return; }
+            const resp = await fetchApi(API + '/api/admin/usuarios', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ruc, correo, nombre, contrasena })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, ruc, correo, nombre, contrasena, rol })
             });
-            if (resp.ok) { alert('Usuario creado'); cargarUsuarios(); document.getElementById('nuevo-ruc').value = ''; document.getElementById('nuevo-correo').value = ''; document.getElementById('nuevo-nombre').value = ''; document.getElementById('nuevo-contrasena').value = ''; }
+            if (resp.ok) { alert('Usuario creado'); cargarUsuarios(); document.getElementById('nuevo-usuario').value = ''; document.getElementById('nuevo-ruc').value = ''; document.getElementById('nuevo-correo').value = ''; document.getElementById('nuevo-nombre').value = ''; document.getElementById('nuevo-contrasena').value = ''; }
             else { alert('El RUC o correo ya existe'); }
         }
 
@@ -572,7 +666,7 @@ function verificarAdmin() {
             usuarioEditando = usuarioId;
             document.getElementById('modal-editar').classList.add('visible');
             fetch(API + '/api/admin/usuarios', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             }).then(r => r.json()).then(usuarios => {
                 const u = usuarios.find(x => x.id === usuarioId);
                 document.getElementById('editar-ruc').value = u.ruc;
@@ -587,18 +681,30 @@ function verificarAdmin() {
             const ruc = document.getElementById('editar-ruc').value.trim();
             const correo = document.getElementById('editar-correo').value.trim();
             const nombre = document.getElementById('editar-nombre').value.trim();
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioEditando, {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioEditando, {
                 method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ruc, correo, nombre })
             });
             if (resp.ok) { cerrarModal(); cargarUsuarios(); } else { alert('El RUC o correo ya existe'); }
         }
 
-        async function cambiarEstado(usuarioId, activo) {
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/estado', {
+        async function cambiarRol(usuarioId) {
+            const select = document.getElementById('rol-' + usuarioId);
+            if (!select) return;
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/rol', {
                 method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rol: select.value })
+            });
+            const data = await resp.json();
+            if (resp.ok) cargarUsuarios(); else alert(data.error || 'No se pudo actualizar el rol');
+        }
+
+        async function cambiarEstado(usuarioId, activo) {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/estado', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ activo: Boolean(activo) })
             });
             if (resp.ok) { cargarUsuarios(); }
@@ -607,14 +713,16 @@ function verificarAdmin() {
         function cerrarSesion() {
             fetch(API + '/api/logout', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             }).catch(() => {});
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('usuario_nombre');
+            sessionStorage.removeItem('csrf_token');
+            sessionStorage.removeItem('usuario');
             window.location.href = 'login.html';
         }
 
         document.getElementById('carpeta-subir').addEventListener('change', actualizarSubcarpetasSelect);
+        configurarPanel();
+        cambiarVista('resumen');
         cargarTickets();
     </script>
 </body>

@@ -59,7 +59,7 @@
       <a href="#servicios">Servicios</a>
       <a href="#gratuitos">Servicios Gratuitos</a>
       <a href="#contacto">Contacto</a>
-      <a href="login.html" style="background:#2e9e5b; padding:8px 15px; border-radius:6px;">Iniciar sesión</a>
+      <a href="login.html" onclick="abrirInicioSesion(event)" style="background:#2e9e5b; padding:8px 15px; border-radius:6px;">Iniciar sesión</a>
     </nav>
   </header>
 
@@ -154,6 +154,34 @@
   } catch (err) {
     resultado.innerHTML = '<p style="color:red;">No se pudo conectar al servidor. Verificá que el backend esté activo.</p>';
   }
+}
+</script>
+
+<script>
+function abrirInicioSesion(event) {
+  event.preventDefault();
+
+  const ancho = 460;
+  const alto = 720;
+  const izquierda = Math.max(0, Math.round((screen.availWidth - ancho) / 2));
+  const arriba = Math.max(0, Math.round((screen.availHeight - alto) / 2));
+
+  const ventana = window.open(
+    'login.html',
+    'kakuaaLogin',
+    'width=' + ancho +
+    ',height=' + alto +
+    ',left=' + izquierda +
+    ',top=' + arriba +
+    ',resizable=yes,scrollbars=yes'
+  );
+
+  if (!ventana) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  ventana.focus();
 }
 </script>
 
