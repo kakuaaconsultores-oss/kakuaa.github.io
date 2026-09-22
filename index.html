@@ -136,7 +136,7 @@
   resultado.innerHTML = '<p>Cargando...</p>';
 
   try {
-    const resp = await fetch('https://backend-ruc.onrender.com/api/ruc?ruc=' + encodeURIComponent(ruc));
+    const resp = await fetch('https://backend-ruc-1.onrender.com/api/ruc?ruc=' + encodeURIComponent(ruc));
     const json = await resp.json();
     // La API devuelve los datos dentro de "data"
     const data = json.data || json;

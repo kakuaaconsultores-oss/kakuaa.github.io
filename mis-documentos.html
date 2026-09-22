@@ -54,7 +54,7 @@
     </div>
 
     <script>
-        const API = 'https://backend-ruc.onrender.com';
+        const API = 'https://backend-ruc-1.onrender.com';
 function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=sessionStorage.getItem('csrf_token')||''; if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
 
         const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
