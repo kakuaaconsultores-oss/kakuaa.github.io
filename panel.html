@@ -423,8 +423,7 @@
                     let acciones = '';
                     if (t.estado === 'pendiente') {
                         acciones = `
-                            <input type="password" id="nueva-pass-${t.id}" placeholder="Nueva contraseña (mín 6)">
-                            <button class="btn btn-verde btn-pequeno" onclick="aprobarTicket(${t.id})">Aprobar</button>
+                            <button class="btn btn-verde btn-pequeno" onclick="aprobarTicket(${t.id})">Aprobar y enviar enlace</button>
                             <button class="btn btn-rojo btn-pequeno" onclick="rechazarTicket(${t.id})">Rechazar</button>
                         `;
                     }
@@ -444,17 +443,18 @@
         }
 
         async function aprobarTicket(ticketId) {
-            const nuevaPass = document.getElementById('nueva-pass-' + ticketId).value;
-            if (!nuevaPass || nuevaPass.length < 6) { alert('Ingresá una contraseña de al menos 6 caracteres'); return; }
-            if (!confirm('¿Aprobar este ticket y enviar la nueva contraseña por correo?')) return;
+            if (!confirm('¿Aprobar este ticket? Se generará un enlace de restablecimiento de un solo uso y se enviará al correo del contribuyente.')) return;
             const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/aprobar', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nueva_password: nuevaPass })
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             });
             const data = await resp.json();
-            if (resp.ok) { alert('Ticket aprobado. Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.')); cargarTickets(); }
-            else { alert(data.error || 'Error al aprobar'); }
+            if (resp.ok) {
+                alert(data.message || 'Ticket aprobado y enlace de recuperación enviado.');
+                cargarTickets();
+            } else {
+                alert(data.error || 'Error al aprobar');
+            }
         }
 
         async function rechazarTicket(ticketId) {
