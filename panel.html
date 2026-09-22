@@ -476,6 +476,8 @@
                     <h3>${u.nombre}</h3>
                     <p>RUC: ${u.ruc}</p>
                     <p>${u.correo}</p>
+                    <p><strong>Rol: ${(u.rol || 'contribuyente').toUpperCase()}</strong></p>
+                    ${u.rol !== 'superadmin' ? '<select id="rol-' + u.id + '" style="padding:6px;border:1px solid var(--gris-borde);border-radius:8px"><option value="contribuyente" '+(u.rol==='contribuyente'?'selected':'')+'>Contribuyente</option><option value="operativo" '+(u.rol==='operativo'?'selected':'')+'>Operativo</option><option value="admin" '+(u.rol==='admin'?'selected':'')+'>Administrador</option></select><button class="btn btn-azul btn-pequeno" onclick="cambiarRol('+u.id+')">Guardar rol</button>' : ''}
                     ${estado}
                     <div class="acciones">
                         <button class="btn btn-azul btn-pequeno" onclick="verDetalle(${u.id})">Ver carpeta</button>
