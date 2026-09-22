@@ -492,25 +492,11 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                     <div class="acciones">
                         <button class="btn btn-azul btn-pequeno" onclick="verDetalle(${u.id})">Ver carpeta</button>
                         <button class="btn btn-gris btn-pequeno" onclick="abrirEditar(${u.id})">Editar</button>
-                        <button class="btn btn-amarillo btn-pequeno" onclick="resetearPass(${u.id})">Reset pass</button>
                         <button class="btn ${u.activo ? 'btn-rojo' : 'btn-verde'} btn-pequeno" onclick="cambiarEstado(${u.id}, ${u.activo ? 0 : 1})">${u.activo ? 'Deshabilitar' : 'Habilitar'}</button>
                     </div>
                 `;
                 grid.appendChild(tarjeta);
             });
-        }
-
-        async function resetearPass(usuarioId) {
-            const nuevaPass = prompt('Ingresá la nueva contraseña (mínimo 6 caracteres):');
-            if (!nuevaPass || nuevaPass.length < 6) { alert('Contraseña inválida'); return; }
-            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nueva_password: nuevaPass })
-            });
-            const data = await resp.json();
-            if (resp.ok) { alert('Contraseña actualizada' + (data.message.includes('correo') ? ' y correo enviado.' : '.')); }
-            else { alert(data.error || 'Error'); }
         }
 
         async function verDetalle(usuarioId) {
