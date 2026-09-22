@@ -597,7 +597,6 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             formData.append('subcarpeta2', '');
             const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/documentos', {
                 method: 'POST',
-                ,
                 body: formData
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); } else { alert('Error al subir'); }
