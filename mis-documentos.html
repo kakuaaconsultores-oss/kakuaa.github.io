@@ -59,8 +59,6 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
 
         const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
 
-        function getToken() { return sessionStorage.getItem('token') || ''; }
-
         function verificarSesion() {
             const usuario = sessionStorage.getItem('usuario'); if (!usuario) { window.location.href = 'login.html'; return false; }
             return true;
