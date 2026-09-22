@@ -316,13 +316,14 @@
 
     <script>
         const API = 'https://backend-ruc.onrender.com';
+function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=sessionStorage.getItem('csrf_token')||''; if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
+
         let usuarioSeleccionado = null;
         let docsActuales = [];
         let subsActuales = [];
         const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
 
-        function getToken() { return sessionStorage.getItem('token') || ''; }
-
+        
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, char => ({
                 '&': '&amp;',
@@ -358,8 +359,7 @@
         }
 
         function verificarSesion() {
-            const token = getToken();
-            if (!token) {
+            const usuario = sessionStorage.getItem('usuario'); if (!usuario) {
                 window.location.href = 'login.html';
                 return false;
             }
@@ -404,8 +404,8 @@
             const contenedor = document.getElementById('tickets-container');
             contenedor.innerHTML = '<div class="sin-datos">Cargando...</div>';
             try {
-                const resp = await fetch(API + '/api/admin/tickets', {
-                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                const resp = await fetchApi(API + '/api/admin/tickets', {
+                    
                 });
                 if (resp.status === 401) { window.location.href = 'login.html'; return; }
                 const tickets = await resp.json();
@@ -444,9 +444,9 @@
 
         async function aprobarTicket(ticketId) {
             if (!confirm('¿Aprobar este ticket? Se generará un enlace de restablecimiento de un solo uso y se enviará al correo del contribuyente.')) return;
-            const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/aprobar', {
+            const resp = await fetchApi(API + '/api/admin/tickets/' + ticketId + '/aprobar', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             });
             const data = await resp.json();
             if (resp.ok) {
@@ -459,9 +459,9 @@
 
         async function rechazarTicket(ticketId) {
             if (!confirm('¿Rechazar este ticket?')) return;
-            const resp = await fetch(API + '/api/admin/tickets/' + ticketId + '/rechazar', {
+            const resp = await fetchApi(API + '/api/admin/tickets/' + ticketId + '/rechazar', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             });
             if (resp.ok) { cargarTickets(); } else { alert('Error al rechazar'); }
         }
@@ -469,8 +469,8 @@
         // ===== USUARIOS =====
         async function cargarUsuarios() {
             if (!verificarAdmin()) return;
-            const resp = await fetch(API + '/api/admin/usuarios', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const resp = await fetchApi(API + '/api/admin/usuarios', {
+                
             });
             if (resp.status === 401) { window.location.href = 'login.html'; return; }
             const usuarios = await resp.json();
@@ -503,9 +503,9 @@
         async function resetearPass(usuarioId) {
             const nuevaPass = prompt('Ingresá la nueva contraseña (mínimo 6 caracteres):');
             if (!nuevaPass || nuevaPass.length < 6) { alert('Contraseña inválida'); return; }
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/reset-password', {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/reset-password', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nueva_password: nuevaPass })
             });
             const data = await resp.json();
@@ -517,17 +517,17 @@
             if (!verificarAdmin()) return;
             usuarioSeleccionado = usuarioId;
             cambiarVista('detalle');
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/documentos', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/documentos', {
+                
             });
             if (resp.status === 401) { window.location.href = 'login.html'; return; }
             docsActuales = await resp.json();
-            const respSubs = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/subcarpetas', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const respSubs = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/subcarpetas', {
+                
             });
             subsActuales = await respSubs.json();
-            const respUsu = await fetch(API + '/api/admin/usuarios', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const respUsu = await fetchApi(API + '/api/admin/usuarios', {
+                
             });
             const usuarios = await respUsu.json();
             const usu = usuarios.find(u => u.id === usuarioId);
@@ -609,9 +609,9 @@
             formData.append('carpeta', carpeta);
             formData.append('subcarpeta', subcarpeta);
             formData.append('subcarpeta2', '');
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/documentos', {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/documentos', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken() },
+                ,
                 body: formData
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); } else { alert('Error al subir'); }
@@ -621,9 +621,9 @@
             const carpeta = document.getElementById('carpeta-nueva-sub').value;
             const nombre = document.getElementById('nombre-subcarpeta').value.trim();
             if (!nombre) { alert('Ingresá el nombre'); return; }
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas', {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ carpeta, nombre, padre: '' })
             });
             if (resp.ok) { document.getElementById('nombre-subcarpeta').value = ''; verDetalle(usuarioSeleccionado); } else { alert('Esa subcarpeta ya existe'); }
@@ -631,25 +631,25 @@
 
         async function eliminarSubcarpeta(nombre) {
             if (!confirm('¿Eliminar la subcarpeta y sus documentos?')) return;
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas/' + encodeURIComponent(nombre), {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioSeleccionado + '/subcarpetas/' + encodeURIComponent(nombre), {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); }
         }
 
         async function eliminarDoc(docId) {
             if (!confirm('¿Eliminar este documento?')) return;
-            const resp = await fetch(API + '/api/admin/documentos/' + docId, {
+            const resp = await fetchApi(API + '/api/admin/documentos/' + docId, {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             });
             if (resp.ok) { verDetalle(usuarioSeleccionado); }
         }
 
         async function descargarDoc(docId) {
-            const resp = await fetch(API + '/api/mis-documentos/' + docId + '/descargar', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+            const resp = await fetchApi(API + '/api/mis-documentos/' + docId + '/descargar', {
+                
             });
             if (!resp.ok) { alert('No autorizado'); return; }
             const blob = await resp.blob();
@@ -666,9 +666,9 @@
             const nombre = document.getElementById('nuevo-nombre').value.trim();
             const contrasena = document.getElementById('nuevo-contrasena').value;
             if (!usuario || !ruc || !correo || !nombre || !contrasena) { alert('Completá todos los campos'); return; }
-            const resp = await fetch(API + '/api/admin/usuarios', {
+            const resp = await fetchApi(API + '/api/admin/usuarios', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ usuario, ruc, correo, nombre, contrasena, rol })
             });
             if (resp.ok) { alert('Usuario creado'); cargarUsuarios(); document.getElementById('nuevo-usuario').value = ''; document.getElementById('nuevo-ruc').value = ''; document.getElementById('nuevo-correo').value = ''; document.getElementById('nuevo-nombre').value = ''; document.getElementById('nuevo-contrasena').value = ''; }
@@ -680,7 +680,7 @@
             usuarioEditando = usuarioId;
             document.getElementById('modal-editar').classList.add('visible');
             fetch(API + '/api/admin/usuarios', {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             }).then(r => r.json()).then(usuarios => {
                 const u = usuarios.find(x => x.id === usuarioId);
                 document.getElementById('editar-ruc').value = u.ruc;
@@ -695,9 +695,9 @@
             const ruc = document.getElementById('editar-ruc').value.trim();
             const correo = document.getElementById('editar-correo').value.trim();
             const nombre = document.getElementById('editar-nombre').value.trim();
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioEditando, {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioEditando, {
                 method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ruc, correo, nombre })
             });
             if (resp.ok) { cerrarModal(); cargarUsuarios(); } else { alert('El RUC o correo ya existe'); }
@@ -706,9 +706,9 @@
         async function cambiarRol(usuarioId) {
             const select = document.getElementById('rol-' + usuarioId);
             if (!select) return;
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/rol', {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/rol', {
                 method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rol: select.value })
             });
             const data = await resp.json();
@@ -716,9 +716,9 @@
         }
 
         async function cambiarEstado(usuarioId, activo) {
-            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/estado', {
+            const resp = await fetchApi(API + '/api/admin/usuarios/' + usuarioId + '/estado', {
                 method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ activo: Boolean(activo) })
             });
             if (resp.ok) { cargarUsuarios(); }
@@ -727,10 +727,10 @@
         function cerrarSesion() {
             fetch(API + '/api/logout', {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                
             }).catch(() => {});
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('usuario_nombre');
+            sessionStorage.removeItem('csrf_token');
+            sessionStorage.removeItem('csrf_token');
             window.location.href = 'login.html';
         }
 
