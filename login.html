@@ -38,6 +38,7 @@ input{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:1
 const API='https://backend-ruc.onrender.com';
 let challenge='';
 let intervalo=null;
+let regeneracionesRestantes=5;
 function mensaje(t){document.getElementById('mensaje').textContent=t||''}
 function iniciarContador(){let restante=60;const el=document.getElementById('contador');clearInterval(intervalo);intervalo=setInterval(()=>{restante--;el.textContent=restante>0?'Código válido durante '+restante+' segundos.':'El código venció. Podés solicitar uno nuevo.';if(restante<=0)clearInterval(intervalo)},1000)}
 async function iniciarSesion(){
@@ -58,7 +59,7 @@ else{mensaje(data.error||'Código incorrecto');if(data.bloqueado){document.getEl
 }catch(e){mensaje('No se pudo verificar el código. Intentá de nuevo.')}
 }
 async function reenviarOTP(){
-mensaje('');try{const resp=await fetch(API+'/api/login/resend-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge})});const data=await resp.json();if(resp.ok){challenge=data.challenge;document.getElementById('otp').value='';iniciarContador();mensaje('Se envió un nuevo código. El anterior quedó invalidado.')}else mensaje(data.error||'No se pudo enviar el código')}catch(e){mensaje('No se pudo conectar al servidor.')}
+mensaje('');try{const resp=await fetch(API+'/api/login/resend-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge})});const data=await resp.json();if(resp.ok){challenge=data.challenge;regeneracionesRestantes=data.regeneraciones_restantes ?? Math.max(0,regeneracionesRestantes-1);document.getElementById('otp').value='';iniciarContador();document.querySelector('#otpBox button[onclick="reenviarOTP()"]')?.setAttribute('disabled', regeneracionesRestantes<=0);mensaje('Se envió un nuevo código. Te quedan '+regeneracionesRestantes+' solicitudes de nuevo código.')}else mensaje(data.error||'No se pudo enviar el código')}catch(e){mensaje('No se pudo conectar al servidor.')}
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'){if(document.getElementById('otpBox').style.display==='block')verificarOTP();else iniciarSesion()}});
 </script>
