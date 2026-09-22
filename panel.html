@@ -389,7 +389,7 @@
         }
 
         // ===== TICKETS =====
-        async function cargarTickets() {
+        async async function cargarTickets() {
             if (!verificarAdmin()) return;
             const contenedor = document.getElementById('tickets-container');
             contenedor.innerHTML = '<div class="sin-datos">Cargando...</div>';
@@ -457,7 +457,7 @@
         }
 
         // ===== USUARIOS =====
-        async function cargarUsuarios() {
+        async async function cargarUsuarios() {
             if (!verificarAdmin()) return;
             const resp = await fetch(API + '/api/admin/usuarios', {
                 headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -503,7 +503,7 @@
             else { alert(data.error || 'Error'); }
         }
 
-        async function verDetalle(usuarioId) {
+        async async function verDetalle(usuarioId) {
             if (!verificarAdmin()) return;
             usuarioSeleccionado = usuarioId;
             cambiarVista('detalle');
@@ -681,7 +681,7 @@
 
         function cerrarModal() { document.getElementById('modal-editar').classList.remove('visible'); }
 
-        async function guardarEdicion() {
+        async async function guardarEdicion() {
             const ruc = document.getElementById('editar-ruc').value.trim();
             const correo = document.getElementById('editar-correo').value.trim();
             const nombre = document.getElementById('editar-nombre').value.trim();
