@@ -241,7 +241,9 @@
                 <div class="panel-form">
                     <h3>Datos del nuevo usuario</h3>
                     <div class="form-fila">
+                        <input type="text" id="nuevo-usuario" placeholder="Usuario de acceso">
                         <input type="text" id="nuevo-ruc" placeholder="RUC (ej: 80012345-6)">
+                        <select id="nuevo-rol"><option value="contribuyente">Contribuyente</option><option value="operativo">Operativo</option><option value="admin">Administrador</option></select>
                         <input type="email" id="nuevo-correo" placeholder="correo@ejemplo.com">
                         <input type="text" id="nuevo-nombre" placeholder="Nombre del usuario">
                         <input type="password" id="nuevo-contrasena" placeholder="Contraseña inicial">
@@ -645,17 +647,19 @@
 
         async function crearUsuario()
         {
+            const usuario = document.getElementById('nuevo-usuario').value.trim();
             const ruc = document.getElementById('nuevo-ruc').value.trim();
+            const rol = document.getElementById('nuevo-rol').value;
             const correo = document.getElementById('nuevo-correo').value.trim();
             const nombre = document.getElementById('nuevo-nombre').value.trim();
             const contrasena = document.getElementById('nuevo-contrasena').value;
-            if (!ruc || !correo || !nombre || !contrasena) { alert('Completá todos los campos'); return; }
+            if (!usuario || !ruc || !correo || !nombre || !contrasena) { alert('Completá todos los campos'); return; }
             const resp = await fetch(API + '/api/admin/usuarios', {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ruc, correo, nombre, contrasena })
+                body: JSON.stringify({ usuario, ruc, correo, nombre, contrasena, rol })
             });
-            if (resp.ok) { alert('Usuario creado'); cargarUsuarios(); document.getElementById('nuevo-ruc').value = ''; document.getElementById('nuevo-correo').value = ''; document.getElementById('nuevo-nombre').value = ''; document.getElementById('nuevo-contrasena').value = ''; }
+            if (resp.ok) { alert('Usuario creado'); cargarUsuarios(); document.getElementById('nuevo-usuario').value = ''; document.getElementById('nuevo-ruc').value = ''; document.getElementById('nuevo-correo').value = ''; document.getElementById('nuevo-nombre').value = ''; document.getElementById('nuevo-contrasena').value = ''; }
             else { alert('El RUC o correo ya existe'); }
         }
 
@@ -685,6 +689,18 @@
                 body: JSON.stringify({ ruc, correo, nombre })
             });
             if (resp.ok) { cerrarModal(); cargarUsuarios(); } else { alert('El RUC o correo ya existe'); }
+        }
+
+        async function cambiarRol(usuarioId) {
+            const select = document.getElementById('rol-' + usuarioId);
+            if (!select) return;
+            const resp = await fetch(API + '/api/admin/usuarios/' + usuarioId + '/rol', {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rol: select.value })
+            });
+            const data = await resp.json();
+            if (resp.ok) cargarUsuarios(); else alert(data.error || 'No se pudo actualizar el rol');
         }
 
         async function cambiarEstado(usuarioId, activo) {
