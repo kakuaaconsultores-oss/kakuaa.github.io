@@ -177,13 +177,46 @@
     <div class="layout">
         <!-- ===== SIDEBAR ===== -->
         <aside class="sidebar">
-            <div class="nav-item activo" data-vista="tickets" onclick="cambiarVista('tickets')">🎫 Tickets</div>
+            <div class="nav-item activo" data-vista="resumen" onclick="cambiarVista('resumen')">📊 Resumen</div>
+            <div class="nav-item" data-vista="tickets" onclick="cambiarVista('tickets')">🎫 Tickets</div>
             <div class="nav-item" data-vista="usuarios" onclick="cambiarVista('usuarios')">👥 Usuarios</div>
             <div class="nav-item" data-vista="crear" onclick="cambiarVista('crear')">➕ Crear usuario</div>
+            <div class="nav-item" data-vista="seguridad" onclick="cambiarVista('seguridad')">🔐 Seguridad</div>
         </aside>
 
         <!-- ===== CONTENIDO ===== -->
         <main class="contenido">
+
+            <!-- VISTA RESUMEN -->
+            <section class="vista" id="vista-resumen">
+                <h2 class="titulo-seccion">Centro de Control</h2>
+                <p class="subtitulo">Resumen general de la operación y acceso rápido a las funciones administrativas.</p>
+                <div class="grid-usuarios">
+                    <div class="tarjeta-usuario">
+                        <div class="avatar">SA</div>
+                        <h3 id="resumen-rol">SUPERADMIN</h3>
+                        <p>Acceso integral al sistema</p>
+                    </div>
+                    <div class="tarjeta-usuario">
+                        <div class="avatar">U</div>
+                        <h3>Usuarios</h3>
+                        <p>Gestioná cuentas, roles y accesos.</p>
+                        <button class="btn btn-azul btn-pequeno" onclick="cambiarVista('usuarios')">Ver usuarios</button>
+                    </div>
+                    <div class="tarjeta-usuario">
+                        <div class="avatar">T</div>
+                        <h3>Tickets</h3>
+                        <p>Solicitudes de recuperación pendientes.</p>
+                        <button class="btn btn-azul btn-pequeno" onclick="cambiarVista('tickets')">Ver tickets</button>
+                    </div>
+                    <div class="tarjeta-usuario">
+                        <div class="avatar">S</div>
+                        <h3>Seguridad</h3>
+                        <p>Autenticación, OTP y controles de acceso.</p>
+                        <button class="btn btn-gris btn-pequeno" onclick="cambiarVista('seguridad')">Ver seguridad</button>
+                    </div>
+                </div>
+            </section>
 
             <!-- VISTA TICKETS -->
             <section class="vista activa" id="vista-tickets">
@@ -287,30 +320,68 @@
         const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
 
         function getToken() { return sessionStorage.getItem('token') || ''; }
-function esAdmin() {
-    const usuario = JSON.parse(sessionStorage.getItem('usuario') || 'null');
-    return usuario && usuario.ruc === '80000000-0';
-}
 
-function verificarAdmin() {
-    if (!verificarSesion()) return false;
-    if (!esAdmin()) { window.location.href = 'mis-documentos.html'; return false; }
-    return true;
-}
+        function usuarioActual() {
+            try { return JSON.parse(sessionStorage.getItem('usuario') || 'null'); }
+            catch (_) { return null; }
+        }
 
-        function verificarSesion() {
-            const token = getToken();
-            if (!token) { window.location.href = 'login.html'; return false; }
+        function esAdmin() {
+            const usuario = usuarioActual();
+            return !!usuario && ['superadmin', 'admin'].includes(usuario.rol);
+        }
+
+        function esSuperAdmin() {
+            const usuario = usuarioActual();
+            return !!usuario && usuario.rol === 'superadmin';
+        }
+
+        function verificarAdmin() {
+            if (!verificarSesion()) return false;
+            if (!esAdmin()) {
+                window.location.href = 'mis-documentos.html';
+                return false;
+            }
             return true;
         }
 
+        function verificarSesion() {
+            const token = getToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+
+        function configurarPanel() {
+            const usuario = usuarioActual();
+            if (!usuario) {
+                window.location.href = 'login.html';
+                return;
+            }
+            document.getElementById('avatar-admin').textContent = (usuario.nombre || usuario.usuario || 'U').charAt(0).toUpperCase();
+            document.getElementById('rol-panel').textContent =
+                usuario.rol === 'superadmin' ? 'Centro de Control SUPERADMIN' :
+                usuario.rol === 'admin' ? 'Panel de Administración' : 'Panel Operativo';
+
+            const seguridad = document.querySelector('[data-vista="seguridad"]');
+            if (seguridad) seguridad.style.display = esSuperAdmin() ? 'flex' : 'none';
+        }
+
         function cambiarVista(vista) {
-            if (vista === "seguridad" && !esSuperAdmin()) return;
-            if (vista === "resumen") {
+            if (vista === 'seguridad' && !esSuperAdmin()) return;
+            if (!verificarSesion()) return;
+
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('activo'));
-            document.querySelector('.nav-item[data-vista="' + vista + '"]').classList.add('activo');
+            const nav = document.querySelector('.nav-item[data-vista="' + vista + '"]');
+            if (nav) nav.classList.add('activo');
+
             document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
-            document.getElementById('vista-' + vista).classList.add('activa');
+            const objetivo = document.getElementById('vista-' + vista);
+            if (!objetivo) return;
+            objetivo.classList.add('activa');
+
             if (vista === 'tickets') cargarTickets();
             if (vista === 'usuarios') cargarUsuarios();
         }
