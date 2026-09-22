@@ -323,6 +323,16 @@
 
         function getToken() { return sessionStorage.getItem('token') || ''; }
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
         function usuarioActual() {
             try { return JSON.parse(sessionStorage.getItem('usuario') || 'null'); }
             catch (_) { return null; }
@@ -389,7 +399,7 @@
         }
 
         // ===== TICKETS =====
-        async async function cargarTickets() {
+        async function cargarTickets() {
             if (!verificarAdmin()) return;
             const contenedor = document.getElementById('tickets-container');
             contenedor.innerHTML = '<div class="sin-datos">Cargando...</div>';
@@ -420,9 +430,9 @@
                     }
                     div.innerHTML = `
                         <div class="info">
-                            <h4>${t.nombre} <span style="color:#999;font-weight:400">(${t.ruc})</span></h4>
-                            <p>${t.correo}</p>
-                            <p style="font-size:0.75rem;color:#aaa">Solicitado: ${t.creado_en}</p>
+                            <h4>${escapeHtml(t.nombre)} <span style="color:#999;font-weight:400">(${escapeHtml(t.ruc)})</span></h4>
+                            <p>${escapeHtml(t.correo)}</p>
+                            <p style="font-size:0.75rem;color:#aaa">Solicitado: ${escapeHtml(t.creado_en)}</p>
                         </div>
                         <div class="acciones">${badge} ${acciones}</div>
                     `;
@@ -457,7 +467,7 @@
         }
 
         // ===== USUARIOS =====
-        async async function cargarUsuarios() {
+        async function cargarUsuarios() {
             if (!verificarAdmin()) return;
             const resp = await fetch(API + '/api/admin/usuarios', {
                 headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -473,10 +483,10 @@
                 const estado = u.activo ? '<span class="estado estado-activo">Activo</span>' : '<span class="estado estado-inactivo">Inactivo</span>';
                 tarjeta.innerHTML = `
                     <div class="avatar">${inicial}</div>
-                    <h3>${u.nombre}</h3>
-                    <p>RUC: ${u.ruc}</p>
-                    <p>${u.correo}</p>
-                    <p><strong>Rol: ${(u.rol || 'contribuyente').toUpperCase()}</strong></p>
+                    <h3>${escapeHtml(u.nombre)}</h3>
+                    <p>RUC: ${escapeHtml(u.ruc)}</p>
+                    <p>${escapeHtml(u.correo)}</p>
+                    <p><strong>Rol: ${escapeHtml((u.rol || 'contribuyente').toUpperCase())}</strong></p>
                     ${u.rol !== 'superadmin' ? '<select id="rol-' + u.id + '" style="padding:6px;border:1px solid var(--gris-borde);border-radius:8px"><option value="contribuyente" '+(u.rol==='contribuyente'?'selected':'')+'>Contribuyente</option><option value="operativo" '+(u.rol==='operativo'?'selected':'')+'>Operativo</option><option value="admin" '+(u.rol==='admin'?'selected':'')+'>Administrador</option></select><button class="btn btn-azul btn-pequeno" onclick="cambiarRol('+u.id+')">Guardar rol</button>' : ''}
                     ${estado}
                     <div class="acciones">
@@ -503,7 +513,7 @@
             else { alert(data.error || 'Error'); }
         }
 
-        async async function verDetalle(usuarioId) {
+        async function verDetalle(usuarioId) {
             if (!verificarAdmin()) return;
             usuarioSeleccionado = usuarioId;
             cambiarVista('detalle');
@@ -522,7 +532,7 @@
             const usuarios = await respUsu.json();
             const usu = usuarios.find(u => u.id === usuarioId);
             document.getElementById('info-usuario').innerHTML = `
-                ${usu.nombre} <span style="font-size:0.8rem;color:#999;font-weight:400">(${usu.ruc})</span>
+                ${escapeHtml(usu.nombre)} <span style="font-size:0.8rem;color:#999;font-weight:400">(${escapeHtml(usu.ruc)})</span>
             `;
             llenarSelectores();
             renderizarCarpetas();
@@ -561,25 +571,25 @@
                 const div = document.createElement('div'); div.className = 'carpeta';
                 const docsCarpeta = docsActuales.filter(d => d.carpeta === carpeta);
                 const subsCarpeta = subsActuales.filter(s => s.carpeta === carpeta && s.padre === '');
-                let html = `<h4>📁 ${carpeta}</h4>`;
+                let html = `<h4>📁 ${escapeHtml(carpeta)}</h4>`;
                 subsCarpeta.forEach(s => {
-                    html += `<span class="subcarpeta-chip">${s.nombre} <button class="btn btn-rojo btn-pequeno" style="padding:2px 6px" onclick="eliminarSubcarpeta('${s.nombre}')">✕</button></span>`;
+                    html += `<span class="subcarpeta-chip">${escapeHtml(s.nombre)} <button class="btn btn-rojo btn-pequeno" style="padding:2px 6px" onclick="eliminarSubcarpeta(decodeURIComponent('${encodeURIComponent(s.nombre)}'))">✕</button></span>`;
                 });
                 html += `<div style="margin-top:8px">`;
                 docsCarpeta.filter(d => d.subcarpeta === '' && d.subcarpeta2 === '').forEach(d => {
-                    html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
+                    html += `<div class="doc-item"><span>${escapeHtml(d.nombre_archivo)}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
                 });
                 html += `</div>`;
                 subsCarpeta.forEach(s => {
                     const docsSub = docsCarpeta.filter(d => d.subcarpeta === s.nombre && d.subcarpeta2 === '');
                     const subsHijas = subsActuales.filter(x => x.carpeta === carpeta && x.padre === s.nombre);
                     if (docsSub.length > 0 || subsHijas.length > 0) {
-                        html += `<div style="margin-left:16px;margin-top:8px;"><strong>↳ ${s.nombre}:</strong>`;
+                        html += `<div style="margin-left:16px;margin-top:8px;"><strong>↳ ${escapeHtml(s.nombre)}:</strong>`;
                         subsHijas.forEach(h => {
-                            html += `<div style="margin-left:16px;margin-top:4px;"><em>↳ ${h.nombre}</em></div>`;
+                            html += `<div style="margin-left:16px;margin-top:4px;"><em>↳ ${escapeHtml(h.nombre)}</em></div>`;
                         });
                         docsSub.forEach(d => {
-                            html += `<div class="doc-item"><span>${d.nombre_archivo}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
+                            html += `<div class="doc-item"><span>${escapeHtml(d.nombre_archivo)}</span><div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="descargarDoc(${d.id})">⬇</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarDoc(${d.id})">🗑</button></div></div>`;
                         });
                         html += `</div>`;
                     }
@@ -681,7 +691,7 @@
 
         function cerrarModal() { document.getElementById('modal-editar').classList.remove('visible'); }
 
-        async async function guardarEdicion() {
+        async function guardarEdicion() {
             const ruc = document.getElementById('editar-ruc').value.trim();
             const correo = document.getElementById('editar-correo').value.trim();
             const nombre = document.getElementById('editar-nombre').value.trim();
