@@ -464,9 +464,13 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 usuario.rol === 'superadmin' ? 'Centro de Control SUPERADMIN' :
                 usuario.rol === 'admin' ? 'Panel de Administración' : 'Panel Operativo';
 
+            const dashboardNav = document.querySelector('[data-vista="dashboard"]');
             const tareasNav = document.querySelector('[data-vista="tareas"]');
             const factNav = document.querySelector('[data-vista="facturacion"]');
+            if (dashboardNav) dashboardNav.style.display = esAdmin() ? 'flex' : 'none';
             if (tareasNav) tareasNav.style.display = ['superadmin','admin','operativo'].includes(usuario.rol) ? 'flex' : 'none';
+            const formTarea = document.getElementById('form-tarea-panel');
+            if (formTarea) formTarea.style.display = esAdmin() ? 'block' : 'none';
             if (factNav) factNav.style.display = esAdmin() ? 'flex' : 'none';
             const seguridad = document.querySelector('[data-vista="seguridad"]');
             if (seguridad) seguridad.style.display = esSuperAdmin() ? 'flex' : 'none';
@@ -878,8 +882,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
 
         document.getElementById('carpeta-subir').addEventListener('change', actualizarSubcarpetasSelect);
         configurarPanel();
-        cambiarVista('resumen');
-        cargarTickets();
+        if (esAdmin()) { cargarDashboard(); prepararCatalogos(); }
+        cambiarVista(esAdmin() ? 'dashboard' : 'tareas');
     </script>
 </body>
 </html>
