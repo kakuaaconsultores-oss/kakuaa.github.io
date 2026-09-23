@@ -54,7 +54,7 @@ async function redirigirSiSesionActiva(){
  }catch(e){}
 }
 
-function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=sessionStorage.getItem('csrf_token')||''; if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
+function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=localStorage.getItem('csrf_token')||''; if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
 let challenge='';
 let intervalo=null;
 let regeneracionesRestantes=5;
@@ -75,7 +75,7 @@ const otp=document.getElementById('otp').value.trim();mensaje('');
 if(!/^\d{4}$/.test(otp)){mensaje('Ingresá los 4 dígitos del código');return}
 document.getElementById('btnOtp').disabled=true;
 try{const resp=await fetchApi(API+'/api/login/verify-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge,otp})});const data=await resp.json();
-if(resp.ok){sessionStorage.setItem('csrf_token',data.csrf_token||'');sessionStorage.setItem('usuario',JSON.stringify(data.usuario));if(data.debe_cambiar){window.location.href='cambiar-password.html';}else if(data.usuario.rol==='superadmin'||data.usuario.rol==='admin'||data.usuario.rol==='operativo')window.location.href='panel.html';else window.location.href='mis-documentos.html'}
+if(resp.ok){localStorage.setItem('csrf_token',data.csrf_token||'');sessionStorage.setItem('usuario',JSON.stringify(data.usuario));if(data.debe_cambiar){window.location.href='cambiar-password.html';}else if(data.usuario.rol==='superadmin'||data.usuario.rol==='admin'||data.usuario.rol==='operativo')window.location.href='panel.html';else window.location.href='mis-documentos.html'}
 else{mensaje(data.error||'Código incorrecto');if(data.bloqueado||data.vencido)document.getElementById('btnOtp').disabled=true}
 }catch(e){mensaje('No se pudo verificar el código. Intentá de nuevo.')}finally{if(!document.getElementById('btnOtp').disabled)document.getElementById('btnOtp').disabled=false}
 }
