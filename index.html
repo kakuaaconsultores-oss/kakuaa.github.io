@@ -7,53 +7,62 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a2a5e; background: #f7faf9; line-height: 1.6; }
-
-    /* Header */
     header { background: #1a2a5e; color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
     header .logo { font-size: 1.4rem; font-weight: bold; }
     header nav a { color: white; text-decoration: none; margin-left: 25px; }
     header nav a:hover { text-decoration: underline; }
-
-    /* Hero */
     .hero { background: linear-gradient(135deg, #1a2a5e, #2d6a5e); color: white; text-align: center; padding: 80px 20px; }
     .hero h1 { font-size: 2.6rem; margin-bottom: 15px; }
     .hero p { font-size: 1.2rem; max-width: 700px; margin: 0 auto; opacity: 0.9; }
-
-    /* Secciones */
     section { padding: 60px 40px; max-width: 1100px; margin: 0 auto; }
     section h2 { font-size: 2rem; margin-bottom: 30px; text-align: center; color: #1a2a5e; }
-
-    /* Servicios */
     .servicios-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
     .servicio { background: white; border: 1px solid #e0e8e6; border-radius: 10px; padding: 25px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     .servicio h3 { margin-bottom: 10px; color: #1a2a5e; }
     .servicio p { color: #555; font-size: 0.95rem; }
-
-    /* Buscador RUC */
-    .buscador { background: white; border: 1px solid #e0e8e6; border-radius: 10px; padding: 30px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .buscador h3 { margin-bottom: 10px; color: #1a2a5e; }
+    .buscador { background: white; border: 1px solid #e0e8e6; border-radius: 14px; padding: 30px; max-width: 680px; margin: 0 auto; box-shadow: 0 8px 24px rgba(26,42,94,0.08); }
+    .buscador h3 { margin-bottom: 10px; color: #1a2a5e; font-size: 1.35rem; }
     .buscador p { color: #555; margin-bottom: 15px; font-size: 0.95rem; }
     .buscador form { display: flex; gap: 10px; }
-    .buscador input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-    .buscador button { padding: 12px 20px; background: #1a2a5e; color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+    .buscador input { flex: 1; padding: 13px 14px; border: 1px solid #ccd6d3; border-radius: 7px; font-size: 1rem; outline: none; }
+    .buscador input:focus { border-color: #2d6a5e; box-shadow: 0 0 0 3px rgba(45,106,94,0.12); }
+    .buscador button { padding: 12px 22px; background: #1a2a5e; color: white; border: none; border-radius: 7px; font-size: 1rem; cursor: pointer; }
     .buscador button:hover { background: #2d6a5e; }
-    #resultado { margin-top: 20px; background: #f5f5f5; padding: 15px; border-radius: 6px; display: none; }
-    #resultado p { margin-bottom: 5px; color: #333; }
-
-    /* Contacto */
+    .buscador button:disabled { opacity: 0.65; cursor: wait; }
+    #resultado { margin-top: 22px; display: none; }
+    .ruc-card { overflow: hidden; border: 1px solid #dfe8e5; border-radius: 12px; background: #fff; }
+    .ruc-card-header { padding: 18px 20px; background: #f3f7f6; border-bottom: 1px solid #e2eae8; display: flex; justify-content: space-between; gap: 15px; align-items: center; }
+    .ruc-card-header strong { color: #1a2a5e; font-size: 1.1rem; }
+    .estado { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 11px; font-size: .82rem; font-weight: 700; background: #e7f6ed; color: #19733e; }
+    .estado::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .ruc-grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+    .ruc-item { padding: 15px 20px; border-bottom: 1px solid #edf1f0; }
+    .ruc-item:nth-child(odd) { border-right: 1px solid #edf1f0; }
+    .ruc-label { display: block; color: #71807c; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
+    .ruc-value { color: #263632; font-weight: 600; word-break: break-word; }
+    .ruc-foot { padding: 12px 20px; color: #7a8784; font-size: .78rem; }
+    .ruc-loading, .ruc-error { padding: 18px; border-radius: 10px; text-align: center; }
+    .ruc-loading { background: #f3f7f6; color: #52625e; }
+    .ruc-error { background: #fff1f1; color: #a33a3a; border: 1px solid #f0d1d1; }
     .contacto { text-align: center; }
     .contacto p { margin-bottom: 10px; }
-
     footer { background: #1a2a5e; color: white; text-align: center; padding: 20px; margin-top: 40px; }
+    @media (max-width: 700px) {
+      header { padding: 15px 20px; flex-direction: column; gap: 12px; }
+      header nav a { margin: 0 7px; font-size: .9rem; }
+      .hero { padding: 55px 20px; }
+      .hero h1 { font-size: 2.1rem; }
+      section { padding: 45px 20px; }
+      .buscador form { flex-direction: column; }
+      .buscador button { width: 100%; }
+      .ruc-grid { grid-template-columns: 1fr; }
+      .ruc-item:nth-child(odd) { border-right: none; }
+    }
   </style>
 </head>
 <body>
-
-  <!-- Header -->
   <header>
-    <div class="logo">
-  <img src="logo.png" alt="Kakuaa Consultores" style="height:50px;">
-</div>
+    <div class="logo"><img src="logo.png" alt="Kakuaa Consultores" style="height:50px;"></div>
     <nav>
       <a href="#inicio">Inicio</a>
       <a href="#servicios">Servicios</a>
@@ -63,127 +72,127 @@
     </nav>
   </header>
 
-  <!-- Hero -->
   <div class="hero" id="inicio">
     <h1>Kakuaa Consultores</h1>
     <p>Consultoría, asesoría y gestión de procesos para tu empresa. Te acompañamos a crecer con soluciones claras y profesionales.</p>
   </div>
 
-  <!-- Servicios -->
   <section id="servicios">
     <h2>Nuestros Servicios</h2>
     <div class="servicios-grid">
-      <div class="servicio">
-        <h3>Consultoría</h3>
-        <p>Asesoramiento estratégico para optimizar tu negocio.</p>
-      </div>
-      <div class="servicio">
-        <h3>Asesoría</h3>
-        <p>Acompañamiento profesional en decisiones clave.</p>
-      </div>
-      <div class="servicio">
-        <h3>Análisis y gestión de procesos</h3>
-        <p>Diagnóstico y mejora de tus procesos internos.</p>
-      </div>
-      <div class="servicio">
-        <h3>Apertura de empresas</h3>
-        <p>Gestión completa para constituir tu empresa.</p>
-      </div>
-      <div class="servicio">
-        <h3>Liquidación de Impuestos</h3>
-        <p>Declaraciones y cumplimiento tributario al día.</p>
-      </div>
+      <div class="servicio"><h3>Consultoría</h3><p>Asesoramiento estratégico para optimizar tu negocio.</p></div>
+      <div class="servicio"><h3>Asesoría</h3><p>Acompañamiento profesional en decisiones clave.</p></div>
+      <div class="servicio"><h3>Análisis y gestión de procesos</h3><p>Diagnóstico y mejora de tus procesos internos.</p></div>
+      <div class="servicio"><h3>Apertura de empresas</h3><p>Gestión completa para constituir tu empresa.</p></div>
+      <div class="servicio"><h3>Liquidación de Impuestos</h3><p>Declaraciones y cumplimiento tributario al día.</p></div>
     </div>
   </section>
 
-  <!-- Servicios Gratuitos + Buscador RUC -->
   <section id="gratuitos">
     <h2>Servicios Gratuitos</h2>
     <div class="buscador">
       <h3>Consulta de RUC</h3>
-      <p>Ingresá el RUC (ej: 80012345-6) y consultá los datos del contribuyente.</p>
+      <p>Ingresá el RUC (ej: 80012345-6) y consultá los datos públicos disponibles del contribuyente.</p>
       <form onsubmit="event.preventDefault(); consultarRUC();">
-        <input type="text" id="ruc-input" placeholder="Ej: 80012345-6">
-        <button type="submit">Consultar</button>
+        <input type="text" id="ruc-input" placeholder="Ej: 80012345-6" autocomplete="off" maxlength="12">
+        <button id="consultar-btn" type="submit">Consultar</button>
       </form>
-      <div id="resultado"></div>
+      <div id="resultado" aria-live="polite"></div>
     </div>
   </section>
 
-  <!-- Contacto -->
   <section class="contacto" id="contacto">
     <h2>Contacto</h2>
     <p>¿Necesitás ayuda con tu empresa? Escribinos y te asesoramos.</p>
     <p><strong>Email:</strong> kakuaaconsultores@gmail.com</p>
   </section>
 
-  <footer>
-    <p>&copy; 2026 Kakuaa Consultores. Todos los derechos reservados.</p>
-  </footer>
+  <footer><p>&copy; 2026 Kakuaa Consultores. Todos los derechos reservados.</p></footer>
 
-  <!-- Script del buscador de RUC -->
   <script>
+  function escaparHTML(valor) {
+    const div = document.createElement('div');
+    div.textContent = String(valor ?? '-');
+    return div.innerHTML;
+  }
+
+  function normalizarRUC(valor) {
+    return valor.trim().replace(/\s+/g, '').toUpperCase();
+  }
+
   async function consultarRUC() {
-  const ruc = document.getElementById('ruc-input').value.trim();
-  const resultado = document.getElementById('resultado');
+    const input = document.getElementById('ruc-input');
+    const boton = document.getElementById('consultar-btn');
+    const resultado = document.getElementById('resultado');
+    const ruc = normalizarRUC(input.value);
 
-  if (!ruc) {
-    alert('Por favor ingresá un RUC');
-    return;
-  }
-
-  resultado.style.display = 'block';
-  resultado.innerHTML = '<p>Cargando...</p>';
-
-  try {
-    const resp = await fetch('https://backend-ruc-1.onrender.com/api/ruc?ruc=' + encodeURIComponent(ruc));
-    const json = await resp.json();
-    // La API devuelve los datos dentro de "data"
-    const data = json.data || json;
-
-    if (data.error || json.error) {
-      resultado.innerHTML = '<p style="color:red;">Error: ' + (data.error || json.error) + '</p>';
-    } else {
-      resultado.innerHTML =
-        '<p><strong>RUC:</strong> ' + (data.ruc || '-') + '</p>' +
-        '<p><strong>Razón Social:</strong> ' + (data.razonSocial || '-') + '</p>' +
-        '<p><strong>Nombre Fantasía:</strong> ' + (data.nombreFantasia || '-') + '</p>' +
-        '<p><strong>Estado:</strong> ' + (data.estado || '-') + '</p>' +
-        '<p><strong>Categoría:</strong> ' + (data.categoria || '-') + '</p>';
+    if (!/^\d{5,8}-\d$/.test(ruc)) {
+      resultado.style.display = 'block';
+      resultado.innerHTML = '<div class="ruc-error">Ingresá un RUC válido con el formato <strong>80012345-6</strong>.</div>';
+      return;
     }
-  } catch (err) {
-    resultado.innerHTML = '<p style="color:red;">No se pudo conectar al servidor. Verificá que el backend esté activo.</p>';
+
+    resultado.style.display = 'block';
+    resultado.innerHTML = '<div class="ruc-loading">Consultando RUC…</div>';
+    boton.disabled = true;
+
+    try {
+      const resp = await fetch('https://backend-ruc-1.onrender.com/api/ruc?ruc=' + encodeURIComponent(ruc));
+      let json;
+      try {
+        json = await resp.json();
+      } catch (_) {
+        throw new Error('Respuesta inválida del servidor.');
+      }
+
+      if (!resp.ok || json.error) {
+        throw new Error(json.error || 'No se pudo consultar el RUC.');
+      }
+
+      const data = json.data || json;
+      const estado = data.estado || 'No informado';
+      const estadoClase = String(estado).toUpperCase() === 'ACTIVO' ? 'estado' : 'estado' + ' estado-otro';
+
+      resultado.innerHTML =
+        '<div class="ruc-card">' +
+          '<div class="ruc-card-header">' +
+            '<strong>Datos del contribuyente</strong>' +
+            '<span class="' + estadoClase + '">' + escaparHTML(estado) + '</span>' +
+          '</div>' +
+          '<div class="ruc-grid">' +
+            '<div class="ruc-item"><span class="ruc-label">RUC</span><span class="ruc-value">' + escaparHTML(data.ruc || ruc) + '</span></div>' +
+            '<div class="ruc-item"><span class="ruc-label">Razón Social</span><span class="ruc-value">' + escaparHTML(data.razonSocial || '-') + '</span></div>' +
+            '<div class="ruc-item"><span class="ruc-label">Documento</span><span class="ruc-value">' + escaparHTML(data.doc || '-') + '</span></div>' +
+            '<div class="ruc-item"><span class="ruc-label">Dígito Verificador</span><span class="ruc-value">' + escaparHTML(data.dv ?? '-') + '</span></div>' +
+            '<div class="ruc-item"><span class="ruc-label">Tipo</span><span class="ruc-value">' + (data.esPersonaJuridica === true ? 'Persona jurídica' : data.esPersonaJuridica === false ? 'Persona física' : '-') + '</span></div>' +
+            '<div class="ruc-item"><span class="ruc-label">Entidad Pública</span><span class="ruc-value">' + (data.esEntidadPublica === true ? 'Sí' : data.esEntidadPublica === false ? 'No' : '-') + '</span></div>' +
+          '</div>' +
+          '<div class="ruc-foot">Información consultada mediante el servicio de consulta de RUC.</div>' +
+        '</div>';
+    } catch (err) {
+      resultado.innerHTML = '<div class="ruc-error">' + escaparHTML(err.message || 'No se pudo conectar al servidor.') + '</div>';
+    } finally {
+      boton.disabled = false;
+    }
   }
-}
-</script>
 
-<script>
-function abrirInicioSesion(event) {
-  event.preventDefault();
-
-  const ancho = 460;
-  const alto = 720;
-  const izquierda = Math.max(0, Math.round((screen.availWidth - ancho) / 2));
-  const arriba = Math.max(0, Math.round((screen.availHeight - alto) / 2));
-
-  const ventana = window.open(
-    'login.html',
-    'kakuaaLogin',
-    'width=' + ancho +
-    ',height=' + alto +
-    ',left=' + izquierda +
-    ',top=' + arriba +
-    ',resizable=yes,scrollbars=yes'
-  );
-
-  if (!ventana) {
-    window.location.href = 'login.html';
-    return;
+  function abrirInicioSesion(event) {
+    event.preventDefault();
+    const ancho = 460;
+    const alto = 720;
+    const izquierda = Math.max(0, Math.round((screen.availWidth - ancho) / 2));
+    const arriba = Math.max(0, Math.round((screen.availHeight - alto) / 2));
+    const ventana = window.open(
+      'login.html',
+      'kakuaaLogin',
+      'width=' + ancho + ',height=' + alto + ',left=' + izquierda + ',top=' + arriba + ',resizable=yes,scrollbars=yes'
+    );
+    if (!ventana) {
+      window.location.href = 'login.html';
+      return;
+    }
+    ventana.focus();
   }
-
-  ventana.focus();
-}
-</script>
-
+  </script>
 </body>
 </html>
