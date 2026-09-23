@@ -213,7 +213,11 @@
       if (!resp.ok || json.error) throw new Error(json.error || 'No se pudo realizar la búsqueda.');
 
       const data = json.data || json.results || json.content || [];
-      const lista = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+      // TuRuc devuelve la búsqueda como data.contribuyentes.
+      // Mantenemos compatibilidad con otras formas de respuesta por seguridad.
+      const lista = Array.isArray(data) ? data :
+        (Array.isArray(data.contribuyentes) ? data.contribuyentes :
+        (Array.isArray(data.data) ? data.data : []));
       const total = json.totalElements ?? json.total ?? (Array.isArray(data) ? null : data.totalElements);
       const totalPaginas = json.totalPages ?? (Array.isArray(data) ? null : data.totalPages);
 
