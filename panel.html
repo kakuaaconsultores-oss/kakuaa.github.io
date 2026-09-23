@@ -487,10 +487,14 @@
                             <div><label>Naturaleza</label><select id="cc-naturaleza"><option value="deudora">Deudora</option><option value="acreedora">Acreedora</option></select></div>
                             <div><label>Nivel</label><input id="cc-nivel" type="number" min="1" value="1"></div>
                             <div><label>Cuenta padre</label><select id="cc-padre"><option value="">Sin cuenta padre</option></select></div>
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--gris-borde);border-radius:8px;background:#fbfcfe;">
+                                <input id="cc-imputable" type="checkbox" checked style="width:auto;accent-color:var(--verde);">
+                                <label for="cc-imputable" style="margin:0;cursor:pointer;"><strong>Cuenta imputable</strong><span style="display:block;color:var(--texto-suave);font-size:.72rem;margin-top:2px;">Puede recibir movimientos contables.</span></label>
+                            </div>
                         </div>
                         <div class="quick-actions"><button class="btn btn-verde" onclick="guardarCuentaContable()">Guardar cuenta</button><button class="btn btn-gris" onclick="ocultarFormularioCuenta()">Cancelar</button></div>
                     </div>
-                    <div class="table-wrap" style="margin-top:20px;"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Naturaleza</th><th>Nivel</th><th>Padre</th><th>Estado</th></tr></thead><tbody id="tabla-cuentas-contables"><tr><td colspan="7">Cargando cuentas...</td></tr></tbody></table></div>
+                    <div class="table-wrap" style="margin-top:20px;"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Naturaleza</th><th>Nivel</th><th>Padre</th><th>Imputable</th><th>Estado</th></tr></thead><tbody id="tabla-cuentas-contables"><tr><td colspan="7">Cargando cuentas...</td></tr></tbody></table></div>
                 </div>
             </section>
             <section class="vista" id="vista-plan-cuentas">
@@ -823,8 +827,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             const tbody = document.getElementById('tabla-cuentas-contables');
             const plan = document.querySelector('#arbol-plan-cuentas tbody');
             const padre = document.getElementById('cc-padre');
-            if (padre) padre.innerHTML = '<option value="">Sin cuenta padre</option>' + cuentas.map(c => '<option value="'+c.id+'">'+escapeHtml(c.codigo)+' — '+escapeHtml(c.nombre)+'</option>').join('');
-            if (tbody) tbody.innerHTML = cuentas.length ? cuentas.map(c => '<tr><td><strong>'+escapeHtml(c.codigo)+'</strong></td><td>'+escapeHtml(c.nombre)+'</td><td>'+escapeHtml(c.tipo)+'</td><td>'+escapeHtml(c.naturaleza)+'</td><td>'+c.nivel+'</td><td>'+(c.padre_codigo ? escapeHtml(c.padre_codigo) : '—')+'</td><td>'+(c.activa ? 'Activa' : 'Inactiva')+'</td></tr>').join('') : '<tr><td colspan="7">Todavía no hay cuentas contables.</td></tr>';
+            if (padre) padre.innerHTML = '<option value="">Sin cuenta padre</option>' + cuentas.filter(c => !c.imputable).map(c => '<option value="'+c.id+'">'+escapeHtml(c.codigo)+' — '+escapeHtml(c.nombre)+' (No imputable)</option>').join('');
+            if (tbody) tbody.innerHTML = cuentas.length ? cuentas.map(c => '<tr><td><strong>'+escapeHtml(c.codigo)+'</strong></td><td>'+escapeHtml(c.nombre)+'</td><td>'+escapeHtml(c.tipo)+'</td><td>'+escapeHtml(c.naturaleza)+'</td><td>'+c.nivel+'</td><td>'+(c.padre_codigo ? escapeHtml(c.padre_codigo) : '—')+'</td><td>'+(c.imputable ? 'Sí' : 'No')+'</td><td>'+(c.activa ? 'Activa' : 'Inactiva')+'</td></tr>').join('') : '<tr><td colspan="8">Todavía no hay cuentas contables.</td></tr>';
             if (plan) plan.innerHTML = cuentas.length ? cuentas.map(c => '<tr><td><strong>'+escapeHtml(c.codigo)+'</strong></td><td style="padding-left:'+Math.min((c.nivel-1)*22,110)+'px">'+escapeHtml(c.nombre)+'</td><td>'+escapeHtml(c.tipo)+'</td><td>'+escapeHtml(c.naturaleza)+'</td><td>'+(c.imputable ? 'Sí' : 'No')+'</td></tr>').join('') : '<tr><td colspan="5">Todavía no hay cuentas contables.</td></tr>';
         }
         function mostrarFormularioCuenta() {
@@ -833,12 +837,15 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
         }
         function ocultarFormularioCuenta() { document.getElementById('form-cuenta-contable').style.display='none'; }
         async function guardarCuentaContable() {
-            const payload={codigo:document.getElementById('cc-codigo').value.trim(),nombre:document.getElementById('cc-nombre').value.trim(),tipo:document.getElementById('cc-tipo').value,naturaleza:document.getElementById('cc-naturaleza').value,nivel:Number(document.getElementById('cc-nivel').value||1),cuenta_padre_id:document.getElementById('cc-padre').value||null,imputable:true,activa:true};
+            const payload={codigo:document.getElementById('cc-codigo').value.trim(),nombre:document.getElementById('cc-nombre').value.trim(),tipo:document.getElementById('cc-tipo').value,naturaleza:document.getElementById('cc-naturaleza').value,nivel:Number(document.getElementById('cc-nivel').value||1),cuenta_padre_id:document.getElementById('cc-padre').value||null,imputable:document.getElementById('cc-imputable').checked,activa:true};
             const resp=await fetchApi(API+'/api/contabilidad/cuentas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
             const data=await resp.json();
             if(!resp.ok){alert(data.error||'No se pudo crear la cuenta.');return;}
             alert('Cuenta creada correctamente.');
             ['cc-codigo','cc-nombre'].forEach(id=>document.getElementById(id).value='');
+            document.getElementById('cc-nivel').value='1';
+            document.getElementById('cc-padre').value='';
+            document.getElementById('cc-imputable').checked=true;
             ocultarFormularioCuenta(); cargarCuentasContables();
         }
 
