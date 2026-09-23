@@ -54,6 +54,14 @@
     .ruc-error { background: #fff1f1; color: #a33a3a; border: 1px solid #f0d1d1; }
     .contacto { text-align: center; }
     .contacto p { margin-bottom: 10px; }
+    .login-overlay { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(11, 20, 42, .58); backdrop-filter: blur(5px); }
+    .login-overlay.activo { display: flex; }
+    .login-panel { width: min(460px, 100%); height: min(760px, calc(100vh - 48px)); background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 24px 70px rgba(9, 22, 49, .28); position: relative; animation: loginEntrada .18s ease-out; }
+    .login-panel iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+    .login-cerrar { position: absolute; top: 10px; right: 10px; z-index: 2; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(255,255,255,.94); color: #1a2a5e; font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+    .login-cerrar:hover { background: #eef4f2; }
+    @keyframes loginEntrada { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    body.login-abierto { overflow: hidden; }
     footer { background: #1a2a5e; color: white; text-align: center; padding: 20px; margin-top: 40px; }
     @media (max-width: 700px) {
       header { padding: 15px 20px; flex-direction: column; gap: 12px; }
@@ -124,6 +132,13 @@
   </section>
 
   <footer><p>&copy; 2026 Kakuaa Consultores. Todos los derechos reservados.</p></footer>
+
+  <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" aria-label="Iniciar sesión">
+    <div class="login-panel">
+      <button class="login-cerrar" type="button" onclick="cerrarInicioSesion()" aria-label="Cerrar">×</button>
+      <iframe id="login-frame" title="Inicio de sesión de Kakuaa" loading="eager"></iframe>
+    </div>
+  </div>
 
   <script>
   function escaparHTML(valor) {
@@ -263,21 +278,40 @@
 
   function abrirInicioSesion(event) {
     event.preventDefault();
-    const ancho = 460;
-    const alto = 720;
-    const izquierda = Math.max(0, Math.round((screen.availWidth - ancho) / 2));
-    const arriba = Math.max(0, Math.round((screen.availHeight - alto) / 2));
-    const ventana = window.open(
-      'login.html',
-      'kakuaaLogin',
-      'width=' + ancho + ',height=' + alto + ',left=' + izquierda + ',top=' + arriba + ',resizable=yes,scrollbars=yes'
-    );
-    if (!ventana) {
-      window.location.href = 'login.html';
-      return;
-    }
-    ventana.focus();
+    const overlay = document.getElementById('login-overlay');
+    const frame = document.getElementById('login-frame');
+    frame.src = 'login.html';
+    overlay.classList.add('activo');
+    document.body.classList.add('login-abierto');
+    setTimeout(() => document.querySelector('.login-cerrar')?.focus(), 0);
   }
+
+  function cerrarInicioSesion() {
+    const overlay = document.getElementById('login-overlay');
+    const frame = document.getElementById('login-frame');
+    overlay.classList.remove('activo');
+    document.body.classList.remove('login-abierto');
+    frame.src = 'about:blank';
+  }
+
+  document.getElementById('login-overlay').addEventListener('click', function(event) {
+    if (event.target === this) cerrarInicioSesion();
+  });
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') cerrarInicioSesion();
+  });
+
+  document.getElementById('login-frame').addEventListener('load', function() {
+    try {
+      const ruta = this.contentWindow.location.pathname;
+      if (ruta.endsWith('/panel.html') || ruta.endsWith('/cambiar-password.html') || ruta.endsWith('/mis-documentos.html')) {
+        window.location.href = ruta;
+      }
+    } catch (_) {
+      // El iframe permanece aislado si el navegador impide leer su URL.
+    }
+  });
   </script>
 </body>
 </html>
