@@ -97,6 +97,14 @@
         <input type="text" id="ruc-input" placeholder="Ej: 80012345-6" autocomplete="off" maxlength="12">
         <button id="consultar-btn" type="submit">Consultar</button>
       </form>
+      <div style="margin-top:18px;padding-top:18px;border-top:1px solid #e5ecea;">
+        <div style="font-weight:600;color:#1a2a5e;margin-bottom:8px;">¿No tenés el RUC?</div>
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="nombre-input" placeholder="Buscar por nombre o razón social" autocomplete="off" maxlength="50">
+          <button type="button" id="buscar-nombre-btn" onclick="buscarPorNombre(0)">Buscar nombre</button>
+        </div>
+      </div>
+      <div id="resultado-nombre" aria-live="polite"></div>
       <div id="resultado" aria-live="polite"></div>
     </div>
   </section>
@@ -174,6 +182,71 @@
     } finally {
       boton.disabled = false;
     }
+  }
+
+
+  async function buscarPorNombre(pagina) {
+    const input = document.getElementById('nombre-input');
+    const resultado = document.getElementById('resultado-nombre');
+    const boton = document.getElementById('buscar-nombre-btn');
+    const termino = input.value.trim();
+
+    if (termino.length < 3) {
+      resultado.innerHTML = '<div class="ruc-error">Ingresá al menos 3 caracteres.</div>';
+      return;
+    }
+
+    resultado.innerHTML = '<div class="ruc-loading">Buscando coincidencias…</div>';
+    boton.disabled = true;
+
+    try {
+      const resp = await fetch('https://backend-ruc-1.onrender.com/api/ruc/search?search=' + encodeURIComponent(termino) + '&page=' + pagina);
+      const json = await resp.json();
+      if (!resp.ok || json.error) throw new Error(json.error || 'No se pudo realizar la búsqueda.');
+
+      const data = json.data || json.results || json.content || [];
+      const lista = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+      const total = json.totalElements ?? json.total ?? (Array.isArray(data) ? null : data.totalElements);
+      const totalPaginas = json.totalPages ?? (Array.isArray(data) ? null : data.totalPages);
+
+      if (!lista.length) {
+        resultado.innerHTML = '<div class="ruc-error">No encontramos coincidencias para <strong>' + escaparHTML(termino) + '</strong>.</div>';
+        return;
+      }
+
+      let html = '<div class="resultado-lista">';
+      html += '<div style="color:#687773;font-size:.9rem;margin:12px 0 8px;">Coincidencias' + (total != null ? ': <strong>' + escaparHTML(total) + '</strong>' : '') + '</div>';
+
+      lista.forEach(function(item) {
+        const ruc = item.ruc || item.fullRuc || item.documento || '-';
+        const nombre = item.razonSocial || item.nombre || item.name || '-';
+        const estado = item.estado || item.state || 'No informado';
+        html += '<div class="resultado-item" onclick="consultarResultadoRUC(' + JSON.stringify(String(ruc)) + ')">' +
+          '<strong>' + escaparHTML(nombre) + '</strong>' +
+          '<div class="resultado-meta">RUC: ' + escaparHTML(ruc) + ' · Estado: ' + escaparHTML(estado) + '</div>' +
+        '</div>';
+      });
+
+      html += '</div>';
+
+      if (totalPaginas && totalPaginas > 1) {
+        html += '<div class="paginacion"><button onclick="buscarPorNombre(' + (pagina - 1) + ')" ' + (pagina <= 0 ? 'disabled' : '') + '>← Anterior</button><span>Página ' + (pagina + 1) + ' de ' + totalPaginas + '</span><button onclick="buscarPorNombre(' + (pagina + 1) + ')" ' + (pagina + 1 >= totalPaginas ? 'disabled' : '') + '>Siguiente →</button></div>';
+      } else {
+        html += '<div class="paginacion"><button onclick="buscarPorNombre(' + (pagina - 1) + ')" ' + (pagina <= 0 ? 'disabled' : '') + '>← Anterior</button><span>Página ' + (pagina + 1) + '</span><button onclick="buscarPorNombre(' + (pagina + 1) + ')">Siguiente →</button></div>';
+      }
+
+      resultado.innerHTML = html;
+    } catch (err) {
+      resultado.innerHTML = '<div class="ruc-error">' + escaparHTML(err.message || 'No se pudo conectar al servidor.') + '</div>';
+    } finally {
+      boton.disabled = false;
+    }
+  }
+
+  async function consultarResultadoRUC(ruc) {
+    const input = document.getElementById('ruc-input');
+    input.value = ruc;
+    await consultarRUC();
   }
 
   function abrirInicioSesion(event) {
