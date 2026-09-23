@@ -59,6 +59,22 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
 
         const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
 
+        async function restaurarSesion() {
+            try {
+                const resp = await fetchApi(API + '/api/sesion');
+                if (!resp.ok) throw new Error('sesion_invalida');
+                const data = await resp.json();
+                if (!data.usuario) throw new Error('sesion_invalida');
+                sessionStorage.setItem('usuario', JSON.stringify(data.usuario));
+                return true;
+            } catch (e) {
+                sessionStorage.removeItem('csrf_token');
+                sessionStorage.removeItem('usuario');
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+
         function verificarSesion() {
             const usuario = sessionStorage.getItem('usuario'); if (!usuario) { window.location.href = 'login.html'; return false; }
             return true;
@@ -129,7 +145,9 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             window.location.href = 'login.html';
         }
 
-        cargarDocumentos();
+        (async function iniciarDocumentos() {
+            if (await restaurarSesion()) cargarDocumentos();
+        })();
     </script>
 </body>
 </html>
