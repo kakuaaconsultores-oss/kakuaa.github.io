@@ -39,6 +39,21 @@ input{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:1
 </div>
 <script>
 const API='https://backend-ruc-1.onrender.com';
+
+async function redirigirSiSesionActiva(){
+ try{
+  const resp=await fetchApi(API+'/api/sesion');
+  if(!resp.ok)return;
+  const data=await resp.json();
+  if(data.usuario){
+   sessionStorage.setItem('usuario',JSON.stringify(data.usuario));
+   if(data.usuario.debe_cambiar) window.location.href='cambiar-password.html';
+   else if(['superadmin','admin','operativo'].includes(data.usuario.rol)) window.location.href='panel.html';
+   else window.location.href='mis-documentos.html';
+  }
+ }catch(e){}
+}
+
 function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=sessionStorage.getItem('csrf_token')||''; if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
 let challenge='';
 let intervalo=null;
@@ -72,5 +87,6 @@ else{mensaje(data.error||'No se pudo generar un nuevo código.')}
 }catch(e){mensaje('No se pudo conectar al servidor.')}finally{btn.disabled=regeneracionesRestantes<=0}
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'){if(document.getElementById('otpBox').style.display==='block')verificarOTP();else iniciarSesion()}});
+redirigirSiSesionActiva();
 </script>
 </body></html>
