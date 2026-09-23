@@ -87,6 +87,5 @@ else{mensaje(data.error||'No se pudo generar un nuevo código.')}
 }catch(e){mensaje('No se pudo conectar al servidor.')}finally{btn.disabled=regeneracionesRestantes<=0}
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'){if(document.getElementById('otpBox').style.display==='block')verificarOTP();else iniciarSesion()}});
-redirigirSiSesionActiva();
 </script>
 </body></html>
