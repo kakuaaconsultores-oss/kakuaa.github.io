@@ -181,6 +181,11 @@
         .form-grid textarea { min-height:80px; resize:vertical; }
         .form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus { border-color:var(--verde); }
         .acciones-tarea { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+        .cronometro-panel { background:#fff; border:1px solid var(--gris-borde); border-radius:14px; padding:16px 18px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+        .cronometro-panel.activo { border-color:var(--verde); box-shadow:0 4px 16px rgba(46,158,91,.10); }
+        .cronometro-info strong { color:var(--azul); display:block; margin-bottom:4px; }
+        .cronometro-info span { color:var(--texto-suave); font-size:.82rem; }
+        .cronometro-tiempo { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:1.45rem; font-weight:800; color:var(--verde); min-width:105px; text-align:right; }
         @media (max-width:800px) { .dashboard-grid,.form-grid { grid-template-columns:1fr; } .sidebar { width:190px; } .contenido { padding:16px; } }
 
         .oculto { display: none; }
@@ -273,6 +278,13 @@
             <section class="vista" id="vista-tareas">
                 <h2 class="titulo-seccion">Tareas y seguimiento</h2>
                 <p class="subtitulo">Asigná trabajo a ADMIN/OPERATIVO, ordená por prioridad y medí el tiempo real invertido.</p>
+                <div class="cronometro-panel" id="cronometro-panel">
+                    <div class="cronometro-info">
+                        <strong id="cronometro-titulo">Sin tarea activa</strong>
+                        <span id="cronometro-cliente">Iniciá una tarea para comenzar a registrar tiempo.</span>
+                    </div>
+                    <div class="cronometro-tiempo" id="cronometro-tiempo">00:00:00</div>
+                </div>
                 <div class="panel-form" id="form-tarea-panel">
                     <h3>Nueva tarea</h3>
                     <div class="form-grid">
@@ -563,7 +575,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             if (vista === 'articulos') { prepararCatalogos(); cargarArticulos(); }
             if (vista === 'tarifas') { prepararCatalogos(); cargarTarifas(); }
             if (vista === 'costos') { prepararCatalogos(); cargarCostosPersona(); }
-            if (vista === 'tareas') { prepararCatalogos(); cargarTareas(); }
+            if (vista === 'tareas') { prepararCatalogos(); cargarTareas(); cargarCronometroActivo(); }
             if (vista === 'facturacion') { prepararCatalogos(); cargarFacturacion(); }
             if (vista === 'tickets') cargarTickets();
             if (vista === 'usuarios') cargarUsuarios();
@@ -608,6 +620,44 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             ['tarea-cliente','fact-cliente'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">Seleccioná un cliente</option>'+clientes.map(c=>'<option value="'+c.id+'">'+escapeHtml(c.nombre)+' — '+escapeHtml(c.ruc)+'</option>').join('');});
             const as=document.getElementById('tarea-asignado');if(as)as.innerHTML='<option value="">Sin asignar</option>'+staff.map(u=>'<option value="'+u.id+'">'+escapeHtml(u.nombre)+' — '+u.rol.toUpperCase()+'</option>').join('');
         }
+        let intervaloCronometro = null;
+        let inicioCronometro = null;
+
+        function actualizarRelojCronometro() {
+            const el = document.getElementById('cronometro-tiempo');
+            if (!el || !inicioCronometro) return;
+            const segundos = Math.max(0, Math.floor((Date.now() - inicioCronometro) / 1000));
+            const h = String(Math.floor(segundos / 3600)).padStart(2, '0');
+            const m = String(Math.floor((segundos % 3600) / 60)).padStart(2, '0');
+            const s = String(segundos % 60).padStart(2, '0');
+            el.textContent = h + ':' + m + ':' + s;
+        }
+
+        async function cargarCronometroActivo() {
+            const panel = document.getElementById('cronometro-panel');
+            if (!panel) return;
+            try {
+                const r = await fetchApi(API + '/api/admin/tiempo/activo');
+                if (!r.ok) return;
+                const sesion = await r.json();
+                clearInterval(intervaloCronometro);
+                if (!sesion) {
+                    inicioCronometro = null;
+                    panel.classList.remove('activo');
+                    document.getElementById('cronometro-titulo').textContent = 'Sin tarea activa';
+                    document.getElementById('cronometro-cliente').textContent = 'Iniciá una tarea para comenzar a registrar tiempo.';
+                    document.getElementById('cronometro-tiempo').textContent = '00:00:00';
+                    return;
+                }
+                inicioCronometro = new Date(String(sesion.inicio).replace(' ', 'T') + 'Z').getTime();
+                panel.classList.add('activo');
+                document.getElementById('cronometro-titulo').textContent = '⏱ ' + (sesion.titulo || 'Tarea en progreso');
+                document.getElementById('cronometro-cliente').textContent = sesion.cliente_nombre || 'Cliente';
+                actualizarRelojCronometro();
+                intervaloCronometro = setInterval(actualizarRelojCronometro, 1000);
+            } catch (e) {}
+        }
+
         async function cargarTareas() {
             const cont=document.getElementById('lista-tareas');if(!cont)return;
             try{
@@ -623,8 +673,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             const r=await fetchApi(API+'/api/admin/tareas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo crear la tarea.');return;}
             document.getElementById('tarea-titulo').value='';document.getElementById('tarea-descripcion').value='';document.getElementById('tarea-fecha').value='';cargarTareas();cargarDashboard();
         }
-        async function iniciarTarea(id){const r=await fetchApi(API+'/api/admin/tareas/'+id+'/iniciar',{method:'POST'}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo iniciar.');return;}cargarTareas();cargarDashboard();}
-        async function detenerTarea(id){const r=await fetchApi(API+'/api/admin/tareas/'+id+'/detener',{method:'POST'}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo detener.');return;}cargarTareas();cargarDashboard();}
+        async function iniciarTarea(id){const r=await fetchApi(API+'/api/admin/tareas/'+id+'/iniciar',{method:'POST'}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo iniciar.');return;}cargarTareas();cargarCronometroActivo();if(esAdmin())cargarDashboard();}
+        async function detenerTarea(id){const r=await fetchApi(API+'/api/admin/tareas/'+id+'/detener',{method:'POST'}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo detener.');return;}cargarTareas();cargarCronometroActivo();if(esAdmin())cargarDashboard();}
         async function completarTarea(id){const r=await fetchApi(API+'/api/admin/tareas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'completada'})}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo completar.');return;}cargarTareas();cargarDashboard();}
         async function cargarFacturacion(){
             const cont=document.getElementById('lista-facturacion');if(!cont)return;const r=await fetchApi(API+'/api/admin/facturacion');if(!r.ok){cont.innerHTML='<div class="sin-datos">No se pudo cargar.</div>';return;}const rows=await r.json();let html='<table><thead><tr><th>Fecha</th><th>Factura</th><th>Cliente</th><th>Concepto</th><th>Monto</th><th>Estado</th></tr></thead><tbody>';rows.forEach(f=>{html+='<tr><td>'+escapeHtml(f.fecha)+'</td><td>'+escapeHtml(f.numero)+'</td><td>'+escapeHtml(f.cliente_nombre)+'</td><td>'+escapeHtml(f.concepto)+'</td><td>'+formatoGuarani(f.monto)+'</td><td>'+escapeHtml(f.estado)+'</td></tr>';});html+='</tbody></table>';cont.innerHTML=rows.length?html:'<div class="sin-datos">No hay facturas registradas.</div>';
