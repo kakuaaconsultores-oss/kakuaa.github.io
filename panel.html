@@ -190,36 +190,178 @@
 
         .oculto { display: none; }
         .sin-datos { text-align: center; color: var(--texto-suave); padding: 40px; font-size:  ​0.9rem; }
+    
+        /* ===== KAKUAA ERP SHELL ===== */
+        body { background:#f5f7fb; }
+        .header { height:68px; padding:0 24px; background:#fff; color:var(--texto); border-bottom:1px solid var(--gris-borde); box-shadow:0 2px 12px rgba(20,34,70,.05); }
+        .header-left,.header-actions,.usuario,.logo,.header .logo { display:flex; align-items:center; }
+        .header-left { gap:14px; }
+        .header .logo { gap:10px; }
+        .header .logo h1 { color:var(--azul); font-size:1.08rem; }
+        .header .logo span { color:var(--texto-suave); opacity:1; }
+        .header .logo img { width:38px;height:38px; }
+        .header-actions { gap:14px; }
+        .top-action { width:38px;height:38px;border:1px solid var(--gris-borde);background:#fff;border-radius:10px;cursor:pointer;font-size:1rem; }
+        .usuario { gap:10px; }
+        .usuario-datos { display:flex; flex-direction:column; min-width:110px; }
+        .usuario-datos strong { font-size:.82rem; }
+        .usuario-datos span { color:var(--texto-suave);font-size:.68rem;text-transform:uppercase; }
+        .header .usuario .avatar-mini { background:linear-gradient(135deg,var(--azul),var(--verde)); }
+        .header .btn-cerrar { background:#fff;color:var(--texto);border-color:var(--gris-borde); }
+        .header .btn-cerrar:hover { background:#f5f7fb; }
+        .menu-mobile { display:none;border:0;background:#eef2f7;color:var(--azul);width:40px;height:40px;border-radius:10px;font-size:1.2rem;cursor:pointer; }
+        .layout { min-height:calc(100vh - 68px); }
+        .sidebar { width:252px;padding:0;background:#fff;border-right:1px solid var(--gris-borde);overflow-y:auto;position:sticky;top:68px;height:calc(100vh - 68px); }
+        .sidebar-brand { height:76px;padding:0 20px;display:flex;align-items:center;gap:11px;border-bottom:1px solid #eef1f5; }
+        .brand-mark { width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--azul),var(--verde));color:#fff;display:grid;place-items:center;font-weight:800; }
+        .sidebar-brand strong { display:block;color:var(--azul);font-size:.95rem; }
+        .sidebar-brand span { display:block;color:var(--texto-suave);font-size:.68rem;margin-top:2px; }
+        .sidebar-nav { padding:12px 10px 24px; }
+        .nav-label { padding:12px 10px 6px;color:#98a0ad;font-size:.62rem;font-weight:800;letter-spacing:.09em; }
+        .sidebar .nav-item { margin:2px 0;padding:9px 10px;border-radius:9px;gap:9px;font-size:.82rem;font-weight:600; }
+        .sidebar .nav-item:hover { background:#f4f7fb;color:var(--azul); }
+        .sidebar .nav-item.activo { background:#eaf2ff;color:var(--azul);box-shadow:inset 3px 0 0 var(--verde); }
+        .nav-icon { width:21px;display:inline-flex;justify-content:center;flex:0 0 21px; }
+        .nav-group-title { display:flex;justify-content:space-between;align-items:center;padding:10px;color:var(--texto);font-size:.82rem;font-weight:700;cursor:pointer;border-radius:9px; }
+        .nav-group-title:hover { background:#f7f8fb; }
+        .nav-group-title .chevron { color:#9aa2af;transition:transform .2s; }
+        .nav-group.open .chevron { transform:rotate(180deg); }
+        .nav-subitems { display:none;padding-left:10px; }
+        .nav-group.open .nav-subitems { display:block; }
+        .nav-subitem { font-size:.77rem !important;font-weight:500 !important;padding:8px 10px 8px 30px !important; }
+        .contenido { padding:28px; max-width:1800px; }
+        .titulo-seccion { font-size:1.45rem; }
+        .subtitulo { max-width:850px; }
+        .dashboard-welcome { background:linear-gradient(135deg,#17285d 0%,#24447d 62%,#2e9e5b 130%);color:#fff;border-radius:18px;padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;gap:20px;align-items:center;overflow:hidden;position:relative; }
+        .dashboard-welcome:after { content:"";position:absolute;width:220px;height:220px;border-radius:50%;border:1px solid rgba(255,255,255,.12);right:-80px;top:-100px; }
+        .dashboard-welcome h2 { font-size:1.45rem;margin-bottom:6px;position:relative;z-index:1; }
+        .dashboard-welcome p { opacity:.82;font-size:.84rem;position:relative;z-index:1; }
+        .welcome-date { background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);padding:10px 14px;border-radius:10px;font-size:.78rem;white-space:nowrap; }
+        .module-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0; }
+        .module-card { background:#fff;border:1px solid var(--gris-borde);border-radius:14px;padding:17px;cursor:pointer;transition:.2s; }
+        .module-card:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(20,34,70,.07);border-color:#cfd8e8; }
+        .module-card .module-icon { width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#eef3fb;font-size:1.1rem;margin-bottom:12px; }
+        .module-card h3 { font-size:.88rem;color:var(--azul);margin-bottom:5px; }
+        .module-card p { font-size:.74rem;color:var(--texto-suave);line-height:1.45; }
+        .quick-actions { display:flex;gap:8px;flex-wrap:wrap;margin-top:16px; }
+        .erp-placeholder { background:#fff;border:1px solid var(--gris-borde);border-radius:16px;padding:22px; }
+        .erp-placeholder-head { display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:18px; }
+        .erp-placeholder h3 { color:var(--azul);font-size:1rem; }
+        .erp-placeholder p { color:var(--texto-suave);font-size:.78rem;margin-top:4px; }
+        .placeholder-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }
+        .placeholder-box { border:1px dashed #ccd4e2;border-radius:12px;padding:16px;background:#fbfcfe; }
+        .placeholder-box strong { display:block;color:var(--azul);font-size:.8rem;margin-bottom:5px; }
+        .placeholder-box span { color:var(--texto-suave);font-size:.72rem;line-height:1.45; }
+        .module-pill { display:inline-flex;padding:5px 9px;border-radius:999px;background:#e8f6ee;color:var(--verde);font-size:.67rem;font-weight:800;text-transform:uppercase; }
+        @media(max-width:1100px){ .module-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+        @media(max-width:800px){ .menu-mobile{display:block}.sidebar{position:fixed;left:-270px;top:68px;z-index:150;transition:left .2s;height:calc(100vh - 68px);box-shadow:8px 0 24px rgba(0,0,0,.08)}.sidebar.mobile-open{left:0}.contenido{padding:18px}.usuario-datos{display:none}.header{padding:0 14px}.header-actions{gap:7px}.header .btn-cerrar{padding:7px 9px}.placeholder-grid{grid-template-columns:1fr}.dashboard-welcome{align-items:flex-start;flex-direction:column}.welcome-date{white-space:normal} }
+
     </style>
 </head>
 <body>
 
     <!-- ===== HEADER ===== -->
     <header class="header">
+    <div class="header-left">
+        <button class="menu-mobile" type="button" onclick="toggleSidebar()" aria-label="Abrir menú">☰</button>
         <div class="logo">
             <img src="logo.png" alt="Kakuaa" onerror="this.style.display='none'">
             <div>
-                <h1>Kakuaa Consultores</h1>
-                <span id="rol-panel">Panel de Administración</span>
+                <h1>Kakuaa ERP</h1>
+                <span id="rol-panel">Sistema de gestión empresarial</span>
             </div>
         </div>
+    </div>
+    <div class="header-actions">
+        <button class="top-action" type="button" title="Notificaciones" onclick="mostrarNotificacionERP('No hay nuevas notificaciones.')">🔔</button>
         <div class="usuario">
             <div class="avatar-mini" id="avatar-admin">A</div>
+            <div class="usuario-datos"><strong id="usuario-header">Usuario</strong><span id="rol-header">SUPERADMIN</span></div>
             <button class="btn-cerrar" onclick="cerrarSesion()">Cerrar sesión</button>
         </div>
-    </header>
+    </div>
+</header>
 
     <div class="layout">
         <!-- ===== SIDEBAR ===== -->
-        <aside class="sidebar">
-            <div class="nav-item activo" data-vista="dashboard" onclick="cambiarVista('dashboard')">📊 Dashboard</div>
-            <div class="nav-item" data-vista="tareas" onclick="cambiarVista('tareas')">📝 Tareas</div>
-            <div class="nav-item" data-vista="facturacion" onclick="cambiarVista('facturacion')">💰 Facturación</div>
-            <div class="nav-item" data-vista="tickets" onclick="cambiarVista('tickets')">🎫 Tickets</div>
-            <div class="nav-item" data-vista="usuarios" onclick="cambiarVista('usuarios')">👥 Usuarios</div>
-            <div class="nav-item" data-vista="crear" onclick="cambiarVista('crear')">➕ Crear usuario</div>
-            <div class="nav-item" data-vista="seguridad" onclick="cambiarVista('seguridad')">🔐 Seguridad</div>
-        </aside>
+        <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-mark">K</div>
+        <div><strong>Kakuaa</strong><span>ERP Suite</span></div>
+    </div>
+    <div class="sidebar-nav">
+        <div class="nav-label">PRINCIPAL</div>
+        <div class="nav-item activo" data-vista="dashboard" onclick="cambiarVista('dashboard')"><span class="nav-icon">🏠</span><span>Inicio</span></div>
+
+        <div class="nav-label">GESTIÓN</div>
+        <div class="nav-group">
+            <div class="nav-group-title" onclick="toggleNavGroup(this)"><span><span class="nav-icon">👥</span> Clientes</span><span class="chevron">⌄</span></div>
+            <div class="nav-subitems">
+                <div class="nav-item nav-subitem" data-vista="clientes" onclick="cambiarVista('clientes')">Definición de Clientes</div>
+                <div class="nav-item nav-subitem" data-vista="tarifas-clientes" onclick="cambiarVista('tarifas-clientes')">Tarifas de Clientes</div>
+                <div class="nav-item nav-subitem" data-vista="estado-clientes" onclick="cambiarVista('estado-clientes')">Estado de Cuenta</div>
+            </div>
+        </div>
+        <div class="nav-group">
+            <div class="nav-group-title" onclick="toggleNavGroup(this)"><span><span class="nav-icon">⚙️</span> Gestión</span><span class="chevron">⌄</span></div>
+            <div class="nav-subitems">
+                <div class="nav-item nav-subitem" data-vista="definiciones" onclick="cambiarVista('definiciones')">Definiciones</div>
+                <div class="nav-item nav-subitem" data-vista="tareas" onclick="cambiarVista('tareas')">Definición de Tareas</div>
+                <div class="nav-item nav-subitem" data-vista="tiempo" onclick="cambiarVista('tiempo')">Control de tiempo</div>
+            </div>
+        </div>
+
+        <div class="nav-label">OPERACIONES</div>
+        <div class="nav-item" data-vista="documentos" onclick="cambiarVista('documentos')"><span class="nav-icon">📄</span><span>Documentos</span></div>
+
+        <div class="nav-group">
+            <div class="nav-group-title" onclick="toggleNavGroup(this)"><span><span class="nav-icon">🧾</span> Facturación</span><span class="chevron">⌄</span></div>
+            <div class="nav-subitems">
+                <div class="nav-item nav-subitem" data-vista="facturacion" onclick="cambiarVista('facturacion')">Facturas</div>
+                <div class="nav-item nav-subitem" data-vista="articulos" onclick="cambiarVista('articulos')">Artículos facturables</div>
+                <div class="nav-item nav-subitem" data-vista="tarifas" onclick="cambiarVista('tarifas')">Tarifas</div>
+            </div>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-group-title" onclick="toggleNavGroup(this)"><span><span class="nav-icon">🛒</span> Compras</span><span class="chevron">⌄</span></div>
+            <div class="nav-subitems">
+                <div class="nav-item nav-subitem" data-vista="articulos-compra" onclick="cambiarVista('articulos-compra')">Artículos de compra</div>
+                <div class="nav-item nav-subitem" data-vista="proveedores" onclick="cambiarVista('proveedores')">Definición de proveedores</div>
+                <div class="nav-item nav-subitem" data-vista="compras" onclick="cambiarVista('compras')">Registro de Compras</div>
+                <div class="nav-item nav-subitem" data-vista="pagos" onclick="cambiarVista('pagos')">Registro de pagos</div>
+                <div class="nav-item nav-subitem" data-vista="estado-proveedores" onclick="cambiarVista('estado-proveedores')">Estado de Cuenta</div>
+            </div>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-group-title" onclick="toggleNavGroup(this)"><span><span class="nav-icon">📊</span> Finanzas</span><span class="chevron">⌄</span></div>
+            <div class="nav-subitems">
+                <div class="nav-item nav-subitem" data-vista="costos" onclick="cambiarVista('costos')">Costos y márgenes</div>
+                <div class="nav-item nav-subitem" data-vista="centro-costos" onclick="cambiarVista('centro-costos')">Centro de Costos</div>
+                <div class="nav-item nav-subitem" data-vista="presupuestos" onclick="cambiarVista('presupuestos')">Presupuestos</div>
+                <div class="nav-item nav-subitem" data-vista="balance" onclick="cambiarVista('balance')">Balance General</div>
+                <div class="nav-item nav-subitem" data-vista="resultados" onclick="cambiarVista('resultados')">Estado de Resultados</div>
+            </div>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-group-title" onclick="toggleNavGroup(this)"><span><span class="nav-icon">🏦</span> Banca</span><span class="chevron">⌄</span></div>
+            <div class="nav-subitems">
+                <div class="nav-item nav-subitem" data-vista="bancos" onclick="cambiarVista('bancos')">Definición de bancos</div>
+                <div class="nav-item nav-subitem" data-vista="medios-pago" onclick="cambiarVista('medios-pago')">Medios de pago</div>
+                <div class="nav-item nav-subitem" data-vista="gestion-bancos" onclick="cambiarVista('gestion-bancos')">Gestión de bancos</div>
+            </div>
+        </div>
+
+        <div class="nav-label">SISTEMA</div>
+        <div class="nav-item" data-vista="usuarios" onclick="cambiarVista('usuarios')"><span class="nav-icon">👤</span><span>Usuarios</span></div>
+        <div class="nav-item" data-vista="crear" onclick="cambiarVista('crear')"><span class="nav-icon">➕</span><span>Crear usuario</span></div>
+        <div class="nav-item" data-vista="tickets" onclick="cambiarVista('tickets')"><span class="nav-icon">🎫</span><span>Tickets</span></div>
+        <div class="nav-item" data-vista="seguridad" onclick="cambiarVista('seguridad')"><span class="nav-icon">🔐</span><span>Seguridad</span></div>
+        <div class="nav-item" data-vista="configuracion" onclick="cambiarVista('configuracion')"><span class="nav-icon">⚙️</span><span>Configuración</span></div>
+    </div>
+</aside>
 
         <!-- ===== CONTENIDO ===== -->
         <main class="contenido">
@@ -257,6 +399,16 @@
 
             <!-- DASHBOARD SUPERADMIN -->
             <section class="vista activa" id="vista-dashboard">
+                <div class="dashboard-welcome">
+                    <div><h2>Bienvenido a Kakuaa ERP</h2><p>Centro de gestión de clientes, operaciones, facturación, compras, finanzas y banca.</p></div>
+                    <div class="welcome-date" id="dashboard-fecha">Panel ejecutivo</div>
+                </div>
+                <div class="module-grid">
+                    <div class="module-card" onclick="cambiarVista('clientes')"><div class="module-icon">👥</div><h3>Clientes</h3><p>Maestro de clientes, tarifas y estados de cuenta.</p></div>
+                    <div class="module-card" onclick="cambiarVista('facturacion')"><div class="module-icon">🧾</div><h3>Facturación</h3><p>Facturas, artículos facturables y tarifas.</p></div>
+                    <div class="module-card" onclick="cambiarVista('compras')"><div class="module-icon">🛒</div><h3>Compras</h3><p>Proveedores, compras y pagos.</p></div>
+                    <div class="module-card" onclick="cambiarVista('resultados')"><div class="module-icon">📊</div><h3>Finanzas</h3><p>Costos, presupuestos y estados financieros.</p></div>
+                </div>
                 <h2 class="titulo-seccion">Dashboard ejecutivo</h2>
                 <p class="subtitulo">Clientes, facturación, horas de trabajo, tareas y tickets en un solo lugar.</p>
                 <div class="metricas">
@@ -273,6 +425,35 @@
                     <div class="tabla-panel"><h3>Prioridad y avance de tareas</h3><div id="resumen-tareas-dashboard"><div class="sin-datos">Cargando...</div></div></div>
                 </div>
             </section>
+
+            
+            <!-- ===== MÓDULOS ERP ===== -->
+            <section class="vista" id="vista-clientes">
+                <h2 class="titulo-seccion">Clientes</h2><p class="subtitulo">Administrá la información comercial y financiera de cada cliente.</p>
+                <div class="erp-placeholder"><div class="erp-placeholder-head"><div><h3>Definición de Clientes</h3><p>Maestro central de clientes y contribuyentes.</p></div><span class="module-pill">Módulo</span></div>
+                <div class="placeholder-grid"><div class="placeholder-box"><strong>Ficha del cliente</strong><span>RUC, razón social, contacto, estado y datos administrativos.</span></div><div class="placeholder-box"><strong>Información comercial</strong><span>Servicios contratados, responsables y condiciones.</span></div><div class="placeholder-box"><strong>Acciones</strong><span>Crear, editar, consultar y administrar el cliente.</span></div></div><div class="quick-actions"><button class="btn btn-verde">＋ Nuevo cliente</button><button class="btn btn-gris">Importar</button></div></div>
+            </section>
+            <section class="vista" id="vista-tarifas-clientes"><h2 class="titulo-seccion">Tarifas de Clientes</h2><p class="subtitulo">Configuración comercial por cliente y servicio.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Tarifa vigente</strong><span>Servicio, importe, moneda y vigencia.</span></div><div class="placeholder-box"><strong>Historial</strong><span>Versiones anteriores y cambios de tarifa.</span></div><div class="placeholder-box"><strong>Aplicación</strong><span>Reglas para facturación automática.</span></div></div></div></section>
+            <section class="vista" id="vista-estado-clientes"><h2 class="titulo-seccion">Estado de Cuenta de Clientes</h2><p class="subtitulo">Saldos, facturas, pagos y movimientos por cliente.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Saldo pendiente</strong><span>Visualización del saldo acumulado.</span></div><div class="placeholder-box"><strong>Movimientos</strong><span>Facturas, notas y pagos.</span></div><div class="placeholder-box"><strong>Período</strong><span>Filtros por fecha y cliente.</span></div></div></div></section>
+            <section class="vista" id="vista-definiciones"><h2 class="titulo-seccion">Definiciones</h2><p class="subtitulo">Parámetros maestros que alimentan los módulos del ERP.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Catálogos</strong><span>Estados, tipos, categorías y parámetros generales.</span></div><div class="placeholder-box"><strong>Clasificaciones</strong><span>Configuraciones reutilizables del sistema.</span></div><div class="placeholder-box"><strong>Configuración</strong><span>Valores por defecto y reglas operativas.</span></div></div></div></section>
+            <section class="vista" id="vista-tiempo"><h2 class="titulo-seccion">Control de tiempo</h2><p class="subtitulo">Seguimiento de horas por persona, tarea y cliente.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Cronómetro activo</strong><span>Tarea y cliente actualmente en ejecución.</span></div><div class="placeholder-box"><strong>Horas por persona</strong><span>Tiempo registrado y costo estimado.</span></div><div class="placeholder-box"><strong>Rentabilidad</strong><span>Comparación entre horas, costos y facturación.</span></div></div><div class="quick-actions"><button class="btn btn-azul" onclick="cambiarVista('tareas')">Ir a tareas</button></div></div></section>
+            <section class="vista" id="vista-documentos"><h2 class="titulo-seccion">Documentos</h2><p class="subtitulo">Repositorio documental de clientes y operación.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Carpetas</strong><span>Organización por cliente y categoría.</span></div><div class="placeholder-box"><strong>Documentos</strong><span>Carga, descarga y gestión documental.</span></div><div class="placeholder-box"><strong>Seguridad</strong><span>Acceso controlado según permisos.</span></div></div><div class="quick-actions"><button class="btn btn-azul" onclick="cambiarVista('usuarios')">Ir a clientes</button></div></div></section>
+            <section class="vista" id="vista-articulos"><h2 class="titulo-seccion">Artículos facturables</h2><p class="subtitulo">Servicios y conceptos disponibles para facturación.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Catálogo</strong><span>Código, descripción, unidad y estado.</span></div><div class="placeholder-box"><strong>Precio</strong><span>Tarifas y vigencias.</span></div><div class="placeholder-box"><strong>Facturación</strong><span>Relación con clientes y facturas.</span></div></div></div></section>
+            <section class="vista" id="vista-tarifas"><h2 class="titulo-seccion">Tarifas</h2><p class="subtitulo">Administración centralizada de precios y condiciones.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Tarifas base</strong><span>Precios estándar por servicio.</span></div><div class="placeholder-box"><strong>Vigencias</strong><span>Control de fechas de aplicación.</span></div><div class="placeholder-box"><strong>Excepciones</strong><span>Condiciones particulares por cliente.</span></div></div></div></section>
+            <section class="vista" id="vista-articulos-compra"><h2 class="titulo-seccion">Artículos de Compra</h2><p class="subtitulo">Catálogo de bienes y servicios adquiridos.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Catálogo</strong><span>Productos, servicios y categorías.</span></div><div class="placeholder-box"><strong>Costos</strong><span>Último costo y costo promedio.</span></div><div class="placeholder-box"><strong>Proveedores</strong><span>Relación entre artículos y proveedores.</span></div></div></div></section>
+            <section class="vista" id="vista-proveedores"><h2 class="titulo-seccion">Definición de Proveedores</h2><p class="subtitulo">Maestro de proveedores y condiciones de compra.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Ficha proveedor</strong><span>RUC, razón social y contactos.</span></div><div class="placeholder-box"><strong>Condiciones</strong><span>Plazos y medios de pago.</span></div><div class="placeholder-box"><strong>Estado de cuenta</strong><span>Deudas y pagos pendientes.</span></div></div></div></section>
+            <section class="vista" id="vista-compras"><h2 class="titulo-seccion">Registro de Compras</h2><p class="subtitulo">Carga y control de comprobantes y adquisiciones.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Comprobante</strong><span>Proveedor, fecha, número y timbrado.</span></div><div class="placeholder-box"><strong>Detalle</strong><span>Artículos, cantidades, impuestos y totales.</span></div><div class="placeholder-box"><strong>Contabilización</strong><span>Preparación para integración financiera.</span></div></div></div></section>
+            <section class="vista" id="vista-pagos"><h2 class="titulo-seccion">Registro de Pagos</h2><p class="subtitulo">Gestión de pagos realizados y pendientes.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Pago</strong><span>Proveedor, importe, fecha y medio.</span></div><div class="placeholder-box"><strong>Aplicación</strong><span>Aplicación contra comprobantes.</span></div><div class="placeholder-box"><strong>Conciliación</strong><span>Preparación para banca.</span></div></div></div></section>
+            <section class="vista" id="vista-estado-proveedores"><h2 class="titulo-seccion">Estado de Cuenta de Proveedores</h2><p class="subtitulo">Obligaciones, pagos y saldos por proveedor.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Saldo</strong><span>Obligaciones pendientes.</span></div><div class="placeholder-box"><strong>Movimientos</strong><span>Compras y pagos.</span></div><div class="placeholder-box"><strong>Vencimientos</strong><span>Control de cuentas por pagar.</span></div></div></div></section>
+            <section class="vista" id="vista-costos"><h2 class="titulo-seccion">Costos y Márgenes</h2><p class="subtitulo">Rentabilidad por cliente, servicio y período.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Costos directos</strong><span>Horas y costos de personal.</span></div><div class="placeholder-box"><strong>Facturación</strong><span>Ingresos por cliente y servicio.</span></div><div class="placeholder-box"><strong>Margen</strong><span>Resultado y porcentaje de margen.</span></div></div></div></section>
+            <section class="vista" id="vista-centro-costos"><h2 class="titulo-seccion">Centro de Costos</h2><p class="subtitulo">Clasificación de costos por área, unidad o proyecto.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Estructura</strong><span>Centros y subcentros.</span></div><div class="placeholder-box"><strong>Asignación</strong><span>Distribución de costos.</span></div><div class="placeholder-box"><strong>Reportes</strong><span>Comparativos por período.</span></div></div></div></section>
+            <section class="vista" id="vista-presupuestos"><h2 class="titulo-seccion">Presupuestos</h2><p class="subtitulo">Planificación y seguimiento presupuestario.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Presupuesto</strong><span>Definición de ingresos y gastos.</span></div><div class="placeholder-box"><strong>Ejecución</strong><span>Real versus presupuestado.</span></div><div class="placeholder-box"><strong>Variaciones</strong><span>Alertas y análisis.</span></div></div></div></section>
+            <section class="vista" id="vista-balance"><h2 class="titulo-seccion">Balance General</h2><p class="subtitulo">Vista estructurada de activos, pasivos y patrimonio.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Activos</strong><span>Disponibilidades, créditos y bienes.</span></div><div class="placeholder-box"><strong>Pasivos</strong><span>Obligaciones y cuentas por pagar.</span></div><div class="placeholder-box"><strong>Patrimonio</strong><span>Capital y resultados acumulados.</span></div></div></div></section>
+            <section class="vista" id="vista-resultados"><h2 class="titulo-seccion">Estado de Resultados</h2><p class="subtitulo">Ingresos, costos, gastos y resultado del período.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Ingresos</strong><span>Facturación y otros ingresos.</span></div><div class="placeholder-box"><strong>Egresos</strong><span>Costos y gastos.</span></div><div class="placeholder-box"><strong>Resultado</strong><span>Resultado operativo y neto.</span></div></div></div></section>
+            <section class="vista" id="vista-bancos"><h2 class="titulo-seccion">Definición de Bancos</h2><p class="subtitulo">Catálogo de entidades y cuentas bancarias.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Entidad</strong><span>Banco, sucursal y datos generales.</span></div><div class="placeholder-box"><strong>Cuentas</strong><span>Número, moneda y titularidad.</span></div><div class="placeholder-box"><strong>Estado</strong><span>Cuentas activas e inactivas.</span></div></div></div></section>
+            <section class="vista" id="vista-medios-pago"><h2 class="titulo-seccion">Medios de Pago</h2><p class="subtitulo">Configuración de efectivo, transferencias, tarjetas y otros medios.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Medios</strong><span>Definición y estado.</span></div><div class="placeholder-box"><strong>Comisiones</strong><span>Costos asociados al medio.</span></div><div class="placeholder-box"><strong>Aplicación</strong><span>Relación con cobros y pagos.</span></div></div></div></section>
+            <section class="vista" id="vista-gestion-bancos"><h2 class="titulo-seccion">Gestión de Bancos</h2><p class="subtitulo">Movimientos, conciliación y posición bancaria.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Movimientos</strong><span>Débitos y créditos bancarios.</span></div><div class="placeholder-box"><strong>Conciliación</strong><span>Comparación con extractos.</span></div><div class="placeholder-box"><strong>Saldo</strong><span>Posición bancaria actual.</span></div></div></div></section>
+            <section class="vista" id="vista-configuracion"><h2 class="titulo-seccion">Configuración</h2><p class="subtitulo">Parámetros generales de Kakuaa ERP.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Empresa</strong><span>Datos, identidad y parámetros fiscales.</span></div><div class="placeholder-box"><strong>Preferencias</strong><span>Moneda, formatos y comportamiento.</span></div><div class="placeholder-box"><strong>Auditoría</strong><span>Registro de acciones y eventos.</span></div></div></div></section>
 
             <!-- TAREAS -->
             <section class="vista" id="vista-tareas">
@@ -1041,10 +1222,35 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             window.location.href = 'login.html';
         }
 
+        
+        function toggleNavGroup(el) {
+            const group = el.closest('.nav-group');
+            if (group) group.classList.toggle('open');
+        }
+        function toggleSidebar() {
+            document.getElementById('sidebar')?.classList.toggle('mobile-open');
+        }
+        function mostrarNotificacionERP(mensaje) {
+            alert(mensaje);
+        }
+        function actualizarCabeceraERP() {
+            const usuario = window.usuarioActual || {};
+            const nombre = usuario.nombre || usuario.usuario || 'Usuario';
+            const rol = (usuario.rol || 'usuario').toUpperCase();
+            const u = document.getElementById('usuario-header');
+            const r = document.getElementById('rol-header');
+            const a = document.getElementById('avatar-admin');
+            if (u) u.textContent = nombre;
+            if (r) r.textContent = rol;
+            if (a) a.textContent = nombre.charAt(0).toUpperCase();
+            const f = document.getElementById('dashboard-fecha');
+            if (f) f.textContent = new Date().toLocaleDateString('es-PY',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+        }
+
         document.getElementById('carpeta-subir').addEventListener('change', actualizarSubcarpetasSelect);
         (async function iniciarPanel() {
             if (!await restaurarSesion()) return;
-            configurarPanel();
+            configurarPanel(); actualizarCabeceraERP();
             if (esAdmin()) { cargarDashboard(); prepararCatalogos(); }
             cambiarVista(esAdmin() ? 'dashboard' : 'tareas');
         })();
