@@ -55,7 +55,7 @@
 
     <script>
         const API = 'https://backend-ruc-1.onrender.com';
-function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=sessionStorage.getItem('csrf_token')||''; if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
+function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=localStorage.getItem('csrf_token')||''; if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
 
         const CARPETAS_FIJAS = ['Declaraciones', 'Balances', 'Estados de Cuentas', 'Facturas'];
 
@@ -68,7 +68,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 sessionStorage.setItem('usuario', JSON.stringify(data.usuario));
                 return true;
             } catch (e) {
-                sessionStorage.removeItem('csrf_token');
+                localStorage.removeItem('csrf_token');
                 sessionStorage.removeItem('usuario');
                 window.location.href = 'login.html';
                 return false;
@@ -140,7 +140,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
 
         function cerrarSesion() {
             fetch(API + '/api/logout', { method: 'POST',  }).catch(() => {});
-            sessionStorage.removeItem('csrf_token');
+            localStorage.removeItem('csrf_token');
             sessionStorage.removeItem('usuario');
             window.location.href = 'login.html';
         }
