@@ -1288,14 +1288,15 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             if (resp.ok) { cargarUsuarios(); }
         }
 
-        function cerrarSesion() {
-            fetch(API + '/api/logout', {
-                method: 'POST',
-                
-            }).catch(() => {});
+        async function cerrarSesion() {
+            try {
+                const resp = await fetchApi(API + '/api/logout', { method: 'POST' });
+                // Aunque el backend rechace la petición, limpiamos el estado local
+                // y evitamos que la sesión reaparezca por datos antiguos del navegador.
+            } catch (e) {}
             sessionStorage.removeItem('csrf_token');
             sessionStorage.removeItem('usuario');
-            window.location.href = 'login.html';
+            window.location.replace('login.html');
         }
 
         
