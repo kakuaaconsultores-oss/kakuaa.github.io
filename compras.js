@@ -48,7 +48,7 @@ function cancelarTipoComprobante(){document.getElementById('form-tipo-compra').s
 async function guardarTipoComprobante(){
  const body={codigo:document.getElementById('tipo-compra-codigo').value.trim(),nombre:document.getElementById('tipo-compra-nombre').value.trim(),activo:1};
  if(!body.codigo||!body.nombre){alert('Código y nombre son obligatorios.');return;}
- const url=API+'/api/compras/tipos_comprobante_compra'+(tipoComprobanteEditando?'/'+tipoComprobanteEditando:'');
+ const url=API+'/api/compras/tipos-comprobante'+(tipoComprobanteEditando?'/'+tipoComprobanteEditando:'');
  const r=await fetchApi(url,{method:tipoComprobanteEditando?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar');return;}
  cancelarTipoComprobante();await cargarComprasCatalogos();
@@ -114,7 +114,7 @@ async function guardarCondicionCompra(){
  if(!body.codigo||!body.nombre){alert('Código y nombre son obligatorios.');return;}
  if(body.tipo==='dias'&&body.dias_credito<0){alert('Los días no pueden ser negativos.');return;}
  if(body.tipo==='cuotas'&&body.cuotas<1){alert('La cantidad de cuotas debe ser al menos 1.');return;}
- const path='/api/compras/condiciones_compra';
+ const path='/api/compras/condiciones';
  const r=await fetchApi(API+path+(condicionCompraEditando?'/'+condicionCompraEditando:''),{method:condicionCompraEditando?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar');return;}cancelarCondicionCompra();await cargarComprasCatalogos();
 }
@@ -130,7 +130,7 @@ function cancelarFormaPago(){document.getElementById('form-forma-pago-compra').s
 async function guardarFormaPago(){
  const body={codigo:document.getElementById('fp-codigo').value.trim(),nombre:document.getElementById('fp-nombre').value.trim(),tipo:document.getElementById('fp-tipo').value,cuenta_contable_id:Number(document.getElementById('fp-cuenta').value)||null};
  if(!body.codigo||!body.nombre||!body.cuenta_contable_id){alert('Código, nombre y cuenta contable son obligatorios.');return;}
- const url=API+'/api/compras/formas_pago_compra'+(formaPagoEditando?'/'+formaPagoEditando:'');
+ const url=API+'/api/compras/formas-pago'+(formaPagoEditando?'/'+formaPagoEditando:'');
  const r=await fetchApi(url,{method:formaPagoEditando?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar');return;}cancelarFormaPago();await cargarComprasCatalogos();
 }
