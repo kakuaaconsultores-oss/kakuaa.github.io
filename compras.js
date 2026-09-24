@@ -135,7 +135,7 @@ async function consultarRucProveedor(){
   document.getElementById('prov-ruc').dataset.consultedRuc=(x.ruc||ruc).trim().toUpperCase();
   document.getElementById('prov-razon').value=x.razon_social||'';
   document.getElementById('prov-nombre').value=x.razon_social||'';
-  document.getElementById('prov-doc').value=x.documento??'';
+  document.getElementById('prov-doc').value=x.ruc||'';
   document.getElementById('prov-razon').readOnly=true;
   document.getElementById('prov-nombre').readOnly=true;
   document.getElementById('prov-doc').readOnly=true;
@@ -237,15 +237,14 @@ async function validarFacturaEnPantalla(){
  const puntoOk=!t.punto_expedicion||String(t.punto_expedicion).padStart(3,'0')===punto;
  const inicio=!t.fecha_inicio||fecha>=String(t.fecha_inicio).slice(0,10);
  const venc=!t.fecha_vencimiento||t.fecha_vencimiento==='3000-12-31'||fecha<=String(t.fecha_vencimiento).slice(0,10);
- if(okFmt&&enRango&&estOk&&puntoOk&&inicio&&venc){estado.textContent='✓ Número, rango, talonario y vigencia correctos.';estado.style.color='#15803d';}
- else{estado.textContent='⚠ El número no coincide con el rango, establecimiento/punto o vigencia del timbrado.';estado.style.color='#b42318';}
+ if(okFmt&&enRango&&estOk&&puntoOk&&inicio&&venc){estado.textContent='✓ Número, rango, talonario y vigencia correctos.';estado.style.color='#15803d';return true;}
+ estado.textContent='⚠ El número no coincide con el rango, establecimiento/punto o vigencia del timbrado.';estado.style.color='#b42318';return false;
 }
 async function guardarComprobanteCompra(){
  const body={proveedor_id:Number(document.getElementById('comp-proveedor').value),tipo_comprobante_id:Number(document.getElementById('comp-tipo').value)||null,timbrado_id:Number(document.getElementById('comp-timbrado').value)||null,condicion_id:Number(document.getElementById('comp-condicion').value)||null,numero:document.getElementById('comp-numero').value.trim(),cdc:document.getElementById('comp-cdc').value.trim(),fecha:document.getElementById('comp-fecha').value,gravado_10:Number(document.getElementById('comp-grav10').value||0),gravado_5:Number(document.getElementById('comp-grav5').value||0),exento:Number(document.getElementById('comp-exento').value||0),iva_10:Number(document.getElementById('comp-iva10').value||0),iva_5:Number(document.getElementById('comp-iva5').value||0),total:Number(document.getElementById('comp-total').value||0),observacion:document.getElementById('comp-observacion').value.trim(),origen:'MANUAL'};
  if(!body.proveedor_id||!body.tipo_comprobante_id||!body.timbrado_id||!body.numero||!body.fecha||!body.total){alert('Proveedor, tipo, timbrado, número, fecha y total son obligatorios.');return;}
- await validarFacturaEnPantalla();
- const estado=document.getElementById('comp-timbrado-estado');
- if(estado&&estado.style.color==='rgb(180, 35, 24)'){alert(estado.textContent);return;}
+ const valido=await validarFacturaEnPantalla();
+ if(valido===false){const estado=document.getElementById('comp-timbrado-estado');alert(estado?.textContent||'El comprobante no coincide con el timbrado.');return;}
  const r=await fetchApi(API+'/api/compras/comprobantes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  if(!r.ok){const d=await r.json();alert(d.error||'No se pudo registrar');return;}const d=await r.json();await cargarComprobantesCompra();if(d.id)await mostrarCuotero(d.id);
 }
