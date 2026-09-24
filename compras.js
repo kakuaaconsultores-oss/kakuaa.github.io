@@ -21,7 +21,6 @@ function renderCatalogoCompra(id,rows,cols){
  '<td><button class="btn btn-gris btn-pequeno" onclick="editarCatalogoCompra(\''+id+'\','+r.id+')">Editar</button> <button class="btn btn-rojo btn-pequeno" onclick="eliminarCatalogoCompra(\''+id+'\','+r.id+')">Eliminar</button></td></tr>').join('')+
  '</tbody></table>';
 }
-}
 async function cargarCuentasContablesCompra(){
  const r=await fetchApi(API+'/api/contabilidad/cuentas');
  if(!r.ok){cuentasContablesCompra=[];return;}
