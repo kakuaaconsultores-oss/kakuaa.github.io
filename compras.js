@@ -1,13 +1,15 @@
 
 let comprasCatalogosCache = {};
 async function cargarComprasCatalogos(){
- try{const r=await fetchApi(API+'/api/compras/catalogos');if(!r.ok)return;comprasCatalogosCache=await r.json();
+ try{
+   await cargarCuentasContablesCompra();
+   const r=await fetchApi(API+'/api/compras/catalogos');if(!r.ok)return;comprasCatalogosCache=await r.json();
  const p=document.getElementById('comp-proveedor'),t=document.getElementById('comp-tipo'),cond=document.getElementById('comp-condicion');
  if(p){p.innerHTML='<option value="">Proveedor *</option>';(comprasCatalogosCache.proveedores||[]).forEach(x=>p.innerHTML+='<option value="'+x.id+'">'+escapeHtml(x.razon_social)+'</option>');}
  if(t){t.innerHTML='<option value="">Tipo de comprobante</option>';(comprasCatalogosCache.tipos_comprobante||[]).filter(x=>Number(x.activo)!==0).forEach(x=>t.innerHTML+='<option value="'+x.id+'">'+escapeHtml(x.nombre)+'</option>');} if(cond){cond.innerHTML='<option value="">Condición de compra</option>';(comprasCatalogosCache.condiciones||[]).filter(x=>Number(x.activo)!==0).forEach(x=>cond.innerHTML+='<option value="'+x.id+'">'+escapeHtml(x.nombre)+'</option>');}
  renderCatalogoCompra('lista-conceptos-compra',comprasCatalogosCache.conceptos||[],['codigo','nombre','tipo','tasa_iva']);
  renderCatalogoCompra('lista-condiciones-compra',comprasCatalogosCache.condiciones||[],['codigo','nombre','tipo','dias_credito','cuotas']);
- renderCatalogoCompra('lista-formas-pago-compra',comprasCatalogosCache.formas_pago||[],['codigo','nombre','tipo']);
+ renderCatalogoCompra('lista-formas-pago-compra',comprasCatalogosCache.formas_pago||[],['codigo','nombre','tipo','cuenta_contable_nombre']);
  renderCatalogoCompra('catalogo-tipos-compra',comprasCatalogosCache.tipos_comprobante||[],['codigo','nombre']);
  renderProveedoresCompra(comprasCatalogosCache.proveedores||[]);
  }catch(e){console.error(e);}
@@ -19,7 +21,23 @@ function renderCatalogoCompra(id,rows,cols){
  '<td><button class="btn btn-gris btn-pequeno" onclick="editarCatalogoCompra(\''+id+'\','+r.id+')">Editar</button> <button class="btn btn-rojo btn-pequeno" onclick="eliminarCatalogoCompra(\''+id+'\','+r.id+')">Eliminar</button></td></tr>').join('')+
  '</tbody></table>';
 }
-let tipoComprobanteEditando=null, condicionCompraEditando=null;
+}
+async function cargarCuentasContablesCompra(){
+ const r=await fetchApi(API+'/api/contabilidad/cuentas');
+ if(!r.ok){cuentasContablesCompra=[];return;}
+ cuentasContablesCompra=await r.json();
+ const sel=document.getElementById('fp-cuenta');
+ if(sel)llenarSelectCuentasCompra(sel);
+}
+function llenarSelectCuentasCompra(sel,valor){
+ sel.innerHTML='<option value="">— Seleccioná una cuenta contable —</option>';
+ cuentasContablesCompra.filter(x=>Number(x.imputable)===1 && Number(x.activa)!==0).forEach(x=>{
+   const opt=document.createElement('option');opt.value=x.id;opt.textContent=x.codigo+' - '+x.nombre;sel.appendChild(opt);
+ });
+ if(valor!=null)sel.value=String(valor);
+}
+function nombreCuentaCompra(id){const x=cuentasContablesCompra.find(c=>Number(c.id)===Number(id));return x?x.codigo+' - '+x.nombre:'';}
+let tipoComprobanteEditando=null, condicionCompraEditando=null, formaPagoEditando=null, cuentasContablesCompra=[];
 function abrirNuevoTipoComprobante(){
  tipoComprobanteEditando=null;
  document.getElementById('tipo-compra-codigo').value='';
@@ -37,6 +55,17 @@ async function guardarTipoComprobante(){
  cancelarTipoComprobante();await cargarComprasCatalogos();
 }
 function editarCatalogoCompra(id,recordId){
+ if(id==='lista-formas-pago-compra'){
+   const row=(comprasCatalogosCache.formas_pago||[]).find(x=>x.id===recordId);if(!row)return;
+   formaPagoEditando=recordId;
+   document.getElementById('fp-codigo').value=row.codigo||'';
+   document.getElementById('fp-nombre').value=row.nombre||'';
+   document.getElementById('fp-tipo').value=row.tipo||'contado';
+   llenarSelectCuentasCompra(document.getElementById('fp-cuenta'),row.cuenta_contable_id);
+   document.getElementById('form-forma-pago-compra').style.display='block';
+   document.getElementById('btn-guardar-forma-pago').textContent='💾 Guardar cambios';
+   document.getElementById('form-forma-pago-compra').scrollIntoView({behavior:'smooth',block:'center'});return;
+ }
  const rows=(id==='catalogo-tipos-compra'?comprasCatalogosCache.tipos_comprobante:comprasCatalogosCache.condiciones)||[];
  const row=rows.find(x=>x.id===recordId);if(!row)return;
  if(id==='catalogo-tipos-compra'){
@@ -62,7 +91,7 @@ function editarCatalogoCompra(id,recordId){
 async function eliminarCatalogoCompra(id,recordId){
  const nombre=id==='catalogo-tipos-compra'?'tipo de comprobante':'condición de compra';
  if(!confirm('¿Eliminar este '+nombre+'? Esta acción no se puede deshacer.'))return;
- const path=id==='catalogo-tipos-compra'?'tipos_comprobante_compra':'condiciones_compra';
+ const path=id==='catalogo-tipos-compra'?'tipos_comprobante_compra':(id==='lista-formas-pago-compra'?'formas_pago_compra':'condiciones_compra');
  const r=await fetchApi(API+'/api/compras/'+path+'/'+recordId,{method:'DELETE'});
  const d=await r.json();if(!r.ok){alert(d.error||'No se pudo eliminar');return;}await cargarComprasCatalogos();
 }
@@ -93,6 +122,19 @@ async function guardarCondicionCompra(){
 function renderProveedoresCompra(rows){const el=document.getElementById('lista-proveedores-compra');if(!el)return;el.innerHTML='<table class="tabla"><thead><tr><th>RUC</th><th>Razón social</th><th>Contacto</th><th>Estado</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+escapeHtml(r.ruc||'')+'</td><td>'+escapeHtml(r.razon_social)+'</td><td>'+escapeHtml(r.correo||r.telefono||'')+'</td><td>'+escapeHtml(r.estado)+'</td></tr>').join('')+'</tbody></table>';}
 async function crearProveedorCompra(){const body={ruc:document.getElementById('prov-ruc').value.trim(),razon_social:document.getElementById('prov-razon').value.trim(),nombre_comercial:document.getElementById('prov-nombre').value.trim(),documento:document.getElementById('prov-doc').value.trim(),correo:document.getElementById('prov-correo').value.trim(),telefono:document.getElementById('prov-telefono').value.trim(),direccion:document.getElementById('prov-direccion').value.trim()};if(!body.razon_social){alert('La razón social es obligatoria.');return;}const r=await fetchApi(API+'/api/compras/proveedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok){alert(d.error||'No se pudo crear el proveedor');return;}await cargarComprasCatalogos();}
 async function crearConceptoCompra(){const body={codigo:document.getElementById('ccp-codigo').value.trim(),nombre:document.getElementById('ccp-nombre').value.trim(),tipo:document.getElementById('ccp-tipo').value.trim()||'servicio',tasa_iva:Number(document.getElementById('ccp-iva').value||0),cuenta_contable_id:document.getElementById('ccp-cuenta').value||null,descripcion:document.getElementById('ccp-desc').value.trim()};if(!body.codigo||!body.nombre){alert('Código y nombre son obligatorios.');return;}const r=await fetchApi(API+'/api/compras/conceptos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const d=await r.json();alert(d.error||'No se pudo crear');return;}await cargarComprasCatalogos();}
+function abrirNuevaFormaPago(){
+ formaPagoEditando=null;document.getElementById('fp-codigo').value='';document.getElementById('fp-nombre').value='';
+ document.getElementById('fp-tipo').value='contado';llenarSelectCuentasCompra(document.getElementById('fp-cuenta'));
+ document.getElementById('form-forma-pago-compra').style.display='block';document.getElementById('btn-guardar-forma-pago').textContent='＋ Crear Forma de Pago';
+}
+function cancelarFormaPago(){document.getElementById('form-forma-pago-compra').style.display='none';formaPagoEditando=null;}
+async function guardarFormaPago(){
+ const body={codigo:document.getElementById('fp-codigo').value.trim(),nombre:document.getElementById('fp-nombre').value.trim(),tipo:document.getElementById('fp-tipo').value,cuenta_contable_id:Number(document.getElementById('fp-cuenta').value)||null};
+ if(!body.codigo||!body.nombre||!body.cuenta_contable_id){alert('Código, nombre y cuenta contable son obligatorios.');return;}
+ const url=API+'/api/compras/formas_pago_compra'+(formaPagoEditando?'/'+formaPagoEditando:'');
+ const r=await fetchApi(url,{method:formaPagoEditando?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar');return;}cancelarFormaPago();await cargarComprasCatalogos();
+}
 async function crearCatalogoCompra(tipo){let body;if(tipo==='condiciones')body={codigo:document.getElementById('cond-codigo').value.trim(),nombre:document.getElementById('cond-nombre').value.trim(),dias_credito:Number(document.getElementById('cond-dias').value||0)};else body={codigo:document.getElementById('fp-codigo').value.trim(),nombre:document.getElementById('fp-nombre').value.trim(),tipo:document.getElementById('fp-tipo').value};if(!body.codigo||!body.nombre){alert('Código y nombre son obligatorios.');return;}const r=await fetchApi(API+'/api/compras/'+tipo,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const d=await r.json();alert(d.error||'No se pudo crear');return;}await cargarComprasCatalogos();}
 async function guardarComprobanteCompra(){const body={proveedor_id:Number(document.getElementById('comp-proveedor').value),tipo_comprobante_id:Number(document.getElementById('comp-tipo').value)||null,condicion_id:Number(document.getElementById('comp-condicion').value)||null,numero:document.getElementById('comp-numero').value.trim(),cdc:document.getElementById('comp-cdc').value.trim(),fecha:document.getElementById('comp-fecha').value,gravado_10:Number(document.getElementById('comp-grav10').value||0),gravado_5:Number(document.getElementById('comp-grav5').value||0),exento:Number(document.getElementById('comp-exento').value||0),iva_10:Number(document.getElementById('comp-iva10').value||0),iva_5:Number(document.getElementById('comp-iva5').value||0),total:Number(document.getElementById('comp-total').value||0),observacion:document.getElementById('comp-observacion').value.trim(),origen:'MANUAL'};if(!body.proveedor_id||!body.numero||!body.fecha||!body.total){alert('Proveedor, número, fecha y total son obligatorios.');return;}const r=await fetchApi(API+'/api/compras/comprobantes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const d=await r.json();alert(d.error||'No se pudo registrar');return;}const d=await r.json();await cargarComprobantesCompra();if(d.id)await mostrarCuotero(d.id);}
 async function cargarComprobantesCompra(){const r=await fetchApi(API+'/api/compras/comprobantes');if(!r.ok)return;const rows=await r.json();const el=document.getElementById('lista-compras');if(el)el.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Comprobante</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td><td>'+(x.estado==='anulado'?'—':'<button class="btn btn-rojo btn-pequeno" onclick="anularCompra('+x.id+')">Anular</button>')+'</td></tr>').join('')+'</tbody></table>';const pend=document.getElementById('lista-compras-pendientes');if(pend)pend.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Número</th><th>Total</th><th>Estado</th></tr></thead><tbody>'+rows.filter(x=>x.estado==='pendiente_contabilizar').map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td></tr>').join('')+'</tbody></table>';}
