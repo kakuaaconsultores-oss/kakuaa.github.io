@@ -568,14 +568,36 @@
             <section class="vista" id="vista-articulos"><h2 class="titulo-seccion">Artículos facturables</h2><p class="subtitulo">Servicios y conceptos disponibles para facturación.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Catálogo</strong><span>Código, descripción, unidad y estado.</span></div><div class="placeholder-box"><strong>Precio</strong><span>Tarifas y vigencias.</span></div><div class="placeholder-box"><strong>Facturación</strong><span>Relación con clientes y facturas.</span></div></div></div></section>
             <section class="vista" id="vista-tarifas"><h2 class="titulo-seccion">Tarifas</h2><p class="subtitulo">Administración centralizada de precios y condiciones.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Tarifas base</strong><span>Precios estándar por servicio.</span></div><div class="placeholder-box"><strong>Vigencias</strong><span>Control de fechas de aplicación.</span></div><div class="placeholder-box"><strong>Excepciones</strong><span>Condiciones particulares por cliente.</span></div></div></div></section>
             <section class="vista" id="vista-articulos-compra"><h2 class="titulo-seccion">Conceptos / Ítems de Compra</h2><p class="subtitulo">Catálogo de bienes y servicios adquiridos.</p><div class="card"><div class="form-grid"><input id="ccp-codigo" placeholder="Código *"><input id="ccp-nombre" placeholder="Nombre *"><input id="ccp-tipo" placeholder="Tipo"><input id="ccp-iva" type="number" value="10" placeholder="IVA %"><input id="ccp-cuenta" type="number" placeholder="ID cuenta contable"><input id="ccp-desc" placeholder="Descripción"></div><button class="btn btn-azul" onclick="crearConceptoCompra()">＋ Guardar concepto</button></div><div id="lista-conceptos-compra" style="margin-top:16px"></div></section>
-<section class="vista" id="vista-proveedores"><h2 class="titulo-seccion">Proveedores</h2><p class="subtitulo">Maestro de proveedores del cliente activo.</p><div class="card"><div class="form-grid"><input id="prov-ruc" placeholder="RUC"><input id="prov-razon" placeholder="Razón social *"><input id="prov-nombre" placeholder="Nombre comercial"><input id="prov-doc" placeholder="Documento"><input id="prov-correo" placeholder="Correo"><input id="prov-telefono" placeholder="Teléfono"><input id="prov-direccion" placeholder="Dirección"></div><button class="btn btn-azul" onclick="crearProveedorCompra()">＋ Guardar proveedor</button></div><div id="lista-proveedores-compra" style="margin-top:16px"></div></section>
+<section class="vista" id="vista-proveedores">
+<h2 class="titulo-seccion">Proveedores</h2>
+<p class="subtitulo">El RUC consulta automáticamente los datos tributarios. Correo, teléfono y dirección son opcionales.</p>
+<div class="card">
+ <div class="form-grid">
+  <div style="display:flex;gap:8px;align-items:center">
+   <input id="prov-ruc" placeholder="RUC *" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();consultarRucProveedor()}">
+   <button type="button" class="btn btn-gris btn-pequeno" onclick="consultarRucProveedor()">Consultar RUC</button>
+  </div>
+  <input id="prov-razon" placeholder="Razón social *" readonly>
+  <input id="prov-nombre" placeholder="Nombre comercial" readonly>
+  <input id="prov-doc" placeholder="Documento" readonly>
+  <input id="prov-correo" type="email" placeholder="Correo (opcional)">
+  <input id="prov-telefono" placeholder="Teléfono (opcional)">
+  <input id="prov-direccion" class="full" placeholder="Dirección (opcional)">
+  <div class="full" id="prov-estado" style="font-size:.78rem;color:var(--texto-suave)"></div>
+ </div>
+ <button class="btn btn-azul" onclick="crearProveedorCompra()">＋ Guardar proveedor</button>
+</div>
+<div id="lista-proveedores-compra" style="margin-top:16px"></div>
+</section>
 <section class="vista" id="vista-compras">
 <h2 class="titulo-seccion">Registrar Factura</h2><p class="subtitulo">Carga manual de comprobantes de compra.</p>
 <div class="card"><div class="form-grid">
 <select id="comp-proveedor"><option value="">Proveedor *</option></select>
-<select id="comp-tipo"><option value="">Tipo de comprobante</option></select>
+<select id="comp-tipo"><option value="">Tipo de comprobante *</option></select>
+<select id="comp-timbrado"><option value="">Timbrado *</option></select>
 <select id="comp-condicion"><option value="">Condición de compra</option></select>
-<input id="comp-numero" placeholder="Número *"><input id="comp-cdc" placeholder="CDC / DTE"><input id="comp-fecha" type="date">
+<input id="comp-numero" placeholder="Número (001-001-0000001) *"><input id="comp-cdc" placeholder="CDC / DTE"><input id="comp-fecha" type="date">
+<div id="comp-timbrado-estado" class="full" style="font-size:.78rem;color:var(--texto-suave)">Seleccioná proveedor, tipo, timbrado, número y fecha para validar.</div>
 <input id="comp-grav10" type="number" placeholder="Gravado 10%"><input id="comp-grav5" type="number" placeholder="Gravado 5%">
 <input id="comp-exento" type="number" placeholder="Exento"><input id="comp-iva10" type="number" placeholder="IVA 10%"><input id="comp-iva5" type="number" placeholder="IVA 5%">
 <input id="comp-total" type="number" placeholder="Total *"><input id="comp-observacion" placeholder="Observación">
