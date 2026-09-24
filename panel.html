@@ -585,7 +585,7 @@
                                 <input id="cc-imputable" type="checkbox" checked onchange="actualizarFormularioCuentaUI()" style="width:auto;accent-color:var(--verde);">
                                 <label for="cc-imputable" style="margin:0;cursor:pointer;"><strong>Cuenta imputable</strong><span style="display:block;color:var(--texto-suave);font-size:.72rem;margin-top:2px;">Puede recibir movimientos contables.</span></label>
                             </div>
-                            <div><label>Concepto Estado de Flujo de Efectivo *</label><select id="cc-flujo">
+                            <div><label>Concepto Estado de Flujo de Efectivo</label><select id="cc-flujo">
                                 <option value="">Seleccioná</option>
                                 <option value="1.01">1.01 — VENTAS NETAS (COBRO NETO)</option>
                                 <option value="1.02">1.02 — PAGO A PROVEEDORES LOCALES (PAGO NETO)</option>
@@ -1316,8 +1316,11 @@ function obtenerFormularioImpuestoActivo() {
             const formulario=obtenerFormularioImpuestoActivo();
             const imputable=document.getElementById('cc-imputable').checked;
             const inciso=document.getElementById('cc-inciso').value.trim();
-            if (!codigo || !nombre || !tipo || !naturaleza || !nivel || !concepto) {
+            if (!codigo || !nombre || !tipo || !naturaleza || !nivel) {
                 alert('Completá todos los campos obligatorios (*).'); return;
+            }
+            if (imputable && !concepto) {
+                alert('El Concepto de Estado de Flujo de Efectivo es obligatorio para las cuentas imputables.'); return;
             }
             if (formulario!=='NO_APLICA' && !inciso) {
                 alert('La referencia/casilla DNIT es obligatoria cuando se selecciona un Formulario 500 o 501.'); return;
