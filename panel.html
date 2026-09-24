@@ -1277,6 +1277,12 @@ function obtenerFormularioImpuestoActivo() {
             if (!codigo || !nombre || !tipo || !naturaleza || !nivel || !concepto) {
                 alert('Completá todos los campos obligatorios (*).'); return;
             }
+            if ((formulario==='500' || formulario==='501') && imputable && !inciso) {
+                alert('La referencia/casilla del Formulario 500/501 es obligatoria para una cuenta imputable.'); return;
+            }
+            if ((formulario==='500' || formulario==='501') && !imputable && inciso) {
+                alert('Una cuenta no imputable no puede tener una referencia/casilla del Formulario 500/501.'); return;
+            }
             const payload={codigo,nombre,tipo,naturaleza,nivel,cuenta_padre_id:document.getElementById('cc-padre').value||null,imputable,activa:true,concepto_flujo_efectivo:concepto,formulario_impuesto:formulario,inciso_formulario:imputable?inciso:''};
             const resp=await fetchApi(API+'/api/contabilidad/cuentas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
             const data=await resp.json();
