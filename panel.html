@@ -1352,7 +1352,7 @@ function obtenerFormularioImpuestoActivo() {
         function abrirImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='block'; }
         function cerrarImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='none'; }
         async function importarCuentas(){ const file=document.getElementById('archivo-cuentas').files[0]; if(!file){alert('Seleccioná un archivo Excel.');return;} const fd=new FormData(); fd.append('archivo',file); const r=await fetchApi(API+'/api/contabilidad/cuentas/importar',{method:'POST',body:fd}); const d=await r.json(); document.getElementById('resultado-importacion-cuentas').innerHTML=r.ok?'<div style="padding:10px;background:#eaf8f0;border-radius:8px;">'+d.importadas+' cuentas importadas correctamente.</div>':'<div style="padding:10px;background:#fff1f1;border-radius:8px;">'+escapeHtml(d.error||'No se pudo importar.')+'</div>'; if(r.ok){document.getElementById('archivo-cuentas').value='';cargarCuentasContables();} }
-        async async function editarCuentaContable(id){
+        async function editarCuentaContable(id){
             const r=await fetchApi(API+'/api/contabilidad/cuentas');
             const cuentas=await r.json();
             const c=cuentas.find(x=>Number(x.id)===Number(id));
