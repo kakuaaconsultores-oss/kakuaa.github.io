@@ -132,6 +132,7 @@ async function consultarRucProveedor(){
   if(!r.ok){if(estado)estado.textContent=d.error||'No encontrado';alert(d.error||'No se encontró el RUC.');return;}
   const x=d.data||{};
   document.getElementById('prov-ruc').value=x.ruc||ruc;
+  document.getElementById('prov-ruc').dataset.consultedRuc=(x.ruc||ruc).trim().toUpperCase();
   document.getElementById('prov-razon').value=x.razon_social||'';
   document.getElementById('prov-nombre').value=x.razon_social||'';
   document.getElementById('prov-doc').value=x.documento??'';
@@ -192,7 +193,8 @@ function renderProveedoresCompra(rows){
 }
 async function crearProveedorCompra(){
  const body={ruc:document.getElementById('prov-ruc').value.trim(),razon_social:document.getElementById('prov-razon').value.trim(),nombre_comercial:document.getElementById('prov-nombre').value.trim(),documento:document.getElementById('prov-doc').value.trim(),correo:document.getElementById('prov-correo').value.trim(),telefono:document.getElementById('prov-telefono').value.trim(),direccion:document.getElementById('prov-direccion').value.trim()};
- if(!proveedorRucConsultado){alert('Primero consultá el RUC para cargar los datos oficiales.');return;}
+ const rucActual=body.ruc.toUpperCase();
+ if(!proveedorRucConsultado||document.getElementById('prov-ruc').dataset.consultedRuc!==rucActual){alert('Consultá nuevamente el RUC antes de guardar.');return;}
  if(!body.ruc||!body.razon_social){alert('RUC y razón social son obligatorios.');return;}
  const r=await fetchApi(API+'/api/compras/proveedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const d=await r.json();if(!r.ok){alert(d.error||'No se pudo crear el proveedor');return;}
