@@ -191,6 +191,38 @@
         .oculto { display: none; }
         .sin-datos { text-align: center; color: var(--texto-suave); padding: 40px; font-size:  ​0.9rem; }
     
+
+        .selector-cliente {
+            display:flex;align-items:center;gap:8px;background:#f5f7fb;border:1px solid var(--gris-borde);
+            border-radius:10px;padding:6px 9px;
+        }
+        .selector-cliente label { color:var(--texto-suave);font-size:.67rem;font-weight:700;white-space:nowrap; }
+        .selector-cliente select {
+            border:0;background:transparent;color:var(--azul);font-weight:700;font-size:.78rem;max-width:260px;
+            outline:none;cursor:pointer;
+        }
+        .cliente-contexto { color:var(--verde);font-weight:800; }
+        .cliente-lista { display:flex;flex-direction:column;gap:10px;margin-top:14px; }
+        .cliente-row {
+            background:#fff;border:1px solid var(--gris-borde);border-radius:12px;padding:14px 16px;
+            display:grid;grid-template-columns:minmax(0,1.5fr) minmax(180px,.8fr) minmax(160px,.7fr) auto;
+            gap:12px;align-items:center;
+        }
+        .cliente-row strong { color:var(--azul);font-size:.86rem; }
+        .cliente-row small { color:var(--texto-suave);font-size:.72rem;display:block;margin-top:3px; }
+        .cliente-badges { display:flex;gap:5px;flex-wrap:wrap; }
+        .cliente-badge { display:inline-flex;padding:4px 8px;border-radius:999px;background:#eaf2ff;color:var(--azul);font-size:.64rem;font-weight:800; }
+        .cliente-badge.verde { background:#e8f6ee;color:var(--verde); }
+        .cliente-form-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
+        .cliente-form-grid .full { grid-column:1/-1; }
+        .cliente-form-grid input,.cliente-form-grid select {
+            width:100%;padding:10px 12px;border:1px solid var(--gris-borde);border-radius:8px;font-size:.86rem;
+        }
+        .obligaciones-grid { display:flex;gap:8px;flex-wrap:wrap; }
+        .obligacion-check { display:flex;align-items:center;gap:7px;border:1px solid var(--gris-borde);border-radius:8px;padding:9px 11px;background:#fbfcfe;font-size:.78rem; }
+        @media(max-width:900px){ .selector-cliente label{display:none}.selector-cliente select{max-width:160px}.cliente-row{grid-template-columns:1fr 1fr}.cliente-row .acciones{grid-column:1/-1}.cliente-form-grid{grid-template-columns:1fr}.cliente-form-grid .full{grid-column:auto} }
+        @media(max-width:800px){ .selector-cliente{display:none} }
+
         /* ===== KAKUAA ERP SHELL ===== */
         body { background:#f5f7fb; }
         .header { height:68px; padding:0 24px; background:#fff; color:var(--texto); border-bottom:1px solid var(--gris-borde); box-shadow:0 2px 12px rgba(20,34,70,.05); }
@@ -274,6 +306,12 @@
     </div>
     <div class="header-actions">
         <button class="top-action" type="button" title="Notificaciones" onclick="mostrarNotificacionERP('No hay nuevas notificaciones.')">🔔</button>
+        <div class="selector-cliente" title="Contexto activo del ERP">
+            <label>CLIENTE</label>
+            <select id="selector-cliente" onchange="cambiarClienteContexto(this.value)">
+                <option value="">Seleccionar Cliente</option>
+            </select>
+        </div>
         <div class="usuario">
             <div class="avatar-mini" id="avatar-admin">A</div>
             <div class="usuario-datos"><strong id="usuario-header">Usuario</strong><span id="rol-header">SUPERADMIN</span></div>
@@ -443,9 +481,48 @@
             
             <!-- ===== MÓDULOS ERP ===== -->
             <section class="vista" id="vista-clientes">
-                <h2 class="titulo-seccion">Clientes</h2><p class="subtitulo">Administrá la información comercial y financiera de cada cliente.</p>
-                <div class="erp-placeholder"><div class="erp-placeholder-head"><div><h3>Definición de Clientes</h3><p>Maestro central de clientes y contribuyentes.</p></div><span class="module-pill">Módulo</span></div>
-                <div class="placeholder-grid"><div class="placeholder-box"><strong>Ficha del cliente</strong><span>RUC, razón social, contacto, estado y datos administrativos.</span></div><div class="placeholder-box"><strong>Información comercial</strong><span>Servicios contratados, responsables y condiciones.</span></div><div class="placeholder-box"><strong>Acciones</strong><span>Crear, editar, consultar y administrar el cliente.</span></div></div><div class="quick-actions"><button class="btn btn-verde">＋ Nuevo cliente</button><button class="btn btn-gris">Importar</button></div></div>
+                <h2 class="titulo-seccion">Definición de Clientes</h2>
+                <p class="subtitulo">Maestro central de clientes. Este será el contexto que utilizarán Contabilidad, Facturación, Compras, Banca y Finanzas.</p>
+
+                <div class="panel-form" id="panel-form-cliente" style="display:none;">
+                    <h3 id="titulo-form-cliente">Nuevo cliente</h3>
+                    <input type="hidden" id="cliente-edit-id">
+                    <div class="cliente-form-grid">
+                        <input id="cliente-ruc" placeholder="RUC">
+                        <input id="cliente-dv" placeholder="Dígito verificador">
+                        <input id="cliente-razon" class="full" placeholder="Razón social / nombre completo">
+                        <input id="cliente-comercial" placeholder="Nombre comercial">
+                        <select id="cliente-tipo">
+                            <option value="juridica">Persona Jurídica</option>
+                            <option value="fisica">Persona Física</option>
+                        </select>
+                        <input id="cliente-documento" placeholder="Documento de identidad (persona física)">
+                        <input id="cliente-correo" type="email" placeholder="Correo">
+                        <input id="cliente-telefono" placeholder="Teléfono">
+                        <input id="cliente-direccion" class="full" placeholder="Dirección">
+                        <div class="full">
+                            <div style="font-size:.75rem;color:var(--texto-suave);font-weight:700;margin-bottom:7px;">Obligaciones tributarias</div>
+                            <div class="obligaciones-grid">
+                                <label class="obligacion-check"><input id="cliente-iva" type="checkbox"> IVA</label>
+                                <label class="obligacion-check"><input id="cliente-irp" type="checkbox"> IRP</label>
+                                <label class="obligacion-check"><input id="cliente-ire" type="checkbox"> IRE</label>
+                                <label class="obligacion-check"><input id="cliente-idu" type="checkbox"> IDU</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="btn btn-verde" onclick="guardarCliente()">Guardar cliente</button>
+                        <button class="btn btn-gris" onclick="cancelarFormularioCliente()">Cancelar</button>
+                    </div>
+                </div>
+
+                <div class="erp-placeholder">
+                    <div class="erp-placeholder-head">
+                        <div><h3>Clientes registrados</h3><p>El cliente seleccionado en la parte superior queda disponible como contexto del ERP.</p></div>
+                        <button class="btn btn-verde" onclick="mostrarFormularioCliente()">＋ Nuevo cliente</button>
+                    </div>
+                    <div id="lista-clientes" class="cliente-lista"><div class="sin-datos">Cargando clientes...</div></div>
+                </div>
             </section>
             <section class="vista" id="vista-tarifas-clientes"><h2 class="titulo-seccion">Tarifas de Clientes</h2><p class="subtitulo">Configuración comercial por cliente y servicio.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Tarifa vigente</strong><span>Servicio, importe, moneda y vigencia.</span></div><div class="placeholder-box"><strong>Historial</strong><span>Versiones anteriores y cambios de tarifa.</span></div><div class="placeholder-box"><strong>Aplicación</strong><span>Reglas para facturación automática.</span></div></div></div></section>
             <section class="vista" id="vista-estado-clientes"><h2 class="titulo-seccion">Estado de Cuenta de Clientes</h2><p class="subtitulo">Saldos, facturas, pagos y movimientos por cliente.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Saldo pendiente</strong><span>Visualización del saldo acumulado.</span></div><div class="placeholder-box"><strong>Movimientos</strong><span>Facturas, notas y pagos.</span></div><div class="placeholder-box"><strong>Período</strong><span>Filtros por fecha y cliente.</span></div></div></div></section>
@@ -794,6 +871,199 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             if (seguridad) seguridad.style.display = esSuperAdmin() ? 'flex' : 'none';
         }
 
+
+        let clientesERP = [];
+        let clienteActivoERP = null;
+
+        function perfilClienteTexto(cliente) {
+            if (!cliente) return 'Sin cliente';
+            if (cliente.perfil === 'PERSONA_JURIDICA') return 'Persona Jurídica';
+            if (cliente.perfil === 'PERSONA_FISICA_IVA_IRP') return 'Persona Física · IVA + IRP';
+            if (cliente.perfil === 'PERSONA_FISICA_IRP') return 'Persona Física · IRP';
+            return 'Persona Física';
+        }
+
+        function obligacionesClienteTexto(cliente) {
+            return (cliente?.obligaciones || []).join(' · ') || 'Sin obligaciones cargadas';
+        }
+
+        function actualizarSelectorCliente() {
+            const select = document.getElementById('selector-cliente');
+            if (!select) return;
+            const activoId = clienteActivoERP ? String(clienteActivoERP.id) : '';
+            select.innerHTML = '<option value="">Seleccionar Cliente</option>' +
+                clientesERP.map(c => '<option value="' + c.id + '">' + escapeHtml(c.razon_social) + ' · ' + escapeHtml(c.ruc) + '</option>').join('');
+            select.value = activoId;
+        }
+
+        function actualizarContextoClienteUI() {
+            const select = document.getElementById('selector-cliente');
+            if (select) select.value = clienteActivoERP ? String(clienteActivoERP.id) : '';
+            const el = document.getElementById('cliente-contexto-activo');
+            if (el) el.textContent = clienteActivoERP ? clienteActivoERP.razon_social : 'Sin cliente seleccionado';
+        }
+
+        async function cargarClientesERP() {
+            try {
+                const resp = await fetchApi(API + '/api/clientes');
+                if (resp.status === 401) { window.location.href = 'login.html'; return; }
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'No se pudieron cargar los clientes.');
+                clientesERP = Array.isArray(data) ? data : [];
+                actualizarSelectorCliente();
+
+                const guardado = localStorage.getItem('cliente_activo_id');
+                let elegido = clientesERP.find(c => String(c.id) === String(guardado));
+                if (!elegido && clientesERP.length === 1) elegido = clientesERP[0];
+                if (elegido) {
+                    clienteActivoERP = elegido;
+                    localStorage.setItem('cliente_activo_id', String(elegido.id));
+                } else {
+                    clienteActivoERP = null;
+                    localStorage.removeItem('cliente_activo_id');
+                }
+                actualizarContextoClienteUI();
+                cargarListaClientes();
+            } catch (e) {
+                const select = document.getElementById('selector-cliente');
+                if (select) select.innerHTML = '<option value="">Error al cargar clientes</option>';
+                console.error(e);
+            }
+        }
+
+        async function cambiarClienteContexto(clienteId) {
+            if (!clienteId) {
+                clienteActivoERP = null;
+                localStorage.removeItem('cliente_activo_id');
+                actualizarContextoClienteUI();
+                return;
+            }
+            try {
+                const resp = await fetchApi(API + '/api/clientes/contexto/' + encodeURIComponent(clienteId));
+                const data = await resp.json();
+                if (!resp.ok) { alert(data.error || 'No se pudo seleccionar el cliente.'); actualizarSelectorCliente(); return; }
+                clienteActivoERP = data.cliente;
+                localStorage.setItem('cliente_activo_id', String(clienteId));
+                actualizarContextoClienteUI();
+                if (document.getElementById('cliente-contexto-activo')) {
+                    document.getElementById('cliente-contexto-activo').textContent = data.cliente.razon_social;
+                }
+                // A partir de esta capa, los módulos nuevos consumirán este contexto.
+                if (typeof refrescarModuloPorCliente === 'function') refrescarModuloPorCliente();
+            } catch (e) {
+                alert('No se pudo seleccionar el cliente.');
+                actualizarSelectorCliente();
+            }
+        }
+
+        function limpiarFormularioCliente() {
+            ['cliente-edit-id','cliente-ruc','cliente-dv','cliente-razon','cliente-comercial','cliente-documento','cliente-correo','cliente-telefono','cliente-direccion'].forEach(id => {
+                const el=document.getElementById(id); if (el) el.value='';
+            });
+            ['cliente-iva','cliente-irp','cliente-ire','cliente-idu'].forEach(id => {
+                const el=document.getElementById(id); if (el) el.checked=false;
+            });
+            const tipo=document.getElementById('cliente-tipo'); if (tipo) tipo.value='juridica';
+        }
+
+        function mostrarFormularioCliente(cliente=null) {
+            const panel=document.getElementById('panel-form-cliente');
+            if (!panel) return;
+            limpiarFormularioCliente();
+            if (cliente) {
+                document.getElementById('titulo-form-cliente').textContent='Editar cliente';
+                document.getElementById('cliente-edit-id').value=cliente.id;
+                document.getElementById('cliente-ruc').value=cliente.ruc || '';
+                document.getElementById('cliente-dv').value=cliente.dv || '';
+                document.getElementById('cliente-razon').value=cliente.razon_social || '';
+                document.getElementById('cliente-comercial').value=cliente.nombre_comercial || '';
+                document.getElementById('cliente-tipo').value=cliente.tipo_persona || 'juridica';
+                document.getElementById('cliente-documento').value=cliente.documento || '';
+                document.getElementById('cliente-correo').value=cliente.correo || '';
+                document.getElementById('cliente-telefono').value=cliente.telefono || '';
+                document.getElementById('cliente-direccion').value=cliente.direccion || '';
+                (cliente.obligaciones || []).forEach(c => {
+                    const el=document.getElementById('cliente-'+String(c).toLowerCase());
+                    if (el) el.checked=true;
+                });
+            } else {
+                document.getElementById('titulo-form-cliente').textContent='Nuevo cliente';
+            }
+            panel.style.display='block';
+            panel.scrollIntoView({behavior:'smooth',block:'start'});
+        }
+
+        function cancelarFormularioCliente() {
+            const panel=document.getElementById('panel-form-cliente');
+            if (panel) panel.style.display='none';
+            limpiarFormularioCliente();
+        }
+
+        async function guardarCliente() {
+            const obligaciones=[];
+            ['IVA','IRP','IRE','IDU'].forEach(c => {
+                const el=document.getElementById('cliente-'+c.toLowerCase());
+                if (el && el.checked) obligaciones.push(c);
+            });
+            const payload={
+                ruc:document.getElementById('cliente-ruc').value.trim(),
+                dv:document.getElementById('cliente-dv').value.trim(),
+                razon_social:document.getElementById('cliente-razon').value.trim(),
+                nombre_comercial:document.getElementById('cliente-comercial').value.trim(),
+                tipo_persona:document.getElementById('cliente-tipo').value,
+                documento:document.getElementById('cliente-documento').value.trim(),
+                correo:document.getElementById('cliente-correo').value.trim(),
+                telefono:document.getElementById('cliente-telefono').value.trim(),
+                direccion:document.getElementById('cliente-direccion').value.trim(),
+                obligaciones
+            };
+            if (!payload.ruc || !payload.razon_social) { alert('RUC y razón social son obligatorios.'); return; }
+            const editId=document.getElementById('cliente-edit-id').value;
+            const resp=await fetchApi(editId ? API+'/api/clientes/'+editId : API+'/api/clientes', {
+                method: editId ? 'PUT' : 'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify(payload)
+            });
+            const data=await resp.json();
+            if (!resp.ok) { alert(data.error || 'No se pudo guardar el cliente.'); return; }
+            cancelarFormularioCliente();
+            await cargarClientesERP();
+            if (!clienteActivoERP) await cambiarClienteContexto(data.id);
+            alert(editId ? 'Cliente actualizado correctamente.' : 'Cliente creado correctamente.');
+            cargarListaClientes();
+        }
+
+        function cargarListaClientes() {
+            const cont=document.getElementById('lista-clientes');
+            if (!cont) return;
+            if (!clientesERP.length) {
+                cont.innerHTML='<div class="sin-datos">Todavía no hay clientes registrados. Creá el primero, por ejemplo Kakuaa Consultores.</div>';
+                return;
+            }
+            cont.innerHTML=clientesERP.map(c => {
+                const activo = clienteActivoERP && String(clienteActivoERP.id)===String(c.id);
+                return '<div class="cliente-row">' +
+                    '<div><strong>'+escapeHtml(c.razon_social)+'</strong><small>RUC: '+escapeHtml(c.ruc+(c.dv?'-'+c.dv:''))+'</small><small>'+escapeHtml(perfilClienteTexto(c))+'</small></div>' +
+                    '<div><small>Obligaciones</small><div class="cliente-badges">'+((c.obligaciones||[]).length ? c.obligaciones.map(o=>'<span class="cliente-badge verde">'+escapeHtml(o)+'</span>').join('') : '<span class="cliente-badge">—</span>')+'</div></div>' +
+                    '<div><small>Contexto</small><div>'+ (activo ? '<span class="module-pill">Activo</span>' : '<button class="btn btn-gris btn-pequeno" onclick="cambiarClienteContexto('+c.id+')">Seleccionar</button>') + '</div></div>' +
+                    '<div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="mostrarFormularioCliente(clientesERP.find(x=>x.id==='+c.id+'))">Editar</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarClienteERP('+c.id+')">Desactivar</button></div>' +
+                '</div>';
+            }).join('');
+        }
+
+        async function eliminarClienteERP(clienteId) {
+            if (!confirm('¿Desactivar este cliente? No se eliminarán sus datos históricos; quedará fuera del selector activo.')) return;
+            const resp=await fetchApi(API+'/api/clientes/'+clienteId,{method:'DELETE'});
+            const data=await resp.json();
+            if (!resp.ok) { alert(data.error || 'No se pudo desactivar.'); return; }
+            if (clienteActivoERP && String(clienteActivoERP.id)===String(clienteId)) {
+                clienteActivoERP=null;
+                localStorage.removeItem('cliente_activo_id');
+            }
+            await cargarClientesERP();
+            cargarListaClientes();
+        }
+
         function cambiarVista(vista) {
             if (vista === 'seguridad' && !esSuperAdmin()) return;
             if (!verificarSesion()) return;
@@ -808,6 +1078,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             objetivo.classList.add('activa');
 
             if (vista === 'dashboard') cargarDashboard();
+            if (vista === 'clientes') { cargarClientesERP(); setTimeout(cargarListaClientes, 0); }
             if (vista === 'articulos') { prepararCatalogos(); cargarArticulos(); }
             if (vista === 'tarifas') { prepararCatalogos(); cargarTarifas(); }
             if (vista === 'costos') { prepararCatalogos(); cargarCostosPersona(); }
@@ -1335,6 +1606,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
         (async function iniciarPanel() {
             if (!await restaurarSesion()) return;
             configurarPanel(); actualizarCabeceraERP();
+            await cargarClientesERP();
             if (esAdmin()) { cargarDashboard(); prepararCatalogos(); }
             cambiarVista(esAdmin() ? 'dashboard' : 'tareas');
         })();
