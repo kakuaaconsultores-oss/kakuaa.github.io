@@ -1107,9 +1107,6 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             }
             const resp = await fetchApi(API + '/api/contabilidad/cuentas');
             const cuentas = resp.ok ? await resp.json() : [];
-            const tbody = document.getElementById('tabla-cuentas-contables');
-            const plan = document.querySelector('#arbol-plan-cuentas tbody');
-            const padre = document.getElementById('cc-padre');
             if (padre) padre.innerHTML = '<option value="">Sin cuenta padre</option>' + cuentas.filter(c => !c.imputable).map(c => '<option value="'+c.id+'">'+escapeHtml(c.codigo)+' — '+escapeHtml(c.nombre)+' (No imputable)</option>').join('');
             if (tbody) tbody.innerHTML = cuentas.length ? cuentas.map(c => '<tr><td><strong>'+escapeHtml(c.codigo)+'</strong></td><td>'+escapeHtml(c.nombre)+'</td><td>'+escapeHtml(c.tipo)+'</td><td>'+escapeHtml(c.naturaleza)+'</td><td>'+c.nivel+'</td><td>'+(c.padre_codigo ? escapeHtml(c.padre_codigo) : '—')+'</td><td>'+(c.imputable ? 'Sí' : 'No')+'</td><td>'+(c.activa ? 'Activa' : 'Inactiva')+'</td></tr>').join('') : '<tr><td colspan="8">Todavía no hay cuentas contables.</td></tr>';
             if (plan) plan.innerHTML = cuentas.length ? cuentas.map(c => '<tr><td><strong>'+escapeHtml(c.codigo)+'</strong></td><td style="padding-left:'+Math.min((c.nivel-1)*22,110)+'px">'+escapeHtml(c.nombre)+'</td><td>'+escapeHtml(c.tipo)+'</td><td>'+escapeHtml(c.naturaleza)+'</td><td>'+(c.imputable ? 'Sí' : 'No')+'</td></tr>').join('') : '<tr><td colspan="5">Todavía no hay cuentas contables.</td></tr>';
