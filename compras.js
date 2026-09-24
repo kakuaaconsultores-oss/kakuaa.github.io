@@ -147,8 +147,8 @@ function resetProveedorRuc(){
  proveedorRucConsultado=false;proveedorEditando=null;
  ['prov-ruc','prov-razon','prov-nombre','prov-doc','prov-correo','prov-telefono','prov-direccion'].forEach(id=>{const e=document.getElementById(id);if(e){e.readOnly=false;e.value='';delete e.dataset.consultedRuc;}});
  const e=document.getElementById('prov-estado');if(e){e.textContent='';delete e.dataset.valor;}
- const btn=document.querySelector('#vista-proveedores .btn.btn-azul[onclick="crearProveedorCompra()"]');
- if(btn)btn.textContent='＋ Guardar proveedor';
+ const btn=document.getElementById('btn-guardar-proveedor');
+ if(btn){btn.textContent='＋ Guardar proveedor';btn.onclick=crearProveedorCompra;}
  setTimeout(()=>document.getElementById('prov-ruc')?.focus(),0);
 }
 async function cargarTimbradosProveedor(proveedorId){
@@ -204,8 +204,8 @@ function editarProveedorCompra(id){
  ['prov-razon','prov-nombre','prov-doc'].forEach(id=>{const e=document.getElementById(id);if(e)e.readOnly=true;});
  const estado=document.getElementById('prov-estado');if(estado)estado.textContent='Estado: '+(row.estado||'SIN DATO');
  proveedorRucConsultado=true;
- const btn=document.querySelector('#vista-proveedores .btn.btn-azul[onclick="crearProveedorCompra()"]');
- if(btn)btn.textContent='💾 Guardar cambios';
+ const btn=document.getElementById('btn-guardar-proveedor');
+ if(btn){btn.textContent='💾 Guardar cambios';btn.onclick=crearProveedorCompra;}
  document.getElementById('prov-ruc')?.focus();
  document.getElementById('vista-proveedores')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
