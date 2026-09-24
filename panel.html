@@ -404,6 +404,7 @@
                 <div class="nav-item nav-subitem" data-vista="balance-contable" onclick="cambiarVista('balance-contable')">Balance General</div>
                 <div class="nav-item nav-subitem" data-vista="resultados-contables" onclick="cambiarVista('resultados-contables')">Estado de Resultados</div>
                 <div class="nav-item nav-subitem" data-vista="flujo-efectivo" onclick="cambiarVista('flujo-efectivo')">Estado de Flujo de Efectivo</div>
+                <div class="nav-item nav-subitem" data-vista="formulario-renta" onclick="cambiarVista('formulario-renta')">Formulario de Renta</div>
                 <div class="nav-item nav-subitem" data-vista="variacion-patrimonio" onclick="cambiarVista('variacion-patrimonio')">Estado de Variación del Patrimonio Neto</div>
                 <div class="nav-item nav-subitem" data-vista="registro-rg90" onclick="cambiarVista('registro-rg90')">Registro Electrónico de Comprobantes (RG90)</div>
             </div>
@@ -585,12 +586,23 @@
                             </div>
                             <div><label>Concepto Estado de Flujo de Efectivo *</label><select id="cc-flujo">
                                 <option value="">Seleccioná</option>
-                                <option value="operacion">Operación</option>
-                                <option value="inversion">Inversión</option>
-                                <option value="financiacion">Financiación</option>
-                                <option value="no_aplica">No aplica</option>
+                                <option value="1.01">1.01 — VENTAS NETAS (COBRO NETO)</option>
+                                <option value="1.02">1.02 — PAGO A PROVEEDORES LOCALES (PAGO NETO)</option>
+                                <option value="1.03">1.03 — PAGO A PROVEEDORES DEL EXTERIOR (PAGO NETO)</option>
+                                <option value="1.04">1.04 — EFECTIVO PAGADO A EMPLEADOS</option>
+                                <option value="1.05">1.05 — EFECTIVO GENERADO (USADO) POR OTRAS ACTIVIDADES OPERATIVAS</option>
+                                <option value="1.06">1.06 — PAGO DE IMPUESTOS</option>
+                                <option value="2.01">2.01 — AUMENTO/DISMINUCIÓN NETO/A DE INVERSIONES TEMPORARIAS</option>
+                                <option value="2.02">2.02 — AUMENTO/DISMINUCIÓN NETO/A DE INVERSIONES A LARGO PLAZO</option>
+                                <option value="2.03">2.03 — AUMENTO/DISMINUCIÓN NETO/A DE PROPIEDAD, PLANTA Y EQUIPO</option>
+                                <option value="3.01">3.01 — APORTE DE CAPITAL</option>
+                                <option value="3.02">3.02 — AUMENTO/DISMINUCIÓN NETO/A DE PRÉSTAMOS</option>
+                                <option value="3.03">3.03 — DIVIDENDOS PAGADOS</option>
+                                <option value="3.04">3.04 — AUMENTO/DISMINUCIÓN NETO/A DE INTERESES</option>
+                                <option value="4">4 — EFECTO DE LAS GANANCIAS O PÉRDIDAS POR DIFERENCIAS DE TIPO DE CAMBIO</option>
                             </select></div>
-                            <div><label>Inciso Formulario *</label><input id="cc-formulario" readonly value="NO_APLICA" style="background:#f6f8fb;font-weight:700;"></div>
+                            <div><label>Inciso / Casilla Formulario *</label><input id="cc-formulario" readonly value="NO_APLICA" style="background:#f6f8fb;font-weight:700;"></div>
+                            <div><label>Referencia / Casilla DNIT</label><input id="cc-inciso" type="number" min="1" step="1" placeholder="Solo cuentas imputables IRE 500/501" disabled></div>
                         </div>
                         <div style="margin-top:8px;color:var(--texto-suave);font-size:.72rem;">Ref. (*): obligatorio. El formulario se determina automáticamente por el tipo de impuesto del cliente.</div>
                         <div class="quick-actions"><button class="btn btn-verde" onclick="guardarCuentaContable()">Guardar cuenta</button><button class="btn btn-gris" onclick="ocultarFormularioCuenta()">Cancelar</button></div>
@@ -637,12 +649,36 @@
 
             <section class="vista" id="vista-flujo-efectivo">
                 <h2 class="titulo-seccion">Estado de Flujo de Efectivo</h2>
-                <p class="subtitulo">Movimientos de efectivo y equivalentes clasificados por actividad.</p>
-                <div class="erp-placeholder"><div class="placeholder-grid">
-                    <div class="placeholder-box"><strong>Operación</strong><span>Cobros y pagos vinculados a la actividad ordinaria.</span></div>
-                    <div class="placeholder-box"><strong>Inversión</strong><span>Adquisiciones y disposiciones de activos.</span></div>
-                    <div class="placeholder-box"><strong>Financiación</strong><span>Préstamos, aportes, retiros y otros movimientos financieros.</span></div>
-                </div></div>
+                <p class="subtitulo">Panorama automático según las 13 clasificaciones definidas en las cuentas contables.</p>
+                <div class="panel-form">
+                    <div class="form-grid">
+                        <div><label>Desde</label><input id="flujo-desde" type="date"></div>
+                        <div><label>Hasta</label><input id="flujo-hasta" type="date"></div>
+                        <div><label>Efectivo y equivalentes al comienzo del período</label><input id="flujo-saldo-inicial" type="number" step="0.01" value="0"></div>
+                        <div style="display:flex;align-items:end;"><button class="btn btn-verde" onclick="generarFlujoEfectivo()">Generar reporte</button></div>
+                    </div>
+                </div>
+                <div class="tabla-panel">
+                    <div class="erp-placeholder-head"><div><h3>Estado de Flujo de Efectivo</h3><p>1 = Operativas · 2 = Inversión · 3 = Financiamiento · 4 = Diferencias de cambio.</p></div></div>
+                    <div id="tabla-flujo-efectivo"><div class="sin-datos">Seleccioná un cliente y generá el reporte.</div></div>
+                </div>
+            </section>
+            <section class="vista" id="vista-formulario-renta">
+                <h2 class="titulo-seccion">Formulario de Renta</h2>
+                <p class="subtitulo">Preliquidación del Formulario 500 IRE GENERAL o 501 IRE SIMPLE, según el impuesto del cliente activo.</p>
+                <div class="panel-form">
+                    <div class="form-grid">
+                        <div><label>Desde</label><input id="renta-desde" type="date"></div>
+                        <div><label>Hasta</label><input id="renta-hasta" type="date"></div>
+                        <div style="display:flex;align-items:end;"><button class="btn btn-verde" onclick="generarFormularioRenta()">Generar preliquidación</button></div>
+                    </div>
+                    <p style="margin-top:10px;color:var(--texto-suave);font-size:.72rem;">DNIT: Formulario 500 Versión 3 para IRE GENERAL y Formulario 501 Versión 2 para IRE SIMPLE. La exportación es un borrador de trabajo y debe ser revisada antes de su presentación.</p>
+                </div>
+                <div class="quick-actions">
+                    <button class="btn btn-azul" onclick="descargarFormularioRenta('xlsx')">⬇ Descargar Excel</button>
+                    <button class="btn btn-gris" onclick="descargarFormularioRenta('pdf')">⬇ Descargar PDF</button>
+                </div>
+                <div class="tabla-panel" style="margin-top:16px;"><div id="tabla-formulario-renta"><div class="sin-datos">Seleccioná un cliente y generá la preliquidación.</div></div></div>
             </section>
 
             <section class="vista" id="vista-variacion-patrimonio">
@@ -1165,6 +1201,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             if (vista === 'dashboard') cargarDashboard();
             if (vista === 'clientes') { cargarClientesERP(); setTimeout(cargarListaClientes, 0); }
             if (vista === 'definicion-cuentas' || vista === 'plan-cuentas') cargarCuentasContables();
+            if (vista === 'flujo-efectivo') prepararFechasFlujo();
+            if (vista === 'formulario-renta') prepararFechasRenta();
             if (vista === 'articulos') { prepararCatalogos(); cargarArticulos(); }
             if (vista === 'tarifas') { prepararCatalogos(); cargarTarifas(); }
             if (vista === 'costos') { prepararCatalogos(); cargarCostosPersona(); }
@@ -1178,7 +1216,9 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             return new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0 }).format(Number(valor || 0)) + ' G.';
         }
         function horasTexto(horas) { return Number(horas || 0).toFixed(2) + ' h'; }
-        function obtenerFormularioImpuestoActivo() {
+        const FLUJO_EFECTIVO_LABELS = {"4":"EFECTO DE LAS GANANCIAS O PÉRDIDAS POR DIFERENCIAS DE TIPO DE CAMBIO","1.01":"VENTAS NETAS (COBRO NETO)","1.02":"PAGO A PROVEEDORES LOCALES (PAGO NETO)","1.03":"PAGO A PROVEEDORES DEL EXTERIOR (PAGO NETO)","1.04":"EFECTIVO PAGADO A EMPLEADOS","1.05":"EFECTIVO GENERADO (USADO) POR OTRAS ACTIVIDADES OPERATIVAS","1.06":"PAGO DE IMPUESTOS","2.01":"AUMENTO/DISMINUCIÓN NETO/A DE INVERSIONES TEMPORARIAS","2.02":"AUMENTO/DISMINUCIÓN NETO/A DE INVERSIONES A LARGO PLAZO","2.03":"AUMENTO/DISMINUCIÓN NETO/A DE PROPIEDAD, PLANTA Y EQUIPO","3.01":"APORTE DE CAPITAL","3.02":"AUMENTO/DISMINUCIÓN NETO/A DE PRÉSTAMOS","3.03":"DIVIDENDOS PAGADOS","3.04":"AUMENTO/DISMINUCIÓN NETO/A DE INTERESES"};
+
+function obtenerFormularioImpuestoActivo() {
             const cliente = clienteActivoERP;
             if (!cliente) return 'NO_APLICA';
             const mapa = {'IVA':'120','IRP-RSP':'515','IRP-RGC':'516','IRE SIMPLE':'501','IRE GENERAL':'500'};
@@ -1187,12 +1227,16 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
 
         function actualizarFormularioCuentaUI() {
             const el=document.getElementById('cc-formulario');
+            const inciso=document.getElementById('cc-inciso');
+            const imputable=document.getElementById('cc-imputable');
             const contexto=document.getElementById('cc-contexto');
             const cliente=clienteActivoERP;
             const formulario=obtenerFormularioImpuestoActivo();
+            const habilitarInciso=!!imputable?.checked && (formulario==='500' || formulario==='501');
             if (el) el.value=formulario;
+            if (inciso) { inciso.disabled=!habilitarInciso; if(!habilitarInciso) inciso.value=''; }
             if (contexto) contexto.textContent=cliente
-                ? ('Cliente activo: '+(cliente.razon_social||'')+' · Impuesto: '+(cliente.tipo_impuesto||'Sin definir')+' · Formulario: '+formulario)
+                ? ('Cliente activo: '+(cliente.razon_social||'')+' · Impuesto: '+(cliente.tipo_impuesto||'Sin definir')+' · Formulario: '+formulario+(habilitarInciso?' · Inciso habilitado':' · Inciso no aplicable'))
                 : 'Contexto: Kakuaa Consultores · Catálogo maestro general';
         }
 
@@ -1228,10 +1272,12 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             const nivel=Number(document.getElementById('cc-nivel').value||1);
             const concepto=document.getElementById('cc-flujo').value;
             const formulario=obtenerFormularioImpuestoActivo();
+            const imputable=document.getElementById('cc-imputable').checked;
+            const inciso=document.getElementById('cc-inciso').value.trim();
             if (!codigo || !nombre || !tipo || !naturaleza || !nivel || !concepto) {
                 alert('Completá todos los campos obligatorios (*).'); return;
             }
-            const payload={codigo,nombre,tipo,naturaleza,nivel,cuenta_padre_id:document.getElementById('cc-padre').value||null,imputable:document.getElementById('cc-imputable').checked,activa:true,concepto_flujo_efectivo:concepto,formulario_impuesto:formulario};
+            const payload={codigo,nombre,tipo,naturaleza,nivel,cuenta_padre_id:document.getElementById('cc-padre').value||null,imputable,activa:true,concepto_flujo_efectivo:concepto,formulario_impuesto:formulario,inciso_formulario:imputable?inciso:''};
             const resp=await fetchApi(API+'/api/contabilidad/cuentas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
             const data=await resp.json();
             if(!resp.ok){alert(data.error||'No se pudo crear la cuenta.');return;}
@@ -1240,6 +1286,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             document.getElementById('cc-nivel').value='1';
             document.getElementById('cc-padre').value='';
             document.getElementById('cc-imputable').checked=true;
+            document.getElementById('cc-inciso').value='';
             document.getElementById('cc-tipo').value='';
             document.getElementById('cc-naturaleza').value='';
             document.getElementById('cc-flujo').value='';
@@ -1381,6 +1428,43 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
         async function crearCostoPersona(){
             const payload={usuario_id:document.getElementById('costo-persona').value,costo_hora:document.getElementById('costo-hora').value,vigencia_desde:document.getElementById('costo-desde').value,vigencia_hasta:document.getElementById('costo-hasta').value};
             const r=await fetchApi(API+'/api/admin/costos-persona',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar.');return;}document.getElementById('costo-hora').value='';cargarCostosPersona();cargarDashboard();
+        }
+
+        function prepararFechasFlujo(){ const hoy=new Date(); const y=hoy.getFullYear(); const d=document.getElementById('flujo-desde'), h=document.getElementById('flujo-hasta'); if(d&&!d.value)d.value=y+'-01-01'; if(h&&!h.value)h.value=hoy.toISOString().slice(0,10); }
+        function prepararFechasRenta(){ const hoy=new Date(); const y=hoy.getFullYear(); const d=document.getElementById('renta-desde'), h=document.getElementById('renta-hasta'); if(d&&!d.value)d.value=y+'-01-01'; if(h&&!h.value)h.value=y+'-12-31'; }
+        async function generarFlujoEfectivo(){
+            if(!clienteActivoERP){alert('Seleccioná un cliente antes de generar el Estado de Flujo de Efectivo.');return;}
+            const p=new URLSearchParams({desde:document.getElementById('flujo-desde').value,hasta:document.getElementById('flujo-hasta').value,saldo_inicial:document.getElementById('flujo-saldo-inicial').value||'0'});
+            const r=await fetchApi(API+'/api/contabilidad/reportes/flujo-efectivo?'+p.toString()); const d=await r.json();
+            if(!r.ok){alert(d.error||'No se pudo generar el reporte.');return;}
+            const x=d.reporte, det=x.detalle||{}; let html='<table><thead><tr><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>IMPORTE</th></tr></thead><tbody>';
+            html+='<tr><td><strong>1</strong></td><td><strong>FLUJO DE EFECTIVO POR ACTIVIDADES OPERATIVAS</strong></td><td><strong>'+formatoGuarani(x['1'])+'</strong></td></tr>';
+            ['1.01','1.02','1.03','1.04','1.05','1.06'].forEach(k=>html+='<tr><td>'+k+'</td><td>'+FLUJO_EFECTIVO_LABELS[k]+'</td><td>'+formatoGuarani(det[k])+'</td></tr>');
+            html+='<tr><td><strong>2</strong></td><td><strong>FLUJO DE EFECTIVO POR ACTIVIDADES DE INVERSIÓN</strong></td><td><strong>'+formatoGuarani(x['2'])+'</strong></td></tr>';
+            ['2.01','2.02','2.03'].forEach(k=>html+='<tr><td>'+k+'</td><td>'+FLUJO_EFECTIVO_LABELS[k]+'</td><td>'+formatoGuarani(det[k])+'</td></tr>');
+            html+='<tr><td><strong>3</strong></td><td><strong>FLUJO DE EFECTIVO POR ACTIVIDADES DE FINANCIAMIENTO</strong></td><td><strong>'+formatoGuarani(x['3'])+'</strong></td></tr>';
+            ['3.01','3.02','3.03','3.04'].forEach(k=>html+='<tr><td>'+k+'</td><td>'+FLUJO_EFECTIVO_LABELS[k]+'</td><td>'+formatoGuarani(det[k])+'</td></tr>');
+            html+='<tr><td><strong>4</strong></td><td><strong>'+FLUJO_EFECTIVO_LABELS['4']+'</strong></td><td><strong>'+formatoGuarani(x['4'])+'</strong></td></tr>';
+            html+='<tr><td><strong>4.01</strong></td><td><strong>AUMENTO/DISMINUCIÓN NETO/A DE EFECTIVOS Y SUS EQUIVALENTES</strong></td><td><strong>'+formatoGuarani(x['4.01'])+'</strong></td></tr>';
+            html+='<tr><td><strong>4.02</strong></td><td>EFECTIVO Y SUS EQUIVALENTES AL COMIENZO DEL PERIODO</td><td>'+formatoGuarani(x['4.02'])+'</td></tr>';
+            html+='<tr><td><strong>5</strong></td><td><strong>EFECTIVO Y SUS EQUIVALENTES AL CIERRE DEL PERIODO</strong></td><td><strong>'+formatoGuarani(x['5'])+'</strong></td></tr></tbody></table>';
+            document.getElementById('tabla-flujo-efectivo').innerHTML=html;
+        }
+        async function generarFormularioRenta(){
+            if(!clienteActivoERP){alert('Seleccioná un cliente antes de generar el Formulario de Renta.');return;}
+            const p=new URLSearchParams({desde:document.getElementById('renta-desde').value,hasta:document.getElementById('renta-hasta').value});
+            const r=await fetchApi(API+'/api/contabilidad/reportes/formulario-renta?'+p.toString()); const d=await r.json();
+            if(!r.ok){alert(d.error||'No se pudo generar el formulario.');return;}
+            let html='<table><thead><tr><th>INC./CASILLA</th><th>DESCRIPCIÓN</th><th>IMPORTE</th></tr></thead><tbody>';
+            d.casillas.forEach(x=>html+='<tr><td>'+x.numero+'</td><td>'+escapeHtml(x.descripcion)+'</td><td>'+formatoGuarani(x.importe)+'</td></tr>');
+            document.getElementById('tabla-formulario-renta').innerHTML=html+'</tbody></table><p style="margin-top:12px;color:var(--texto-suave);font-size:.72rem;">'+escapeHtml(d.nota)+'</p>';
+        }
+        async function descargarFormularioRenta(formato){
+            if(!clienteActivoERP){alert('Seleccioná un cliente antes de descargar el Formulario de Renta.');return;}
+            const p=new URLSearchParams({desde:document.getElementById('renta-desde').value,hasta:document.getElementById('renta-hasta').value});
+            const r=await fetchApi(API+'/api/contabilidad/reportes/formulario-renta/'+formato+'?'+p.toString());
+            if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'No se pudo descargar el formulario.');return;}
+            const blob=await r.blob(); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=''; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
         }
 
         // ===== TICKETS =====
@@ -1732,6 +1816,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
 
         document.getElementById('carpeta-subir').addEventListener('change', actualizarSubcarpetasSelect);
         document.getElementById('cliente-tipo-impuesto')?.addEventListener('change', actualizarFormularioCliente);
+        document.getElementById('cc-imputable')?.addEventListener('change', actualizarFormularioCuentaUI);
         (async function iniciarPanel() {
             if (!await restaurarSesion()) return;
             configurarPanel(); actualizarCabeceraERP();
