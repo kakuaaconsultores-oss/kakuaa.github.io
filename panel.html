@@ -1256,10 +1256,8 @@ function obtenerFormularioImpuestoActivo() {
                     el.disabled=false;
                 }
             }
-            if (inciso) {
-                inciso.disabled=!habilitarInciso;
-                if (!habilitarInciso && !document.getElementById('cc-id')?.value) inciso.value='';
-            }
+            // La referencia/casilla DNIT permanece editable siempre.
+            // Solo la validación al guardar determina si es obligatoria.
             if (contexto) contexto.textContent=cliente
                 ? ('Cliente activo: '+(cliente.razon_social||'')+' · Impuestos: '+((cliente.impuestos||[cliente.tipo_impuesto]).join ? (cliente.impuestos||[cliente.tipo_impuesto]).join(', ') : (cliente.tipo_impuesto||'Sin definir'))+' · Formulario: '+formulario+(habilitarInciso?' · Inciso habilitado':' · Inciso no aplicable'))
                 : 'Contexto: Kakuaa Consultores · Catálogo maestro general · Podés seleccionar Formulario 500/501 para mapear casillas DNIT';
