@@ -651,7 +651,7 @@
 
             <section class="vista" id="vista-flujo-efectivo">
                 <h2 class="titulo-seccion">Estado de Flujo de Efectivo</h2>
-                <p class="subtitulo">Panorama automático según las 13 clasificaciones definidas en las cuentas contables.</p>
+                <p class="subtitulo">Panorama automático según las 13 clasificaciones definidas en las cuentas contables. Funciona tanto sobre un cliente como sobre el catálogo maestro de Kakuaa.</p>
                 <div class="panel-form">
                     <div class="form-grid">
                         <div><label>Desde</label><input id="flujo-desde" type="date"></div>
@@ -667,11 +667,11 @@
             </section>
             <section class="vista" id="vista-formulario-renta">
                 <h2 class="titulo-seccion">Formulario de Renta</h2>
-                <p class="subtitulo">Preliquidación del Formulario 500 IRE GENERAL o 501 IRE SIMPLE, según el impuesto del cliente activo.</p>
+                <p class="subtitulo">Preliquidación del Formulario 500 IRE GENERAL o 501 IRE SIMPLE. En un cliente IRE se determina automáticamente; en el catálogo maestro de Kakuaa podés seleccionar el formulario.</p>
                 <div class="panel-form">
                     <div class="form-grid">
                         <div><label>Desde</label><input id="renta-desde" type="date"></div>
-                        <div><label>Hasta</label><input id="renta-hasta" type="date"></div>
+                        <div><label>Hasta</label><input id="renta-hasta" type="date"></div><div id="renta-formulario-maestro" style="display:none;"><label>Formulario</label><select id="renta-formulario"><option value="500">500 — IRE GENERAL</option><option value="501">501 — IRE SIMPLE</option></select></div>
                         <div style="display:flex;align-items:end;"><button class="btn btn-verde" onclick="generarFormularioRenta()">Generar preliquidación</button></div>
                     </div>
                     <p style="margin-top:10px;color:var(--texto-suave);font-size:.72rem;">DNIT: Formulario 500 Versión 3 para IRE GENERAL y Formulario 501 Versión 2 para IRE SIMPLE. La exportación es un borrador de trabajo y debe ser revisada antes de su presentación.</p>
@@ -680,7 +680,7 @@
                     <button class="btn btn-azul" onclick="descargarFormularioRenta('xlsx')">⬇ Descargar Excel</button>
                     <button class="btn btn-gris" onclick="descargarFormularioRenta('pdf')">⬇ Descargar PDF</button>
                 </div>
-                <div class="tabla-panel" style="margin-top:16px;"><div id="tabla-formulario-renta"><div class="sin-datos">Seleccioná un cliente y generá la preliquidación.</div></div></div>
+                <div class="tabla-panel" style="margin-top:16px;"><div id="tabla-formulario-renta"><div class="sin-datos">Generá la preliquidación. Si estás en el catálogo maestro, seleccioná Formulario 500 o 501.</div></div></div>
             </section>
 
             <section class="vista" id="vista-variacion-patrimonio">
@@ -1449,9 +1449,8 @@ function obtenerFormularioImpuestoActivo() {
         }
 
         function prepararFechasFlujo(){ const hoy=new Date(); const y=hoy.getFullYear(); const d=document.getElementById('flujo-desde'), h=document.getElementById('flujo-hasta'); if(d&&!d.value)d.value=y+'-01-01'; if(h&&!h.value)h.value=hoy.toISOString().slice(0,10); }
-        function prepararFechasRenta(){ const hoy=new Date(); const y=hoy.getFullYear(); const d=document.getElementById('renta-desde'), h=document.getElementById('renta-hasta'); if(d&&!d.value)d.value=y+'-01-01'; if(h&&!h.value)h.value=y+'-12-31'; }
+        function prepararFechasRenta(){ const hoy=new Date(); const y=hoy.getFullYear(); const d=document.getElementById('renta-desde'), h=document.getElementById('renta-hasta'), m=document.getElementById('renta-formulario-maestro'); if(d&&!d.value)d.value=y+'-01-01'; if(h&&!h.value)h.value=y+'-12-31'; if(m)m.style.display=clienteActivoERP?'none':'block'; }
         async function generarFlujoEfectivo(){
-            if(!clienteActivoERP){alert('Seleccioná un cliente antes de generar el Estado de Flujo de Efectivo.');return;}
             const p=new URLSearchParams({desde:document.getElementById('flujo-desde').value,hasta:document.getElementById('flujo-hasta').value,saldo_inicial:document.getElementById('flujo-saldo-inicial').value||'0'});
             const r=await fetchApi(API+'/api/contabilidad/reportes/flujo-efectivo?'+p.toString()); const d=await r.json();
             if(!r.ok){alert(d.error||'No se pudo generar el reporte.');return;}
@@ -1469,8 +1468,8 @@ function obtenerFormularioImpuestoActivo() {
             document.getElementById('tabla-flujo-efectivo').innerHTML=html;
         }
         async function generarFormularioRenta(){
-            if(!clienteActivoERP){alert('Seleccioná un cliente antes de generar el Formulario de Renta.');return;}
             const p=new URLSearchParams({desde:document.getElementById('renta-desde').value,hasta:document.getElementById('renta-hasta').value});
+            if(!clienteActivoERP)p.set('formulario',document.getElementById('renta-formulario').value);
             const r=await fetchApi(API+'/api/contabilidad/reportes/formulario-renta?'+p.toString()); const d=await r.json();
             if(!r.ok){alert(d.error||'No se pudo generar el formulario.');return;}
             let html='<table><thead><tr><th>INC./CASILLA</th><th>DESCRIPCIÓN</th><th>IMPORTE</th></tr></thead><tbody>';
@@ -1478,8 +1477,8 @@ function obtenerFormularioImpuestoActivo() {
             document.getElementById('tabla-formulario-renta').innerHTML=html+'</tbody></table><p style="margin-top:12px;color:var(--texto-suave);font-size:.72rem;">'+escapeHtml(d.nota)+'</p>';
         }
         async function descargarFormularioRenta(formato){
-            if(!clienteActivoERP){alert('Seleccioná un cliente antes de descargar el Formulario de Renta.');return;}
             const p=new URLSearchParams({desde:document.getElementById('renta-desde').value,hasta:document.getElementById('renta-hasta').value});
+            if(!clienteActivoERP)p.set('formulario',document.getElementById('renta-formulario').value);
             const r=await fetchApi(API+'/api/contabilidad/reportes/formulario-renta/'+formato+'?'+p.toString());
             if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'No se pudo descargar el formulario.');return;}
             const blob=await r.blob(); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=''; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
