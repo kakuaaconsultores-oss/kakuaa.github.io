@@ -1402,9 +1402,8 @@ function obtenerFormularioImpuestoActivo() {
             if (!codigo || !nombre || !tipo || !naturaleza || !nivel) {
                 alert('Completá todos los campos obligatorios (*).'); return;
             }
-            if (imputable && !concepto) {
-                alert('El Concepto de Estado de Flujo de Efectivo es obligatorio para las cuentas imputables.'); return;
-            }
+            // La obligatoriedad del concepto de flujo se valida en el backend.
+            // Las cuentas de dinero dentro de DISPONIBILIDADES quedan exentas.
             if (formulario!=='NO_APLICA' && !inciso) {
                 alert('La referencia/casilla DNIT es obligatoria cuando se selecciona un Formulario 500 o 501.'); return;
             }
