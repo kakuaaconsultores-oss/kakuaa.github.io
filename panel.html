@@ -1247,13 +1247,13 @@ function obtenerFormularioImpuestoActivo() {
             const resp = await fetchApi(API + '/api/contabilidad/cuentas');
             if (!resp.ok) {
                 const data=await resp.json().catch(()=>({}));
-                if (tbody) tbody.innerHTML='<tr><td colspan="10">'+escapeHtml(data.error||'No se pudieron cargar las cuentas.')+'</td></tr>';
+                if (tbody) tbody.innerHTML='<tr><td colspan="11">'+escapeHtml(data.error||'No se pudieron cargar las cuentas.')+'</td></tr>';
                 if (plan) plan.innerHTML='<tr><td colspan="5">'+escapeHtml(data.error||'No se pudo cargar el plan de cuentas.')+'</td></tr>';
                 return;
             }
             const cuentas = await resp.json();
             if (padre) padre.innerHTML = '<option value="">Sin cuenta padre</option>' + cuentas.filter(c => !c.imputable).map(c => '<option value="'+c.id+'">'+escapeHtml(c.codigo)+' — '+escapeHtml(c.nombre)+' (No imputable)</option>').join('');
-            if (tbody) tbody.innerHTML = cuentas.length ? cuentas.map(c => '<tr><td><strong>'+escapeHtml(c.codigo)+'</strong></td><td>'+escapeHtml(c.nombre)+'</td><td>'+escapeHtml(c.tipo)+'</td><td>'+escapeHtml(c.naturaleza)+'</td><td>'+c.nivel+'</td><td>'+(c.padre_codigo ? escapeHtml(c.padre_codigo) : '—')+'</td><td>'+(c.imputable ? 'Sí' : 'No')+'</td><td>'+escapeHtml(c.concepto_flujo_efectivo||'—')+'</td><td>'+escapeHtml(c.formulario_impuesto||'—')+'</td><td>'+(c.activa ? 'Activa' : 'Inactiva')+'</td></tr>').join('') : '<tr><td colspan="10">Todavía no hay cuentas contables.</td></tr>';
+            if (tbody) tbody.innerHTML = cuentas.length ? cuentas.map(c => '<tr><td><strong>'+escapeHtml(c.codigo)+'</strong></td><td>'+escapeHtml(c.nombre)+'</td><td>'+escapeHtml(c.tipo)+'</td><td>'+escapeHtml(c.naturaleza)+'</td><td>'+c.nivel+'</td><td>'+(c.padre_codigo ? escapeHtml(c.padre_codigo) : '—')+'</td><td>'+(c.imputable ? 'Sí' : 'No')+'</td><td>'+escapeHtml(c.concepto_flujo_efectivo||'—')+'</td><td>'+escapeHtml(c.formulario_impuesto||'—')+'</td><td>'+(c.activa ? 'Activa' : 'Inactiva')+'</td></tr>').join('') : '<tr><td colspan="11">Todavía no hay cuentas contables.</td></tr>';
             if (plan) plan.innerHTML = cuentas.length ? cuentas.map(c => '<tr><td><strong>'+escapeHtml(c.codigo)+'</strong></td><td style="padding-left:'+Math.min((c.nivel-1)*22,110)+'px">'+escapeHtml(c.nombre)+'</td><td>'+escapeHtml(c.tipo)+'</td><td>'+escapeHtml(c.naturaleza)+'</td><td>'+(c.imputable ? 'Sí' : 'No')+'</td></tr>').join('') : '<tr><td colspan="5">Todavía no hay cuentas contables.</td></tr>';
             actualizarFormularioCuentaUI();
         }
