@@ -569,11 +569,46 @@
             <section class="vista" id="vista-tarifas"><h2 class="titulo-seccion">Tarifas</h2><p class="subtitulo">Administración centralizada de precios y condiciones.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Tarifas base</strong><span>Precios estándar por servicio.</span></div><div class="placeholder-box"><strong>Vigencias</strong><span>Control de fechas de aplicación.</span></div><div class="placeholder-box"><strong>Excepciones</strong><span>Condiciones particulares por cliente.</span></div></div></div></section>
             <section class="vista" id="vista-articulos-compra"><h2 class="titulo-seccion">Conceptos / Ítems de Compra</h2><p class="subtitulo">Catálogo de bienes y servicios adquiridos.</p><div class="card"><div class="form-grid"><input id="ccp-codigo" placeholder="Código *"><input id="ccp-nombre" placeholder="Nombre *"><input id="ccp-tipo" placeholder="Tipo"><input id="ccp-iva" type="number" value="10" placeholder="IVA %"><input id="ccp-cuenta" type="number" placeholder="ID cuenta contable"><input id="ccp-desc" placeholder="Descripción"></div><button class="btn btn-azul" onclick="crearConceptoCompra()">＋ Guardar concepto</button></div><div id="lista-conceptos-compra" style="margin-top:16px"></div></section>
 <section class="vista" id="vista-proveedores"><h2 class="titulo-seccion">Proveedores</h2><p class="subtitulo">Maestro de proveedores del cliente activo.</p><div class="card"><div class="form-grid"><input id="prov-ruc" placeholder="RUC"><input id="prov-razon" placeholder="Razón social *"><input id="prov-nombre" placeholder="Nombre comercial"><input id="prov-doc" placeholder="Documento"><input id="prov-correo" placeholder="Correo"><input id="prov-telefono" placeholder="Teléfono"><input id="prov-direccion" placeholder="Dirección"></div><button class="btn btn-azul" onclick="crearProveedorCompra()">＋ Guardar proveedor</button></div><div id="lista-proveedores-compra" style="margin-top:16px"></div></section>
-<section class="vista" id="vista-compras"><h2 class="titulo-seccion">Registrar Factura</h2><p class="subtitulo">Carga manual de comprobantes de compra.</p><div class="card"><div class="form-grid"><select id="comp-proveedor"><option value="">Proveedor *</option></select><select id="comp-tipo"><option value="">Tipo de comprobante</option></select><input id="comp-numero" placeholder="Número *"><input id="comp-cdc" placeholder="CDC / DTE"><input id="comp-fecha" type="date"><input id="comp-grav10" type="number" placeholder="Gravado 10%"><input id="comp-grav5" type="number" placeholder="Gravado 5%"><input id="comp-exento" type="number" placeholder="Exento"><input id="comp-iva10" type="number" placeholder="IVA 10%"><input id="comp-iva5" type="number" placeholder="IVA 5%"><input id="comp-total" type="number" placeholder="Total *"><input id="comp-observacion" placeholder="Observación"></div><button class="btn btn-azul" onclick="guardarComprobanteCompra()">＋ Registrar factura</button></div><div id="lista-compras" style="margin-top:16px"></div></section>
+<section class="vista" id="vista-compras">
+<h2 class="titulo-seccion">Registrar Factura</h2><p class="subtitulo">Carga manual de comprobantes de compra.</p>
+<div class="card"><div class="form-grid">
+<select id="comp-proveedor"><option value="">Proveedor *</option></select>
+<select id="comp-tipo"><option value="">Tipo de comprobante</option></select>
+<select id="comp-condicion"><option value="">Condición de compra</option></select>
+<input id="comp-numero" placeholder="Número *"><input id="comp-cdc" placeholder="CDC / DTE"><input id="comp-fecha" type="date">
+<input id="comp-grav10" type="number" placeholder="Gravado 10%"><input id="comp-grav5" type="number" placeholder="Gravado 5%">
+<input id="comp-exento" type="number" placeholder="Exento"><input id="comp-iva10" type="number" placeholder="IVA 10%"><input id="comp-iva5" type="number" placeholder="IVA 5%">
+<input id="comp-total" type="number" placeholder="Total *"><input id="comp-observacion" placeholder="Observación">
+</div><button class="btn btn-azul" onclick="guardarComprobanteCompra()">＋ Registrar factura</button></div>
+<div id="cuotero-generado" style="margin-top:16px"></div><div id="lista-compras" style="margin-top:16px"></div></section>
 <section class="vista" id="vista-pagos"><h2 class="titulo-seccion">Orden de Pago</h2><p class="subtitulo">Estructura preparada para aplicación contra facturas y futura integración con Banca.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Orden de Pago</strong><span>Proveedor y documentos a cancelar.</span></div><div class="placeholder-box"><strong>Aplicación</strong><span>Aplicación parcial o total.</span></div></div></div></section>
 <section class="vista" id="vista-estado-proveedores"><h2 class="titulo-seccion">Estado de Cuenta de Proveedor</h2><div id="reporte-estado-proveedor"></div></section>
-<section class="vista" id="vista-tipos-comprobante-compra"><h2 class="titulo-seccion">Tipos de Comprobantes</h2><div id="catalogo-tipos-compra"></div></section>
-<section class="vista" id="vista-condiciones-compra"><h2 class="titulo-seccion">Condiciones de Compra</h2><div class="card"><div class="form-grid"><input id="cond-codigo" placeholder="Código *"><input id="cond-nombre" placeholder="Nombre *"><input id="cond-dias" type="number" value="0" placeholder="Días de crédito"></div><button class="btn btn-azul" onclick="crearCatalogoCompra('condiciones')">＋ Guardar</button></div><div id="lista-condiciones-compra" style="margin-top:16px"></div></section>
+<section class="vista" id="vista-tipos-comprobante-compra">
+<h2 class="titulo-seccion">Tipos de Comprobantes</h2>
+<p class="subtitulo">Administrá los tipos de comprobantes que podrán utilizarse en Compras.</p>
+<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn btn-azul" onclick="abrirNuevoTipoComprobante()">＋ Nuevo</button></div>
+<div id="form-tipo-compra" class="card" style="display:none;margin-bottom:16px">
+  <div class="form-grid"><input id="tipo-compra-codigo" placeholder="Código *"><input id="tipo-compra-nombre" placeholder="Nombre *"></div>
+  <div style="margin-top:12px"><button id="btn-guardar-tipo-compra" class="btn btn-verde" onclick="guardarTipoComprobante()">＋ Crear Tipo de Comprobante</button> <button class="btn btn-gris" onclick="cancelarTipoComprobante()">Cancelar</button></div>
+</div>
+<div id="catalogo-tipos-compra"></div>
+</section>
+<section class="vista" id="vista-condiciones-compra">
+<h2 class="titulo-seccion">Condiciones de Compra</h2>
+<p class="subtitulo">Definí si una factura se paga a días o mediante cuotas. Las condiciones con cuotas generan automáticamente el cuotero al registrar la factura.</p>
+<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn btn-azul" onclick="abrirNuevaCondicion()">＋ Nuevo</button></div>
+<div id="form-condicion-compra" class="card" style="display:none;margin-bottom:16px">
+  <div class="form-grid">
+    <input id="cond-codigo" placeholder="Código *">
+    <input id="cond-nombre" placeholder="Nombre *">
+    <select id="cond-tipo" onchange="actualizarCamposCondicionCompra()"><option value="dias">Días</option><option value="cuotas">Cuotas</option></select>
+    <input id="cond-dias" type="number" min="0" value="0" placeholder="Días">
+    <input id="cond-cuotas" type="number" min="1" value="1" placeholder="Cuotas">
+  </div>
+  <div style="margin-top:12px"><button id="btn-guardar-condicion" class="btn btn-verde" onclick="guardarCondicionCompra()">＋ Crear Condición de Compra</button> <button class="btn btn-gris" onclick="cancelarCondicionCompra()">Cancelar</button></div>
+</div>
+<div id="lista-condiciones-compra" style="margin-top:16px"></div>
+</section>
 <section class="vista" id="vista-formas-pago-compra"><h2 class="titulo-seccion">Formas de Pago</h2><div class="card"><div class="form-grid"><input id="fp-codigo" placeholder="Código *"><input id="fp-nombre" placeholder="Nombre *"><select id="fp-tipo"><option value="contado">Contado</option><option value="credito">Crédito</option><option value="transferencia">Transferencia</option><option value="cheque">Cheque</option></select></div><button class="btn btn-azul" onclick="crearCatalogoCompra('formas-pago')">＋ Guardar</button></div><div id="lista-formas-pago-compra" style="margin-top:16px"></div></section>
 <section class="vista" id="vista-orden-compra"><h2 class="titulo-seccion">Orden de Compra</h2><p class="subtitulo">Preparada para emisión, recepción y conversión a factura.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Borrador → Emitida → Recibida → Facturada</strong><span>La estructura transaccional ya queda reservada.</span></div></div></div></section>
 <section class="vista" id="vista-nota-credito-compra"><h2 class="titulo-seccion">Registrar Nota de Crédito</h2><p class="subtitulo">La gestión completa se conectará con el comprobante origen y su impacto impositivo.</p><div class="erp-placeholder"><div class="placeholder-box"><strong>Próxima capa</strong><span>Documento origen, motivo, monto y contabilización.</span></div></div></section>
