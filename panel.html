@@ -1131,7 +1131,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 const activo = clienteActivoERP && String(clienteActivoERP.id)===String(c.id);
                 return '<div class="cliente-row">' +
                     '<div><strong>'+escapeHtml(c.razon_social)+'</strong><small>RUC: '+escapeHtml(c.ruc+(c.dv?'-'+c.dv:''))+'</small><small>'+escapeHtml(perfilClienteTexto(c))+'</small></div>' +
-                    '<div><small>Obligaciones</small><div class="cliente-badges">'+((c.obligaciones||[]).length ? c.obligaciones.map(o=>'<span class="cliente-badge verde">'+escapeHtml(o)+'</span>').join('') : '<span class="cliente-badge">—</span>')+'</div></div>' +
+                    '<div><small>Impuesto</small><div class="cliente-badges"><span class="cliente-badge verde">'+escapeHtml(c.tipo_impuesto||'Sin definir')+'</span>'+(c.formulario_impuesto ? '<span class="cliente-badge">Form. '+escapeHtml(c.formulario_impuesto)+'</span>' : '')+'</div></div>' +
                     '<div><small>Contexto</small><div>'+ (activo ? '<span class="module-pill">Activo</span>' : '<button class="btn btn-gris btn-pequeno" onclick="cambiarClienteContexto('+c.id+')">Seleccionar</button>') + '</div></div>' +
                     '<div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="mostrarFormularioCliente(clientesERP.find(x=>x.id==='+c.id+'))">Editar</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarClienteERP('+c.id+')">Desactivar</button></div>' +
                 '</div>';
