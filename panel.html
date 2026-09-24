@@ -971,7 +971,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             const select = document.getElementById('selector-cliente');
             if (!select) return;
             const activoId = clienteActivoERP ? String(clienteActivoERP.id) : '';
-            select.innerHTML = '<option value="">Seleccionar Cliente</option>' +
+            select.innerHTML = '<option value="">Kakuaa Consultores · Catálogo maestro</option>' +
                 clientesERP.map(c => '<option value="' + c.id + '">' + escapeHtml(c.razon_social) + ' · ' + escapeHtml(c.ruc) + '</option>').join('');
             select.value = activoId;
         }
@@ -993,8 +993,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 actualizarSelectorCliente();
 
                 const guardado = localStorage.getItem('cliente_activo_id');
-                let elegido = clientesERP.find(c => String(c.id) === String(guardado));
-                if (!elegido && clientesERP.length === 1) elegido = clientesERP[0];
+                const elegido = clientesERP.find(c => String(c.id) === String(guardado));
                 if (elegido) {
                     clienteActivoERP = elegido;
                     localStorage.setItem('cliente_activo_id', String(elegido.id));
@@ -1114,7 +1113,6 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             if (!resp.ok) { alert(data.error || 'No se pudo guardar el cliente.'); return; }
             cancelarFormularioCliente();
             await cargarClientesERP();
-            if (!clienteActivoERP) await cambiarClienteContexto(data.id);
             alert(editId ? 'Cliente actualizado correctamente.' : 'Cliente creado correctamente.');
             cargarListaClientes();
         }
