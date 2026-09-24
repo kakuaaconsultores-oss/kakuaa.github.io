@@ -218,7 +218,7 @@ async function crearProveedorCompra(){
  if(!proveedorEditando && (!proveedorRucConsultado||document.getElementById('prov-ruc').dataset.consultedRuc!==rucActual)){alert('Consultá nuevamente el RUC antes de guardar.');return;}
  if(!body.ruc||!body.razon_social){alert('RUC y razón social son obligatorios.');return;}
  const url=API+'/api/compras/proveedores'+(proveedorEditando?'/'+proveedorEditando:'');
- const r=await fetchApi(url,{method:proveedorEditando?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const r=await fetchApi(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const d=await r.json();if(!r.ok){alert(d.error||(proveedorEditando?'No se pudo actualizar el proveedor':'No se pudo crear el proveedor'));return;}
  alert(proveedorEditando?'Proveedor actualizado correctamente.':'Proveedor guardado correctamente.');
  resetProveedorRuc();await cargarComprasCatalogos();
