@@ -776,7 +776,7 @@
 
     <script>
         const API = 'https://backend-ruc-1.onrender.com';
-function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=localStorage.getItem('csrf_token')||''; if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
+function fetchApi(input, init={}) { const headers=new Headers(init.headers||{}); const method=(init.method||'GET').toUpperCase(); const csrf=localStorage.getItem('csrf_token')||''; const clienteActivo=localStorage.getItem('cliente_activo_id')||''; if(clienteActivo) headers.set('X-Cliente-ID',clienteActivo); if(!['GET','HEAD','OPTIONS'].includes(method) && csrf) headers.set('X-CSRF-Token',csrf); return fetch(input,{...init,headers,credentials:'include'}); }
 
         let usuarioSeleccionado = null;
         let docsActuales = [];
@@ -950,6 +950,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 }
                 // A partir de esta capa, los módulos nuevos consumirán este contexto.
                 if (typeof refrescarModuloPorCliente === 'function') refrescarModuloPorCliente();
+                const vistaActiva=document.querySelector('.vista.activa')?.id || '';
+                if (vistaActiva === 'vista-definicion-cuentas' || vistaActiva === 'vista-plan-cuentas') cargarCuentasContables();
             } catch (e) {
                 alert('No se pudo seleccionar el cliente.');
                 actualizarSelectorCliente();
@@ -1079,6 +1081,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
 
             if (vista === 'dashboard') cargarDashboard();
             if (vista === 'clientes') { cargarClientesERP(); setTimeout(cargarListaClientes, 0); }
+            if (vista === 'definicion-cuentas' || vista === 'plan-cuentas') cargarCuentasContables();
             if (vista === 'articulos') { prepararCatalogos(); cargarArticulos(); }
             if (vista === 'tarifas') { prepararCatalogos(); cargarTarifas(); }
             if (vista === 'costos') { prepararCatalogos(); cargarCostosPersona(); }
@@ -1093,6 +1096,15 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
         }
         function horasTexto(horas) { return Number(horas || 0).toFixed(2) + ' h'; }
         async function cargarCuentasContables() {
+            const tbody = document.getElementById('tabla-cuentas-contables');
+            const plan = document.querySelector('#arbol-plan-cuentas tbody');
+            const padre = document.getElementById('cc-padre');
+            if (!localStorage.getItem('cliente_activo_id')) {
+                if (tbody) tbody.innerHTML='<tr><td colspan="8">Seleccioná un cliente para consultar su plan de cuentas.</td></tr>';
+                if (plan) plan.innerHTML='<tr><td colspan="5">Seleccioná un cliente para consultar su plan de cuentas.</td></tr>';
+                if (padre) padre.innerHTML='<option value="">Seleccioná primero un cliente</option>';
+                return;
+            }
             const resp = await fetchApi(API + '/api/contabilidad/cuentas');
             const cuentas = resp.ok ? await resp.json() : [];
             const tbody = document.getElementById('tabla-cuentas-contables');
@@ -1108,6 +1120,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
         }
         function ocultarFormularioCuenta() { document.getElementById('form-cuenta-contable').style.display='none'; }
         async function guardarCuentaContable() {
+            if (!localStorage.getItem('cliente_activo_id')) { alert('Seleccioná un cliente antes de crear una cuenta.'); return; }
             const payload={codigo:document.getElementById('cc-codigo').value.trim(),nombre:document.getElementById('cc-nombre').value.trim(),tipo:document.getElementById('cc-tipo').value,naturaleza:document.getElementById('cc-naturaleza').value,nivel:Number(document.getElementById('cc-nivel').value||1),cuenta_padre_id:document.getElementById('cc-padre').value||null,imputable:document.getElementById('cc-imputable').checked,activa:true};
             const resp=await fetchApi(API+'/api/contabilidad/cuentas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
             const data=await resp.json();
