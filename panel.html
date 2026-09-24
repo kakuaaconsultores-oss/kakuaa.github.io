@@ -603,9 +603,9 @@
                                 <option value="4">4 — EFECTO DE LAS GANANCIAS O PÉRDIDAS POR DIFERENCIAS DE TIPO DE CAMBIO</option>
                             </select></div>
                             <div><label>Inciso / Casilla Formulario *</label><select id="cc-formulario" style="background:#f6f8fb;font-weight:700;"><option value="NO_APLICA">NO_APLICA</option><option value="500">Formulario 500</option><option value="501">Formulario 501</option></select></div>
-                            <div><label>Referencia / Casilla DNIT *</label><input id="cc-inciso" type="number" min="1" step="1" placeholder="Solo cuentas imputables IRE 500/501" disabled></div>
+                            <div><label>Referencia / Casilla DNIT</label><input id="cc-inciso" type="number" min="1" step="1" placeholder="Obligatorio para Formulario 500/501"></div>
                         </div>
-                        <div style="margin-top:8px;color:var(--texto-suave);font-size:.72rem;">Ref. (*): obligatorio. El formulario se determina automáticamente por el tipo de impuesto del cliente.</div>
+                        <div style="margin-top:8px;color:var(--texto-suave);font-size:.72rem;">La Referencia / Casilla DNIT es obligatoria únicamente cuando se selecciona Formulario 500 o 501. Para NO_APLICA puede quedar vacía.</div>
                         <div class="quick-actions"><button class="btn btn-verde" onclick="guardarCuentaContable()" id="btn-guardar-cuenta">Guardar cuenta</button><button class="btn btn-gris" onclick="ocultarFormularioCuenta()">Cancelar</button></div>
                     </div>
 <div id="importador-cuentas" style="display:none;margin-top:18px;padding:18px;border:1px dashed var(--gris-borde);border-radius:12px;background:#fbfcfe;"><div style="text-align:center;"><h3>Importar Plan de Cuentas</h3><p style="color:var(--texto-suave);font-size:.78rem;">Subí o arrastrá un Excel con la estructura oficial de Kakuaa.</p><div id="drop-cuentas" style="margin:14px auto;padding:28px;border:2px dashed var(--gris-borde);border-radius:12px;text-align:center;cursor:pointer;background:#fff;" onclick="document.getElementById('archivo-cuentas').click()" ondragover="event.preventDefault();this.style.borderColor='var(--verde)'" ondragleave="this.style.borderColor='var(--gris-borde)'" ondrop="event.preventDefault();this.style.borderColor='var(--gris-borde)';seleccionarArchivoCuentas(event.dataTransfer.files[0])"><strong>Subí o arrastrá tu Excel aquí</strong><span style="display:block;color:var(--texto-suave);font-size:.74rem;margin-top:5px;">Formato .xlsx · Usá la plantilla de ejemplo</span><input id="archivo-cuentas" type="file" accept=".xlsx" style="display:none;" onchange="seleccionarArchivoCuentas(this.files[0])"><div id="nombre-archivo-cuentas" style="margin-top:8px;font-weight:700;"></div></div><div class="quick-actions" style="justify-content:center;"><button class="btn btn-verde" onclick="importarCuentas()">Validar e importar</button><button class="btn btn-gris" onclick="descargarPlantillaCuentas()">⬇ Excel de ejemplo</button><button class="btn btn-gris" onclick="cerrarImportadorCuentas()">Cerrar</button></div><div id="resultado-importacion-cuentas" style="margin-top:12px;"></div></div></div>
@@ -1246,7 +1246,7 @@ function obtenerFormularioImpuestoActivo() {
             const contexto=document.getElementById('cc-contexto');
             const cliente=clienteActivoERP;
             const formulario=obtenerFormularioImpuestoActivo();
-            const habilitarInciso=!!imputable?.checked && (formulario==='500' || formulario==='501');
+            const habilitarInciso=(formulario==='500' || formulario==='501');
             if (el) {
                 if (cliente) {
                     el.value=formulario;
@@ -1321,13 +1321,13 @@ function obtenerFormularioImpuestoActivo() {
             if (!codigo || !nombre || !tipo || !naturaleza || !nivel || !concepto) {
                 alert('Completá todos los campos obligatorios (*).'); return;
             }
-            if ((formulario==='500' || formulario==='501') && imputable && !inciso) {
-                alert('La referencia/casilla del Formulario 500/501 es obligatoria para una cuenta imputable.'); return;
+            if (formulario!=='NO_APLICA' && !inciso) {
+                alert('La referencia/casilla DNIT es obligatoria cuando se selecciona un Formulario 500 o 501.'); return;
             }
             if ((formulario==='500' || formulario==='501') && !imputable && inciso) {
                 alert('Una cuenta no imputable no puede tener una referencia/casilla del Formulario 500/501.'); return;
             }
-            const payload={codigo,nombre,tipo,naturaleza,nivel,cuenta_padre_id:document.getElementById('cc-padre').value||null,imputable,activa:true,concepto_flujo_efectivo:concepto,formulario_impuesto:formulario,inciso_formulario:imputable?inciso:''};
+            const payload={codigo,nombre,tipo,naturaleza,nivel,cuenta_padre_id:document.getElementById('cc-padre').value||null,imputable,activa:true,concepto_flujo_efectivo:concepto,formulario_impuesto:formulario,inciso_formulario:inciso};
             const id=document.getElementById('cc-id').value;
             const resp=await fetchApi(id?API+'/api/contabilidad/cuentas/'+id:API+'/api/contabilidad/cuentas',{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
             const data=await resp.json();
