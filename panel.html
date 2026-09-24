@@ -261,6 +261,7 @@
         .nav-subitems { display:none;padding-left:10px; }
         .nav-group.open .nav-subitems { display:block; }
         .nav-subitem { font-size:.77rem !important;font-weight:500 !important;padding:8px 10px 8px 30px !important; }
+        .nav-subgroup-label { padding:9px 10px 3px 30px;color:#98a0ad;font-size:.61rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase; }
         .contenido { padding:28px; max-width:1800px; }
         .titulo-seccion { font-size:1.45rem; }
         .subtitulo { max-width:850px; }
@@ -386,15 +387,25 @@
         <div class="nav-group">
             <div class="nav-group-title" onclick="toggleNavGroup(this)"><span><span class="nav-icon">📚</span> Contabilidad</span><span class="chevron">⌄</span></div>
             <div class="nav-subitems">
+                <div class="nav-subgroup-label">Definiciones</div>
                 <div class="nav-item nav-subitem" data-vista="definicion-cuentas" onclick="cambiarVista('definicion-cuentas')">Definición de cuentas</div>
                 <div class="nav-item nav-subitem" data-vista="plan-cuentas" onclick="cambiarVista('plan-cuentas')">Plan de Cuentas</div>
-                <div class="nav-item nav-subitem" data-vista="asientos" onclick="cambiarVista('asientos')">Asientos</div>
+                <div class="nav-item nav-subitem" data-vista="cuentas-articulos" onclick="cambiarVista('cuentas-articulos')">Cuentas Contables por Artículos</div>
+
+                <div class="nav-subgroup-label">Gestión</div>
+                <div class="nav-item nav-subitem" data-vista="asientos" onclick="cambiarVista('asientos')">Asientos Contables</div>
+                <div class="nav-item nav-subitem" data-vista="aprobacion-cargas" onclick="cambiarVista('aprobacion-cargas')">Aprobación de cargas</div>
+
+                <div class="nav-subgroup-label">Reportes</div>
                 <div class="nav-item nav-subitem" data-vista="libro-diario" onclick="cambiarVista('libro-diario')">Libro Diario</div>
                 <div class="nav-item nav-subitem" data-vista="libro-mayor" onclick="cambiarVista('libro-mayor')">Libro Mayor</div>
                 <div class="nav-item nav-subitem" data-vista="libro-compras" onclick="cambiarVista('libro-compras')">Libro Compras</div>
                 <div class="nav-item nav-subitem" data-vista="libro-ventas" onclick="cambiarVista('libro-ventas')">Libro Ventas</div>
                 <div class="nav-item nav-subitem" data-vista="balance-contable" onclick="cambiarVista('balance-contable')">Balance General</div>
                 <div class="nav-item nav-subitem" data-vista="resultados-contables" onclick="cambiarVista('resultados-contables')">Estado de Resultados</div>
+                <div class="nav-item nav-subitem" data-vista="flujo-efectivo" onclick="cambiarVista('flujo-efectivo')">Estado de Flujo de Efectivo</div>
+                <div class="nav-item nav-subitem" data-vista="variacion-patrimonio" onclick="cambiarVista('variacion-patrimonio')">Estado de Variación del Patrimonio Neto</div>
+                <div class="nav-item nav-subitem" data-vista="registro-rg90" onclick="cambiarVista('registro-rg90')">Registro Electrónico de Comprobantes (RG90)</div>
             </div>
         </div>
         <div class="nav-group">
@@ -585,6 +596,62 @@
             <section class="vista" id="vista-libro-ventas"><h2 class="titulo-seccion">Libro Ventas</h2><p class="subtitulo">Registro fiscal y contable de las ventas.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Comprobantes</strong><span>Cliente, fecha, número y timbrado.</span></div><div class="placeholder-box"><strong>Impuestos</strong><span>Base imponible, IVA y totales.</span></div><div class="placeholder-box"><strong>Integración</strong><span>Vinculación con Facturación y generación contable.</span></div></div></div></section>
             <section class="vista" id="vista-balance-contable"><h2 class="titulo-seccion">Balance General</h2><p class="subtitulo">Estado de situación patrimonial construido desde el mayor.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Activo</strong><span>Disponibilidades, créditos, bienes y demás activos.</span></div><div class="placeholder-box"><strong>Pasivo</strong><span>Obligaciones y cuentas por pagar.</span></div><div class="placeholder-box"><strong>Patrimonio</strong><span>Capital, resultados y movimientos patrimoniales.</span></div></div></div></section>
             <section class="vista" id="vista-resultados-contables"><h2 class="titulo-seccion">Estado de Resultados</h2><p class="subtitulo">Ingresos, costos y gastos del período.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Ingresos</strong><span>Ventas y otros ingresos reconocidos.</span></div><div class="placeholder-box"><strong>Costos y gastos</strong><span>Costos directos, gastos operativos y financieros.</span></div><div class="placeholder-box"><strong>Resultado</strong><span>Resultado del período y comparativos.</span></div></div></div></section>
+            <section class="vista" id="vista-cuentas-articulos">
+                <h2 class="titulo-seccion">Cuentas Contables por Artículos</h2>
+                <p class="subtitulo">Definí las cuentas contables que utilizará cada artículo tanto en Compras como en Ventas.</p>
+                <div class="erp-placeholder">
+                    <div class="erp-placeholder-head"><div><h3>Parametrización contable de artículos</h3><p>Cuando se cree o edite un artículo, aquí se podrá asignar su tratamiento contable por operación.</p></div><span class="module-pill">Configuración contable</span></div>
+                    <div class="placeholder-grid">
+                        <div class="placeholder-box"><strong>Compras</strong><span>Cuenta de compras/costo, IVA crédito y cuentas relacionadas.</span></div>
+                        <div class="placeholder-box"><strong>Ventas</strong><span>Cuenta de ingresos, IVA débito y cuentas relacionadas.</span></div>
+                        <div class="placeholder-box"><strong>Trazabilidad</strong><span>La configuración quedará asociada al artículo y al cliente activo.</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="vista" id="vista-aprobacion-cargas">
+                <h2 class="titulo-seccion">Aprobación de Cargas</h2>
+                <p class="subtitulo">Control contable previo a que una operación de Compras o Ventas genere obligaciones de pago o cobro.</p>
+                <div class="erp-placeholder">
+                    <div class="erp-placeholder-head"><div><h3>Bandeja de aprobación contable</h3><p>Las cargas registradas en Compras y Ventas pasarán por revisión antes de habilitar su impacto financiero.</p></div><span class="module-pill">Control interno</span></div>
+                    <div class="placeholder-grid">
+                        <div class="placeholder-box"><strong>Pendiente</strong><span>La carga fue registrada pero todavía no está aprobada por Contabilidad.</span></div>
+                        <div class="placeholder-box"><strong>Aprobada</strong><span>La operación queda habilitada para continuar con Orden de Pago o Pago Recibido.</span></div>
+                        <div class="placeholder-box"><strong>Observada</strong><span>Contabilidad puede devolver la carga con motivo y mantener trazabilidad.</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="vista" id="vista-flujo-efectivo">
+                <h2 class="titulo-seccion">Estado de Flujo de Efectivo</h2>
+                <p class="subtitulo">Movimientos de efectivo y equivalentes clasificados por actividad.</p>
+                <div class="erp-placeholder"><div class="placeholder-grid">
+                    <div class="placeholder-box"><strong>Operación</strong><span>Cobros y pagos vinculados a la actividad ordinaria.</span></div>
+                    <div class="placeholder-box"><strong>Inversión</strong><span>Adquisiciones y disposiciones de activos.</span></div>
+                    <div class="placeholder-box"><strong>Financiación</strong><span>Préstamos, aportes, retiros y otros movimientos financieros.</span></div>
+                </div></div>
+            </section>
+
+            <section class="vista" id="vista-variacion-patrimonio">
+                <h2 class="titulo-seccion">Estado de Variación del Patrimonio Neto</h2>
+                <p class="subtitulo">Evolución del patrimonio por aportes, resultados, distribuciones y demás movimientos.</p>
+                <div class="erp-placeholder"><div class="placeholder-grid">
+                    <div class="placeholder-box"><strong>Capital</strong><span>Aportes y movimientos de capital.</span></div>
+                    <div class="placeholder-box"><strong>Resultados</strong><span>Resultado del ejercicio y resultados acumulados.</span></div>
+                    <div class="placeholder-box"><strong>Otros movimientos</strong><span>Reservas, distribuciones y ajustes patrimoniales.</span></div>
+                </div></div>
+            </section>
+
+            <section class="vista" id="vista-registro-rg90">
+                <h2 class="titulo-seccion">Registro Electrónico de Comprobantes (RG90)</h2>
+                <p class="subtitulo">Consulta y control del registro electrónico de comprobantes del cliente activo.</p>
+                <div class="erp-placeholder"><div class="placeholder-grid">
+                    <div class="placeholder-box"><strong>Compras</strong><span>Comprobantes recibidos y documentos vinculados.</span></div>
+                    <div class="placeholder-box"><strong>Ventas</strong><span>Comprobantes emitidos y su estado.</span></div>
+                    <div class="placeholder-box"><strong>Control</strong><span>Validación, diferencias y trazabilidad para la gestión tributaria.</span></div>
+                </div></div>
+            </section>
+
             <section class="vista" id="vista-configuracion"><h2 class="titulo-seccion">Configuración</h2><p class="subtitulo">Parámetros generales de Kakuaa ERP.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Empresa</strong><span>Datos, identidad y parámetros fiscales.</span></div><div class="placeholder-box"><strong>Preferencias</strong><span>Moneda, formatos y comportamiento.</span></div><div class="placeholder-box"><strong>Auditoría</strong><span>Registro de acciones y eventos.</span></div></div></div></section>
 
             <!-- TAREAS -->
