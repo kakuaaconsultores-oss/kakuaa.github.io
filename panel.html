@@ -513,16 +513,16 @@
                         <input id="cliente-telefono" placeholder="Teléfono">
                         <input id="cliente-direccion" class="full" placeholder="Dirección">
                         <div class="full">
-                            <label style="font-size:.75rem;color:var(--texto-suave);font-weight:700;display:block;margin-bottom:7px;">Tipo de impuesto *</label>
-                            <select id="cliente-tipo-impuesto" required>
-                                <option value="">Seleccioná el impuesto</option>
-                                <option value="IVA">IVA</option>
-                                <option value="IRP-RSP">IRP-RSP — Rentas por Servicios Personales</option>
-                                <option value="IRP-RGC">IRP-RGC — Rentas y Ganancias de Capital</option>
-                                <option value="IRE SIMPLE">IRE SIMPLE</option>
-                                <option value="IRE GENERAL">IRE GENERAL</option>
-                            </select>
-                            <div id="cliente-formulario-impuesto" style="margin-top:6px;color:var(--texto-suave);font-size:.72rem;"></div>
+                            <label style="font-size:.75rem;color:var(--texto-suave);font-weight:700;display:block;margin-bottom:7px;">Impuestos / obligaciones tributarias *</label>
+                            <div id="cliente-impuestos" class="obligaciones-grid">
+                                <label class="obligacion-check"><input type="checkbox" class="cliente-impuesto-check" value="IVA" onchange="actualizarFormularioCliente()"> IVA</label>
+                                <label class="obligacion-check"><input type="checkbox" class="cliente-impuesto-check" value="IRP-RSP" onchange="actualizarFormularioCliente()"> IRP-RSP — Rentas por Servicios Personales</label>
+                                <label class="obligacion-check"><input type="checkbox" class="cliente-impuesto-check" value="IRP-RGC" onchange="actualizarFormularioCliente()"> IRP-RGC — Rentas y Ganancias de Capital</label>
+                                <label class="obligacion-check"><input type="checkbox" class="cliente-impuesto-check" value="IRE SIMPLE" onchange="actualizarFormularioCliente()"> IRE SIMPLE</label>
+                                <label class="obligacion-check"><input type="checkbox" class="cliente-impuesto-check" value="IRE GENERAL" onchange="actualizarFormularioCliente()"> IRE GENERAL</label>
+                            </div>
+                            <input type="hidden" id="cliente-tipo-impuesto">
+                            <div id="cliente-formulario-impuesto" style="margin-top:7px;color:var(--texto-suave);font-size:.72rem;"></div>
                         </div>
                     </div>
                     <div class="quick-actions">
@@ -582,7 +582,7 @@
                             <div><label>Nivel *</label><input id="cc-nivel" type="number" min="1" value="1"></div>
                             <div><label>Cuenta padre *</label><select id="cc-padre"><option value="">Sin cuenta padre</option></select></div>
                             <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--gris-borde);border-radius:8px;background:#fbfcfe;">
-                                <input id="cc-imputable" type="checkbox" checked style="width:auto;accent-color:var(--verde);">
+                                <input id="cc-imputable" type="checkbox" checked onchange="actualizarFormularioCuentaUI()" style="width:auto;accent-color:var(--verde);">
                                 <label for="cc-imputable" style="margin:0;cursor:pointer;"><strong>Cuenta imputable</strong><span style="display:block;color:var(--texto-suave);font-size:.72rem;margin-top:2px;">Puede recibir movimientos contables.</span></label>
                             </div>
                             <div><label>Concepto Estado de Flujo de Efectivo *</label><select id="cc-flujo">
@@ -602,7 +602,7 @@
                                 <option value="3.04">3.04 — AUMENTO/DISMINUCIÓN NETO/A DE INTERESES</option>
                                 <option value="4">4 — EFECTO DE LAS GANANCIAS O PÉRDIDAS POR DIFERENCIAS DE TIPO DE CAMBIO</option>
                             </select></div>
-                            <div><label>Inciso / Casilla Formulario *</label><input id="cc-formulario" readonly value="NO_APLICA" style="background:#f6f8fb;font-weight:700;"></div>
+                            <div><label>Inciso / Casilla Formulario *</label><select id="cc-formulario" style="background:#f6f8fb;font-weight:700;"><option value="NO_APLICA">NO_APLICA</option><option value="500">Formulario 500</option><option value="501">Formulario 501</option></select></div>
                             <div><label>Referencia / Casilla DNIT *</label><input id="cc-inciso" type="number" min="1" step="1" placeholder="Solo cuentas imputables IRE 500/501" disabled></div>
                         </div>
                         <div style="margin-top:8px;color:var(--texto-suave);font-size:.72rem;">Ref. (*): obligatorio. El formulario se determina automáticamente por el tipo de impuesto del cliente.</div>
@@ -1079,9 +1079,14 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             ['cliente-edit-id','cliente-ruc','cliente-dv','cliente-razon','cliente-comercial','cliente-documento','cliente-correo','cliente-telefono','cliente-direccion'].forEach(id => {
                 const el=document.getElementById(id); if (el) el.value='';
             });
+            document.querySelectorAll('.cliente-impuesto-check').forEach(el => el.checked=false);
             const impuesto=document.getElementById('cliente-tipo-impuesto'); if (impuesto) impuesto.value='';
             const formulario=document.getElementById('cliente-formulario-impuesto'); if (formulario) formulario.textContent='';
             const tipo=document.getElementById('cliente-tipo'); if (tipo) tipo.value='juridica';
+        }
+
+        function obtenerImpuestosSeleccionadosCliente() {
+            return Array.from(document.querySelectorAll('.cliente-impuesto-check:checked')).map(el => el.value);
         }
 
         function actualizarFormularioCliente() {
@@ -1089,8 +1094,12 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             const info=document.getElementById('cliente-formulario-impuesto');
             if (!impuesto || !info) return;
             const formularios={'IVA':'120','IRP-RSP':'515','IRP-RGC':'516','IRE SIMPLE':'501','IRE GENERAL':'500'};
-            const value=impuesto.value;
-            info.textContent=value ? ('Formulario asociado: '+formularios[value]) : '';
+            const seleccionados=obtenerImpuestosSeleccionadosCliente();
+            const principal=seleccionados[0] || '';
+            impuesto.value=principal;
+            info.textContent=seleccionados.length
+                ? ('Seleccionados: '+seleccionados.map(x => x+' (Form. '+formularios[x]+')').join(' · '))
+                : 'Seleccioná al menos un impuesto.';
         }
 
         function mostrarFormularioCliente(cliente=null) {
@@ -1109,7 +1118,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 document.getElementById('cliente-correo').value=cliente.correo || '';
                 document.getElementById('cliente-telefono').value=cliente.telefono || '';
                 document.getElementById('cliente-direccion').value=cliente.direccion || '';
-                document.getElementById('cliente-tipo-impuesto').value=cliente.tipo_impuesto || '';
+                const impuestosCliente=Array.isArray(cliente.impuestos) && cliente.impuestos.length ? cliente.impuestos : (cliente.tipo_impuesto ? [cliente.tipo_impuesto] : []);
+                document.querySelectorAll('.cliente-impuesto-check').forEach(el => el.checked=impuestosCliente.includes(el.value));
                 actualizarFormularioCliente();
             } else {
                 document.getElementById('titulo-form-cliente').textContent='Nuevo cliente';
@@ -1125,7 +1135,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
         }
 
         async function guardarCliente() {
-            const tipoImpuesto=document.getElementById('cliente-tipo-impuesto').value;
+            const impuestos=obtenerImpuestosSeleccionadosCliente();
+            const tipoImpuesto=impuestos[0] || '';
             const payload={
                 ruc:document.getElementById('cliente-ruc').value.trim(),
                 dv:document.getElementById('cliente-dv').value.trim(),
@@ -1136,10 +1147,11 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 correo:document.getElementById('cliente-correo').value.trim(),
                 telefono:document.getElementById('cliente-telefono').value.trim(),
                 direccion:document.getElementById('cliente-direccion').value.trim(),
-                tipo_impuesto:tipoImpuesto
+                tipo_impuesto:tipoImpuesto,
+                impuestos:impuestos
             };
-            if (!payload.ruc || !payload.razon_social || !payload.tipo_impuesto) {
-                alert('RUC, razón social y tipo de impuesto son obligatorios.'); return;
+            if (!payload.ruc || !payload.razon_social || !impuestos.length) {
+                alert('RUC, razón social y al menos un impuesto son obligatorios.'); return;
             }
             const editId=document.getElementById('cliente-edit-id').value;
             const resp=await fetchApi(editId ? API+'/api/clientes/'+editId : API+'/api/clientes', {
@@ -1167,7 +1179,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
                 const activo = clienteActivoERP && String(clienteActivoERP.id)===String(c.id);
                 return '<div class="cliente-row">' +
                     '<div><strong>'+escapeHtml(c.razon_social)+'</strong><small>RUC: '+escapeHtml(c.ruc+(c.dv?'-'+c.dv:''))+'</small><small>'+escapeHtml(perfilClienteTexto(c))+'</small></div>' +
-                    '<div><small>Impuesto</small><div class="cliente-badges"><span class="cliente-badge verde">'+escapeHtml(c.tipo_impuesto||'Sin definir')+'</span>'+(c.formulario_impuesto ? '<span class="cliente-badge">Form. '+escapeHtml(c.formulario_impuesto)+'</span>' : '')+'</div></div>' +
+                    '<div><small>Impuestos</small><div class="cliente-badges">'+((Array.isArray(c.impuestos)&&c.impuestos.length)?c.impuestos.map(x=>'<span class="cliente-badge verde">'+escapeHtml(x)+'</span>').join(''):'<span class="cliente-badge">Sin definir</span>')+'</div></div>' +
                     '<div><small>Contexto</small><div>'+ (activo ? '<span class="module-pill">Activo</span>' : '<button class="btn btn-gris btn-pequeno" onclick="cambiarClienteContexto('+c.id+')">Seleccionar</button>') + '</div></div>' +
                     '<div class="acciones"><button class="btn btn-azul btn-pequeno" onclick="mostrarFormularioCliente(clientesERP.find(x=>x.id==='+c.id+'))">Editar</button><button class="btn btn-rojo btn-pequeno" onclick="eliminarClienteERP('+c.id+')">Desactivar</button></div>' +
                 '</div>';
@@ -1235,11 +1247,17 @@ function obtenerFormularioImpuestoActivo() {
             const cliente=clienteActivoERP;
             const formulario=obtenerFormularioImpuestoActivo();
             const habilitarInciso=!!imputable?.checked && (formulario==='500' || formulario==='501');
-            if (el) el.value=formulario;
-            if (inciso) { inciso.disabled=!habilitarInciso; if(!habilitarInciso) inciso.value=''; }
+            if (el) {
+                el.value=formulario;
+                el.disabled=!!cliente;
+            }
+            if (inciso) {
+                inciso.disabled=!habilitarInciso;
+                if (!habilitarInciso && cliente) inciso.value='';
+            }
             if (contexto) contexto.textContent=cliente
-                ? ('Cliente activo: '+(cliente.razon_social||'')+' · Impuesto: '+(cliente.tipo_impuesto||'Sin definir')+' · Formulario: '+formulario+(habilitarInciso?' · Inciso habilitado':' · Inciso no aplicable'))
-                : 'Contexto: Kakuaa Consultores · Catálogo maestro general';
+                ? ('Cliente activo: '+(cliente.razon_social||'')+' · Impuestos: '+((cliente.impuestos||[cliente.tipo_impuesto]).join ? (cliente.impuestos||[cliente.tipo_impuesto]).join(', ') : (cliente.tipo_impuesto||'Sin definir'))+' · Formulario: '+formulario+(habilitarInciso?' · Inciso habilitado':' · Inciso no aplicable'))
+                : 'Contexto: Kakuaa Consultores · Catálogo maestro general · Podés seleccionar Formulario 500/501 para mapear casillas DNIT';
         }
 
         async function cargarCuentasContables() {
@@ -1310,7 +1328,7 @@ function obtenerFormularioImpuestoActivo() {
         function abrirImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='block'; }
         function cerrarImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='none'; }
         async function importarCuentas(){ const file=document.getElementById('archivo-cuentas').files[0]; if(!file){alert('Seleccioná un archivo Excel.');return;} const fd=new FormData(); fd.append('archivo',file); const r=await fetchApi(API+'/api/contabilidad/cuentas/importar',{method:'POST',body:fd}); const d=await r.json(); document.getElementById('resultado-importacion-cuentas').innerHTML=r.ok?'<div style="padding:10px;background:#eaf8f0;border-radius:8px;">'+d.importadas+' cuentas importadas correctamente.</div>':'<div style="padding:10px;background:#fff1f1;border-radius:8px;">'+escapeHtml(d.error||'No se pudo importar.')+'</div>'; if(r.ok){document.getElementById('archivo-cuentas').value='';cargarCuentasContables();} }
-        async function editarCuentaContable(id){ const r=await fetchApi(API+'/api/contabilidad/cuentas'); const cuentas=await r.json(); const c=cuentas.find(x=>Number(x.id)===Number(id)); if(!c){alert('Cuenta no encontrada.');return;} document.getElementById('cc-id').value=c.id; document.getElementById('cc-codigo').value=c.codigo; document.getElementById('cc-nombre').value=c.nombre; document.getElementById('cc-tipo').value=c.tipo; document.getElementById('cc-naturaleza').value=c.naturaleza; document.getElementById('cc-nivel').value=c.nivel; document.getElementById('cc-imputable').checked=!!c.imputable; document.getElementById('cc-flujo').value=c.concepto_flujo_efectivo||''; document.getElementById('cc-inciso').value=c.inciso_formulario||''; mostrarFormularioCuenta(); setTimeout(()=>document.getElementById('cc-padre').value=c.cuenta_padre_id||'',100); document.getElementById('btn-guardar-cuenta').textContent='Actualizar cuenta'; }
+        async function editarCuentaContable(id){ const r=await fetchApi(API+'/api/contabilidad/cuentas'); const cuentas=await r.json(); const c=cuentas.find(x=>Number(x.id)===Number(id)); if(!c){alert('Cuenta no encontrada.');return;} document.getElementById('cc-id').value=c.id; document.getElementById('cc-codigo').value=c.codigo; document.getElementById('cc-nombre').value=c.nombre; document.getElementById('cc-tipo').value=c.tipo; document.getElementById('cc-naturaleza').value=c.naturaleza; document.getElementById('cc-nivel').value=c.nivel; document.getElementById('cc-imputable').checked=!!c.imputable; document.getElementById('cc-flujo').value=c.concepto_flujo_efectivo||''; document.getElementById('cc-inciso').value=c.inciso_formulario||''; document.getElementById('cc-formulario').value=c.formulario_impuesto||'NO_APLICA'; mostrarFormularioCuenta(); setTimeout(()=>document.getElementById('cc-padre').value=c.cuenta_padre_id||'',100); document.getElementById('btn-guardar-cuenta').textContent='Actualizar cuenta'; }
         async function eliminarCuentaContable(id){ if(!confirm('¿Eliminar esta cuenta? Si tiene movimientos o subcuentas, Kakuaa impedirá la eliminación para proteger la contabilidad.'))return; const r=await fetchApi(API+'/api/contabilidad/cuentas/'+id,{method:'DELETE'}); const d=await r.json(); if(!r.ok){alert(d.error||'No se pudo eliminar.');return;} cargarCuentasContables(); }
         function abrirImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='block'; document.getElementById('resultado-importacion-cuentas').innerHTML=''; }
         function cerrarImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='none'; }
