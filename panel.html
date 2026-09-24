@@ -609,7 +609,17 @@
 </div>
 <div id="lista-condiciones-compra" style="margin-top:16px"></div>
 </section>
-<section class="vista" id="vista-formas-pago-compra"><h2 class="titulo-seccion">Formas de Pago</h2><div class="card"><div class="form-grid"><input id="fp-codigo" placeholder="Código *"><input id="fp-nombre" placeholder="Nombre *"><select id="fp-tipo"><option value="contado">Contado</option><option value="credito">Crédito</option><option value="transferencia">Transferencia</option><option value="cheque">Cheque</option></select></div><button class="btn btn-azul" onclick="crearCatalogoCompra('formas-pago')">＋ Guardar</button></div><div id="lista-formas-pago-compra" style="margin-top:16px"></div></section>
+<section class="vista" id="vista-formas-pago-compra">
+<h2 class="titulo-seccion">Formas de Pago</h2>
+<p class="subtitulo">Definí cómo se paga una compra y a qué cuenta contable se imputará el medio de pago.</p>
+<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn btn-azul" onclick="abrirNuevaFormaPago()">＋ Nuevo</button></div>
+<div id="form-forma-pago-compra" class="card" style="display:none;margin-bottom:16px">
+<div class="form-grid"><input id="fp-codigo" placeholder="Código *"><input id="fp-nombre" placeholder="Nombre *">
+<select id="fp-tipo"><option value="contado">Contado</option><option value="credito">Crédito</option><option value="transferencia">Transferencia</option><option value="cheque">Cheque</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option></select>
+<select id="fp-cuenta"><option value="">— Seleccioná una cuenta contable —</option></select></div>
+<div style="margin-top:12px"><button id="btn-guardar-forma-pago" class="btn btn-verde" onclick="guardarFormaPago()">＋ Crear Forma de Pago</button> <button class="btn btn-gris" onclick="cancelarFormaPago()">Cancelar</button></div>
+</div>
+<div id="lista-formas-pago-compra" style="margin-top:16px"></div></section>
 <section class="vista" id="vista-orden-compra"><h2 class="titulo-seccion">Orden de Compra</h2><p class="subtitulo">Preparada para emisión, recepción y conversión a factura.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Borrador → Emitida → Recibida → Facturada</strong><span>La estructura transaccional ya queda reservada.</span></div></div></div></section>
 <section class="vista" id="vista-nota-credito-compra"><h2 class="titulo-seccion">Registrar Nota de Crédito</h2><p class="subtitulo">La gestión completa se conectará con el comprobante origen y su impacto impositivo.</p><div class="erp-placeholder"><div class="placeholder-box"><strong>Próxima capa</strong><span>Documento origen, motivo, monto y contabilización.</span></div></div></section>
 <section class="vista" id="vista-compras-pendientes"><h2 class="titulo-seccion">Compras Pendientes de Contabilización</h2><div id="lista-compras-pendientes"></div></section>
