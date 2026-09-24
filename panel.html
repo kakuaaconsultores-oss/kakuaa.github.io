@@ -1248,12 +1248,17 @@ function obtenerFormularioImpuestoActivo() {
             const formulario=obtenerFormularioImpuestoActivo();
             const habilitarInciso=!!imputable?.checked && (formulario==='500' || formulario==='501');
             if (el) {
-                el.value=formulario;
-                el.disabled=!!cliente;
+                if (cliente) {
+                    el.value=formulario;
+                    el.disabled=true;
+                } else {
+                    if (!el.value) el.value='NO_APLICA';
+                    el.disabled=false;
+                }
             }
             if (inciso) {
                 inciso.disabled=!habilitarInciso;
-                if (!habilitarInciso && cliente) inciso.value='';
+                if (!habilitarInciso && !document.getElementById('cc-id')?.value) inciso.value='';
             }
             if (contexto) contexto.textContent=cliente
                 ? ('Cliente activo: '+(cliente.razon_social||'')+' · Impuestos: '+((cliente.impuestos||[cliente.tipo_impuesto]).join ? (cliente.impuestos||[cliente.tipo_impuesto]).join(', ') : (cliente.tipo_impuesto||'Sin definir'))+' · Formulario: '+formulario+(habilitarInciso?' · Inciso habilitado':' · Inciso no aplicable'))
@@ -1278,12 +1283,31 @@ function obtenerFormularioImpuestoActivo() {
             actualizarFormularioCuentaUI();
         }
 
-        function mostrarFormularioCuenta() {
+        function limpiarFormularioCuenta() {
+            document.getElementById('cc-id').value='';
+            document.getElementById('cc-codigo').value='';
+            document.getElementById('cc-nombre').value='';
+            document.getElementById('cc-tipo').value='';
+            document.getElementById('cc-naturaleza').value='';
+            document.getElementById('cc-nivel').value='1';
+            document.getElementById('cc-padre').value='';
+            document.getElementById('cc-imputable').checked=true;
+            document.getElementById('cc-flujo').value='';
+            document.getElementById('cc-formulario').value='NO_APLICA';
+            document.getElementById('cc-inciso').value='';
+            document.getElementById('btn-guardar-cuenta').textContent='Guardar cuenta';
+            actualizarFormularioCuentaUI();
+        }
+        function mostrarFormularioCuenta(nueva=true) {
+            if (nueva) limpiarFormularioCuenta();
             document.getElementById('form-cuenta-contable').style.display='block';
             actualizarFormularioCuentaUI();
             cargarCuentasContables();
         }
-        function ocultarFormularioCuenta() { document.getElementById('form-cuenta-contable').style.display='none'; }
+        function ocultarFormularioCuenta() {
+            limpiarFormularioCuenta();
+            document.getElementById('form-cuenta-contable').style.display='none';
+        }
         async function guardarCuentaContable() {
             const codigo=document.getElementById('cc-codigo').value.trim();
             const nombre=document.getElementById('cc-nombre').value.trim();
@@ -1328,7 +1352,25 @@ function obtenerFormularioImpuestoActivo() {
         function abrirImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='block'; }
         function cerrarImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='none'; }
         async function importarCuentas(){ const file=document.getElementById('archivo-cuentas').files[0]; if(!file){alert('Seleccioná un archivo Excel.');return;} const fd=new FormData(); fd.append('archivo',file); const r=await fetchApi(API+'/api/contabilidad/cuentas/importar',{method:'POST',body:fd}); const d=await r.json(); document.getElementById('resultado-importacion-cuentas').innerHTML=r.ok?'<div style="padding:10px;background:#eaf8f0;border-radius:8px;">'+d.importadas+' cuentas importadas correctamente.</div>':'<div style="padding:10px;background:#fff1f1;border-radius:8px;">'+escapeHtml(d.error||'No se pudo importar.')+'</div>'; if(r.ok){document.getElementById('archivo-cuentas').value='';cargarCuentasContables();} }
-        async function editarCuentaContable(id){ const r=await fetchApi(API+'/api/contabilidad/cuentas'); const cuentas=await r.json(); const c=cuentas.find(x=>Number(x.id)===Number(id)); if(!c){alert('Cuenta no encontrada.');return;} document.getElementById('cc-id').value=c.id; document.getElementById('cc-codigo').value=c.codigo; document.getElementById('cc-nombre').value=c.nombre; document.getElementById('cc-tipo').value=c.tipo; document.getElementById('cc-naturaleza').value=c.naturaleza; document.getElementById('cc-nivel').value=c.nivel; document.getElementById('cc-imputable').checked=!!c.imputable; document.getElementById('cc-flujo').value=c.concepto_flujo_efectivo||''; document.getElementById('cc-inciso').value=c.inciso_formulario||''; document.getElementById('cc-formulario').value=c.formulario_impuesto||'NO_APLICA'; mostrarFormularioCuenta(); setTimeout(()=>document.getElementById('cc-padre').value=c.cuenta_padre_id||'',100); document.getElementById('btn-guardar-cuenta').textContent='Actualizar cuenta'; }
+        async async function editarCuentaContable(id){
+            const r=await fetchApi(API+'/api/contabilidad/cuentas');
+            const cuentas=await r.json();
+            const c=cuentas.find(x=>Number(x.id)===Number(id));
+            if(!c){alert('Cuenta no encontrada.');return;}
+            document.getElementById('cc-id').value=c.id;
+            document.getElementById('cc-codigo').value=c.codigo;
+            document.getElementById('cc-nombre').value=c.nombre;
+            document.getElementById('cc-tipo').value=c.tipo;
+            document.getElementById('cc-naturaleza').value=c.naturaleza;
+            document.getElementById('cc-nivel').value=c.nivel;
+            document.getElementById('cc-imputable').checked=!!c.imputable;
+            document.getElementById('cc-flujo').value=c.concepto_flujo_efectivo||'';
+            document.getElementById('cc-formulario').value=c.formulario_impuesto||'NO_APLICA';
+            document.getElementById('cc-inciso').value=c.inciso_formulario||'';
+            document.getElementById('btn-guardar-cuenta').textContent='Actualizar cuenta';
+            mostrarFormularioCuenta(false);
+            setTimeout(()=>document.getElementById('cc-padre').value=c.cuenta_padre_id||'',100);
+        }
         async function eliminarCuentaContable(id){ if(!confirm('¿Eliminar esta cuenta? Si tiene movimientos o subcuentas, Kakuaa impedirá la eliminación para proteger la contabilidad.'))return; const r=await fetchApi(API+'/api/contabilidad/cuentas/'+id,{method:'DELETE'}); const d=await r.json(); if(!r.ok){alert(d.error||'No se pudo eliminar.');return;} cargarCuentasContables(); }
         function abrirImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='block'; document.getElementById('resultado-importacion-cuentas').innerHTML=''; }
         function cerrarImportadorCuentas(){ document.getElementById('importador-cuentas').style.display='none'; }
