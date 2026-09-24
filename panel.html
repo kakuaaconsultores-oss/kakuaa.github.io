@@ -602,12 +602,12 @@
                                 <option value="4">4 — EFECTO DE LAS GANANCIAS O PÉRDIDAS POR DIFERENCIAS DE TIPO DE CAMBIO</option>
                             </select></div>
                             <div><label>Inciso / Casilla Formulario *</label><input id="cc-formulario" readonly value="NO_APLICA" style="background:#f6f8fb;font-weight:700;"></div>
-                            <div><label>Referencia / Casilla DNIT</label><input id="cc-inciso" type="number" min="1" step="1" placeholder="Solo cuentas imputables IRE 500/501" disabled></div>
+                            <div><label>Referencia / Casilla DNIT *</label><input id="cc-inciso" type="number" min="1" step="1" placeholder="Solo cuentas imputables IRE 500/501" disabled></div>
                         </div>
                         <div style="margin-top:8px;color:var(--texto-suave);font-size:.72rem;">Ref. (*): obligatorio. El formulario se determina automáticamente por el tipo de impuesto del cliente.</div>
                         <div class="quick-actions"><button class="btn btn-verde" onclick="guardarCuentaContable()">Guardar cuenta</button><button class="btn btn-gris" onclick="ocultarFormularioCuenta()">Cancelar</button></div>
                     </div>
-                    <div class="table-wrap" style="margin-top:20px;"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Naturaleza</th><th>Nivel</th><th>Padre</th><th>Imputable</th><th>Flujo</th><th>Form.</th><th>Estado</th></tr></thead><tbody id="tabla-cuentas-contables"><tr><td colspan="10">Cargando cuentas...</td></tr></tbody></table></div>
+                    <div class="table-wrap" style="margin-top:20px;"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Naturaleza</th><th>Nivel</th><th>Padre</th><th>Imputable</th><th>Flujo</th><th>Form.</th><th>Inciso</th><th>Estado</th></tr></thead><tbody id="tabla-cuentas-contables"><tr><td colspan="11">Cargando cuentas...</td></tr></tbody></table></div>
                 </div>
             </section>
             <section class="vista" id="vista-plan-cuentas">
