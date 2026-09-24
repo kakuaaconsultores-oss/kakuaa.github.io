@@ -121,7 +121,7 @@ async function guardarCondicionCompra(){
  const r=await fetchApi(API+path+(condicionCompraEditando?'/'+condicionCompraEditando:''),{method:condicionCompraEditando?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar');return;}cancelarCondicionCompra();await cargarComprasCatalogos();
 }
-let proveedorRucConsultado=false;
+let proveedorRucConsultado=false, proveedorEditando=null;
 async function consultarRucProveedor(){
  const input=document.getElementById('prov-ruc'), estado=document.getElementById('prov-estado');
  const ruc=(input?.value||'').trim(); if(!ruc){alert('Ingresá un RUC.');return;}
@@ -144,9 +144,12 @@ async function consultarRucProveedor(){
  }catch(e){if(estado)estado.textContent='No se pudo consultar';alert('No se pudo consultar TuRuc.');}
 }
 function resetProveedorRuc(){
- proveedorRucConsultado=false;
- ['prov-razon','prov-nombre','prov-doc'].forEach(id=>{const e=document.getElementById(id);if(e){e.readOnly=false;e.value='';}});
- const e=document.getElementById('prov-estado');if(e)e.textContent='';
+ proveedorRucConsultado=false;proveedorEditando=null;
+ ['prov-ruc','prov-razon','prov-nombre','prov-doc','prov-correo','prov-telefono','prov-direccion'].forEach(id=>{const e=document.getElementById(id);if(e){e.readOnly=false;e.value='';delete e.dataset.consultedRuc;}});
+ const e=document.getElementById('prov-estado');if(e){e.textContent='';delete e.dataset.valor;}
+ const btn=document.querySelector('#vista-proveedores .btn.btn-azul[onclick="crearProveedorCompra()"]');
+ if(btn)btn.textContent='＋ Guardar proveedor';
+ setTimeout(()=>document.getElementById('prov-ruc')?.focus(),0);
 }
 async function cargarTimbradosProveedor(proveedorId){
  const sel=document.getElementById('comp-timbrado'); if(!sel)return;
@@ -187,17 +190,37 @@ async function desactivarTimbradoProveedor(proveedorId,timbradoId){
 }
 function renderProveedoresCompra(rows){
  const el=document.getElementById('lista-proveedores-compra');if(!el)return;
- el.innerHTML='<table class="tabla"><thead><tr><th>RUC</th><th>Razón social</th><th>Contacto</th><th>Estado</th><th>Timbrados</th></tr></thead><tbody>'+
- rows.map(r=>'<tr><td>'+escapeHtml(r.ruc||'')+'</td><td>'+escapeHtml(r.razon_social)+'</td><td>'+escapeHtml(r.correo||r.telefono||'')+'</td><td>'+escapeHtml(r.estado)+'</td><td><button class="btn btn-azul btn-pequeno" onclick="abrirTimbradosProveedor('+r.id+')">Gestionar</button></td></tr>').join('')+
+ el.innerHTML='<table class="tabla"><thead><tr><th>RUC</th><th>Razón social</th><th>Contacto</th><th>Estado</th><th>Timbrados</th><th>Acciones</th></tr></thead><tbody>'+
+ rows.map(r=>'<tr><td>'+escapeHtml(r.ruc||'')+'</td><td>'+escapeHtml(r.razon_social)+'</td><td>'+escapeHtml(r.correo||r.telefono||'')+'</td><td>'+escapeHtml(r.estado)+'</td><td><button class="btn btn-azul btn-pequeno" onclick="abrirTimbradosProveedor('+r.id+')">Gestionar</button></td><td><button class="btn btn-gris btn-pequeno" onclick="editarProveedorCompra('+r.id+')">Editar</button></td></tr>').join('')+
  '</tbody></table>';
+}
+function editarProveedorCompra(id){
+ const row=(comprasCatalogosCache.proveedores||[]).find(x=>Number(x.id)===Number(id));if(!row)return;
+ proveedorEditando=id;
+ const ids=['prov-ruc','prov-razon','prov-nombre','prov-doc','prov-correo','prov-telefono','prov-direccion'];
+ const vals=[row.ruc,row.razon_social,row.nombre_comercial,row.documento,row.correo,row.telefono,row.direccion];
+ ids.forEach((id,i)=>{const e=document.getElementById(id);if(e)e.value=vals[i]||'';});
+ const ruc=document.getElementById('prov-ruc');ruc.readOnly=true;ruc.dataset.consultedRuc=(row.ruc||'').trim().toUpperCase();
+ ['prov-razon','prov-nombre','prov-doc'].forEach(id=>{const e=document.getElementById(id);if(e)e.readOnly=true;});
+ const estado=document.getElementById('prov-estado');if(estado)estado.textContent='Estado: '+(row.estado||'SIN DATO');
+ proveedorRucConsultado=true;
+ const btn=document.querySelector('#vista-proveedores .btn.btn-azul[onclick="crearProveedorCompra()"]');
+ if(btn)btn.textContent='💾 Guardar cambios';
+ document.getElementById('prov-ruc')?.focus();
+ document.getElementById('vista-proveedores')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cancelarEdicionProveedor(){
+ proveedorEditando=null;resetProveedorRuc();
 }
 async function crearProveedorCompra(){
  const body={ruc:document.getElementById('prov-ruc').value.trim(),razon_social:document.getElementById('prov-razon').value.trim(),nombre_comercial:document.getElementById('prov-nombre').value.trim(),documento:document.getElementById('prov-doc').value.trim(),correo:document.getElementById('prov-correo').value.trim(),telefono:document.getElementById('prov-telefono').value.trim(),direccion:document.getElementById('prov-direccion').value.trim()};
  const rucActual=body.ruc.toUpperCase();
- if(!proveedorRucConsultado||document.getElementById('prov-ruc').dataset.consultedRuc!==rucActual){alert('Consultá nuevamente el RUC antes de guardar.');return;}
+ if(!proveedorEditando && (!proveedorRucConsultado||document.getElementById('prov-ruc').dataset.consultedRuc!==rucActual)){alert('Consultá nuevamente el RUC antes de guardar.');return;}
  if(!body.ruc||!body.razon_social){alert('RUC y razón social son obligatorios.');return;}
- const r=await fetchApi(API+'/api/compras/proveedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
- const d=await r.json();if(!r.ok){alert(d.error||'No se pudo crear el proveedor');return;}
+ const url=API+'/api/compras/proveedores'+(proveedorEditando?'/'+proveedorEditando:'');
+ const r=await fetchApi(url,{method:proveedorEditando?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const d=await r.json();if(!r.ok){alert(d.error||(proveedorEditando?'No se pudo actualizar el proveedor':'No se pudo crear el proveedor'));return;}
+ alert(proveedorEditando?'Proveedor actualizado correctamente.':'Proveedor guardado correctamente.');
  resetProveedorRuc();await cargarComprasCatalogos();
 }
 async function crearConceptoCompra(){const body={codigo:document.getElementById('ccp-codigo').value.trim(),nombre:document.getElementById('ccp-nombre').value.trim(),tipo:document.getElementById('ccp-tipo').value.trim()||'servicio',tasa_iva:Number(document.getElementById('ccp-iva').value||0),cuenta_contable_id:document.getElementById('ccp-cuenta').value||null,descripcion:document.getElementById('ccp-desc').value.trim()};if(!body.codigo||!body.nombre){alert('Código y nombre son obligatorios.');return;}const r=await fetchApi(API+'/api/compras/conceptos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const d=await r.json();alert(d.error||'No se pudo crear');return;}await cargarComprasCatalogos();}
