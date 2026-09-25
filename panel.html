@@ -332,11 +332,11 @@
     </div>
     <div class="header-actions">
         <button class="top-action" type="button" title="Notificaciones" onclick="mostrarNotificacionERP('No hay nuevas notificaciones.')">🔔</button>
-        <button class="selector-cliente" type="button" title="Cambiar cliente activo" onclick="abrirSelectorCliente()">
+        <div class="selector-cliente" title="Cambiar cliente activo" onclick="abrirSelectorCliente()">
             <label>CLIENTE</label>
             <button id="selector-cliente" type="button" onclick="event.stopPropagation();abrirSelectorCliente()">Sin cliente seleccionado</button>
             <span class="selector-chevron">⌄</span>
-        </button>
+        </div>
         <div class="usuario">
             <div class="avatar-mini" id="avatar-admin">A</div>
             <div class="usuario-datos"><strong id="usuario-header">Usuario</strong><span id="rol-header">SUPERADMIN</span></div>
