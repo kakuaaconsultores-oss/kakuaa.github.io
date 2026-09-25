@@ -607,7 +607,30 @@
             <section class="vista" id="vista-documentos"><h2 class="titulo-seccion">Documentos</h2><p class="subtitulo">Repositorio documental de clientes y operación.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Carpetas</strong><span>Organización por cliente y categoría.</span></div><div class="placeholder-box"><strong>Documentos</strong><span>Carga, descarga y gestión documental.</span></div><div class="placeholder-box"><strong>Seguridad</strong><span>Acceso controlado según permisos.</span></div></div><div class="quick-actions"><button class="btn btn-azul" onclick="cambiarVista('usuarios')">Ir a clientes</button></div></div></section>
             <section class="vista" id="vista-articulos"><h2 class="titulo-seccion">Artículos facturables</h2><p class="subtitulo">Servicios y conceptos disponibles para facturación.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Catálogo</strong><span>Código, descripción, unidad y estado.</span></div><div class="placeholder-box"><strong>Precio</strong><span>Tarifas y vigencias.</span></div><div class="placeholder-box"><strong>Facturación</strong><span>Relación con clientes y facturas.</span></div></div></div></section>
             <section class="vista" id="vista-tarifas"><h2 class="titulo-seccion">Tarifas</h2><p class="subtitulo">Administración centralizada de precios y condiciones.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Tarifas base</strong><span>Precios estándar por servicio.</span></div><div class="placeholder-box"><strong>Vigencias</strong><span>Control de fechas de aplicación.</span></div><div class="placeholder-box"><strong>Excepciones</strong><span>Condiciones particulares por cliente.</span></div></div></div></section>
-            <section class="vista" id="vista-articulos-compra"><h2 class="titulo-seccion">Conceptos / Ítems de Compra</h2><p class="subtitulo">Catálogo de bienes y servicios adquiridos.</p><div class="card"><div class="form-grid"><input id="ccp-codigo" placeholder="Código *"><input id="ccp-nombre" placeholder="Nombre *"><input id="ccp-tipo" placeholder="Tipo"><input id="ccp-iva" type="number" value="10" placeholder="IVA %"><input id="ccp-cuenta" type="number" placeholder="ID cuenta contable"><input id="ccp-desc" placeholder="Descripción"></div><button class="btn btn-azul" onclick="crearConceptoCompra()">＋ Guardar concepto</button></div><div id="lista-conceptos-compra" style="margin-top:16px"></div></section>
+            <section class="vista" id="vista-articulos-compra">
+<h2 class="titulo-seccion">Conceptos / Ítems de Compra</h2>
+<p class="subtitulo">Creá los artículos que podrán utilizarse en Compras. La habilitación para utilizar cada ítem requiere la parametrización de Contabilidad.</p>
+<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn btn-azul" onclick="abrirNuevoConceptoCompra()">＋ Nuevo ítem</button></div>
+<div id="form-concepto-compra" class="card" style="display:none;margin-bottom:16px">
+ <div class="form-grid">
+  <input id="ccp-codigo" value="(automático)" placeholder="Código interno" readonly>
+  <input id="ccp-fecha" value="(automática)" placeholder="Fecha de creación" readonly>
+  <input id="ccp-descripcion" class="full" placeholder="Descripción *">
+  <input id="ccp-unidad" placeholder="Unidad de medida *">
+  <input id="ccp-stock" type="number" min="0" step="0.01" value="0" placeholder="Stock mínimo">
+  <select id="ccp-estado"><option value="activo">Activo *</option><option value="inactivo">Inactivo *</option></select>
+  <select id="ccp-iva"><option value="0">Exento 0% (IVA incluido)</option><option value="5">5% (IVA incluido)</option><option value="10" selected>10% (IVA incluido)</option></select>
+  <input id="ccp-presupuesto" value="Pendiente de Contabilidad" placeholder="Concepto presupuestario" readonly>
+  <input id="ccp-cuenta" value="Pendiente de Contabilidad" placeholder="Cuenta contable" readonly>
+ </div>
+ <div style="font-size:.75rem;color:var(--texto-suave);margin-top:10px">Concepto presupuestario y Cuenta Contable son asignados exclusivamente desde Contabilidad / Cuentas Contables por Artículos.</div>
+ <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+  <button id="btn-guardar-concepto" class="btn btn-azul" onclick="crearConceptoCompra()">＋ Guardar ítem</button>
+  <button type="button" class="btn btn-gris" onclick="cancelarConceptoCompra()">Cancelar</button>
+ </div>
+</div>
+<div id="lista-conceptos-compra" style="margin-top:16px"></div>
+</section>
 <section class="vista" id="vista-proveedores">
 <h2 class="titulo-seccion">Proveedores</h2>
 <p class="subtitulo">El RUC consulta automáticamente los datos tributarios. Correo, teléfono y dirección son opcionales.</p>
@@ -625,7 +648,8 @@
   <input id="prov-direccion" class="full" placeholder="Dirección (opcional)">
   <div class="full" id="prov-estado" style="font-size:.78rem;color:var(--texto-suave)"></div>
  </div>
- <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">\n  <button id="btn-guardar-proveedor" class="btn btn-azul" onclick="crearProveedorCompra()">＋ Guardar proveedor</button>\n  <button type="button" class="btn btn-gris" onclick="cancelarEdicionProveedor()">Cancelar guardado</button>\n </div>
+ <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+  <button id="btn-guardar-proveedor" class="btn btn-azul" onclick="crearProveedorCompra()">＋ Guardar proveedor</button>\n  <button type="button" class="btn btn-gris" onclick="cancelarEdicionProveedor()">Cancelar guardado</button>\n </div>
 </div>
 <div id="lista-proveedores-compra" style="margin-top:16px"></div>
 </section>
@@ -770,14 +794,10 @@
             <section class="vista" id="vista-resultados-contables"><h2 class="titulo-seccion">Estado de Resultados</h2><p class="subtitulo">Ingresos, costos y gastos del período.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Ingresos</strong><span>Ventas y otros ingresos reconocidos.</span></div><div class="placeholder-box"><strong>Costos y gastos</strong><span>Costos directos, gastos operativos y financieros.</span></div><div class="placeholder-box"><strong>Resultado</strong><span>Resultado del período y comparativos.</span></div></div></div></section>
             <section class="vista" id="vista-cuentas-articulos">
                 <h2 class="titulo-seccion">Cuentas Contables por Artículos</h2>
-                <p class="subtitulo">Definí las cuentas contables que utilizará cada artículo tanto en Compras como en Ventas.</p>
-                <div class="erp-placeholder">
-                    <div class="erp-placeholder-head"><div><h3>Parametrización contable de artículos</h3><p>Cuando se cree o edite un artículo, aquí se podrá asignar su tratamiento contable por operación.</p></div><span class="module-pill">Configuración contable</span></div>
-                    <div class="placeholder-grid">
-                        <div class="placeholder-box"><strong>Compras</strong><span>Cuenta de compras/costo, IVA crédito y cuentas relacionadas.</span></div>
-                        <div class="placeholder-box"><strong>Ventas</strong><span>Cuenta de ingresos, IVA débito y cuentas relacionadas.</span></div>
-                        <div class="placeholder-box"><strong>Trazabilidad</strong><span>La configuración quedará asociada al artículo y al cliente activo.</span></div>
-                    </div>
+                <p class="subtitulo">Desde aquí Contabilidad asigna el Concepto Presupuestario y la Cuenta Contable. Los demás datos del ítem quedan bloqueados.</p>
+                <div class="card">
+                    <div style="font-size:.78rem;color:var(--texto-suave);margin-bottom:12px">Un ítem sin Concepto Presupuestario y Cuenta Contable no podrá utilizarse en Compras. Una vez guardada la parametrización, queda habilitado automáticamente.</div>
+                    <div id="lista-cuentas-articulos"></div>
                 </div>
             </section>
 
@@ -1437,6 +1457,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             if (vista === 'facturacion') { prepararCatalogos(); cargarFacturacion(); }
             if (vista === 'tickets') cargarTickets();
             if (vista === 'usuarios') cargarUsuarios();
+            if (vista === 'articulos-compra') { cargarComprasCatalogos(); abrirNuevoConceptoCompra(); }
+            if (vista === 'cuentas-articulos') { cargarComprasCatalogos(); cargarCuentasArticulos(); }
         }
 
         function formatoGuarani(valor) {
