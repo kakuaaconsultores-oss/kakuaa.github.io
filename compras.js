@@ -125,7 +125,7 @@ let proveedorRucConsultado=false, proveedorEditando=null;
 async function consultarRucProveedor(){
  const input=document.getElementById('prov-ruc'), estado=document.getElementById('prov-estado');
  const ruc=(input?.value||'').trim(); if(!ruc){alert('Ingresá un RUC.');return;}
- if(estado) estado.textContent='Consultando TuRuc…';
+ if(estado) estado.textContent='Consultando DNIT…';
  try{
   const r=await fetchApi(API+'/api/compras/proveedores/consulta-ruc/'+encodeURIComponent(ruc));
   const d=await r.json();
@@ -141,7 +141,7 @@ async function consultarRucProveedor(){
   document.getElementById('prov-doc').readOnly=true;
   if(estado){estado.textContent='Estado: '+(x.estado||'SIN DATO');estado.dataset.valor=x.estado||'';}
   proveedorRucConsultado=true;
- }catch(e){if(estado)estado.textContent='No se pudo consultar';alert('No se pudo consultar TuRuc.');}
+ }catch(e){if(estado)estado.textContent='No se pudo consultar';alert('No se pudo consultar la DNIT en este momento.');}
 }
 function resetProveedorRuc(){
  proveedorRucConsultado=false;proveedorEditando=null;
