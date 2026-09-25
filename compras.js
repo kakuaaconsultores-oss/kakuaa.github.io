@@ -10,7 +10,7 @@ async function cargarComprasCatalogos(){
  if(document.getElementById('comp-tipo'))document.getElementById('comp-tipo').onchange=validarFacturaEnPantalla;
  ['comp-numero','comp-fecha'].forEach(id=>document.getElementById(id)?.addEventListener('input',validarFacturaEnPantalla));
  if(t){t.innerHTML='<option value="">Tipo de comprobante</option>';(comprasCatalogosCache.tipos_comprobante||[]).filter(x=>Number(x.activo)!==0).forEach(x=>t.innerHTML+='<option value="'+x.id+'">'+escapeHtml(x.nombre)+'</option>');} if(cond){cond.innerHTML='<option value="">Condición de compra</option>';(comprasCatalogosCache.condiciones||[]).filter(x=>Number(x.activo)!==0).forEach(x=>cond.innerHTML+='<option value="'+x.id+'">'+escapeHtml(x.nombre)+'</option>');}
- renderCatalogoCompra('lista-conceptos-compra',comprasCatalogosCache.conceptos||[],['codigo','nombre','tipo','tasa_iva']);
+ renderConceptosCompra(comprasCatalogosCache.conceptos||[]);
  renderCatalogoCompra('lista-condiciones-compra',comprasCatalogosCache.condiciones||[],['codigo','nombre','tipo','dias_credito','cuotas']);
  renderCatalogoCompra('lista-formas-pago-compra',comprasCatalogosCache.formas_pago||[],['codigo','nombre','tipo','cuenta_contable_nombre']);
  renderCatalogoCompra('catalogo-tipos-compra',comprasCatalogosCache.tipos_comprobante||[],['codigo','nombre']);
@@ -223,7 +223,90 @@ async function crearProveedorCompra(){
  alert(proveedorEditando?'Proveedor actualizado correctamente.':'Proveedor guardado correctamente.');
  resetProveedorRuc();await cargarComprasCatalogos();
 }
-async function crearConceptoCompra(){const body={codigo:document.getElementById('ccp-codigo').value.trim(),nombre:document.getElementById('ccp-nombre').value.trim(),tipo:document.getElementById('ccp-tipo').value.trim()||'servicio',tasa_iva:Number(document.getElementById('ccp-iva').value||0),cuenta_contable_id:document.getElementById('ccp-cuenta').value||null,descripcion:document.getElementById('ccp-desc').value.trim()};if(!body.codigo||!body.nombre){alert('Código y nombre son obligatorios.');return;}const r=await fetchApi(API+'/api/compras/conceptos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const d=await r.json();alert(d.error||'No se pudo crear');return;}await cargarComprasCatalogos();}
+let conceptoCompraEditando=null;
+function renderConceptosCompra(rows){
+ const el=document.getElementById('lista-conceptos-compra');if(!el)return;
+ const fmtFecha=v=>v?new Date(String(v).replace(' ','T')).toLocaleDateString('es-PY'):'';
+ el.innerHTML='<table class="tabla"><thead><tr><th>Código</th><th>Descripción</th><th>Fecha creación</th><th>Unidad</th><th>Stock mín.</th><th>Estado</th><th>IVA</th><th>Concepto presup.</th><th>Cuenta contable</th><th>Uso</th><th>Acciones</th></tr></thead><tbody>'+
+ rows.map(r=>{
+   const listo=Number(r.habilitado_compras)===1;
+   const estado=Number(r.activo)!==0?'Activo':'Inactivo';
+   const cuenta=r.cuenta_codigo&&r.cuenta_nombre?(r.cuenta_codigo+' - '+r.cuenta_nombre):(r.cuenta_contable_id?'Asignada':'Pendiente');
+   return '<tr><td>'+escapeHtml(r.codigo||'')+'</td><td>'+escapeHtml(r.descripcion||r.nombre||'')+'</td><td>'+escapeHtml(fmtFecha(r.creado_en))+'</td><td>'+escapeHtml(r.unidad_medida||'')+'</td><td>'+escapeHtml(r.stock_minimo??0)+'</td><td>'+escapeHtml(estado)+'</td><td>'+escapeHtml(Number(r.tasa_iva||0)+'% incluido')+'</td><td>'+escapeHtml(r.concepto_presupuestario||'Pendiente')+'</td><td>'+escapeHtml(cuenta)+'</td><td><span class="badge '+(listo?'aprobado':'pendiente')+'">'+(listo?'Disponible':'Bloqueado contable')+'</span></td><td><button class="btn btn-gris btn-pequeno" onclick="editarConceptoCompra('+r.id+')">Editar</button> <button class="btn btn-rojo btn-pequeno" onclick="eliminarConceptoCompra('+r.id+')">Desactivar</button></td></tr>';
+ }).join('')+'</tbody></table>';
+}
+function limpiarFormularioConceptoCompra(){
+ conceptoCompraEditando=null;
+ ['ccp-descripcion','ccp-unidad','ccp-stock'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+ const estado=document.getElementById('ccp-estado');if(estado)estado.value='activo';
+ const iva=document.getElementById('ccp-iva');if(iva)iva.value='10';
+ const codigo=document.getElementById('ccp-codigo');if(codigo){codigo.value='(automático)';codigo.readOnly=true;}
+ const fecha=document.getElementById('ccp-fecha');if(fecha)fecha.value='(automática)';
+ const presup=document.getElementById('ccp-presupuesto');if(presup)presup.value='Pendiente de Contabilidad';
+ const cuenta=document.getElementById('ccp-cuenta');if(cuenta)cuenta.value='Pendiente de Contabilidad';
+ const btn=document.getElementById('btn-guardar-concepto');if(btn)btn.textContent='＋ Guardar ítem';
+}
+function cancelarConceptoCompra(){limpiarFormularioConceptoCompra();}
+function editarConceptoCompra(id){
+ const row=(comprasCatalogosCache.conceptos||[]).find(x=>Number(x.id)===Number(id));if(!row)return;
+ conceptoCompraEditando=id;
+ document.getElementById('ccp-codigo').value=row.codigo||'';
+ document.getElementById('ccp-fecha').value=row.creado_en?new Date(String(row.creado_en).replace(' ','T')).toLocaleDateString('es-PY'):'';
+ document.getElementById('ccp-descripcion').value=row.descripcion||row.nombre||'';
+ document.getElementById('ccp-unidad').value=row.unidad_medida||'';
+ document.getElementById('ccp-stock').value=row.stock_minimo??0;
+ document.getElementById('ccp-estado').value=Number(row.activo)!==0?'activo':'inactivo';
+ document.getElementById('ccp-iva').value=String(Number(row.tasa_iva??10));
+ document.getElementById('ccp-presupuesto').value=row.concepto_presupuestario||'Pendiente de Contabilidad';
+ const cuenta=nombreCuentaCompra(row.cuenta_contable_id)||'Pendiente de Contabilidad';
+ document.getElementById('ccp-cuenta').value=cuenta;
+ document.getElementById('btn-guardar-concepto').textContent='💾 Guardar cambios';
+ document.getElementById('form-concepto-compra').style.display='block';
+ document.getElementById('form-concepto-compra').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function abrirNuevoConceptoCompra(){
+ limpiarFormularioConceptoCompra();
+ document.getElementById('form-concepto-compra').style.display='block';
+}
+async function crearConceptoCompra(){
+ const body={descripcion:document.getElementById('ccp-descripcion').value.trim(),unidad_medida:document.getElementById('ccp-unidad').value.trim(),stock_minimo:Number(document.getElementById('ccp-stock').value||0),estado:document.getElementById('ccp-estado').value,tasa_iva:Number(document.getElementById('ccp-iva').value)};
+ if(!body.descripcion||!body.unidad_medida){alert('Descripción y unidad de medida son obligatorias.');return;}
+ if(body.stock_minimo<0){alert('El stock mínimo no puede ser negativo.');return;}
+ if(![0,5,10].includes(body.tasa_iva)){alert('Seleccioná un tipo de IVA válido.');return;}
+ const url=API+'/api/compras/conceptos'+(conceptoCompraEditando?'/'+conceptoCompraEditando:'');
+ const r=await fetchApi(url,{method:conceptoCompraEditando?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar el ítem.');return;}
+ limpiarFormularioConceptoCompra();document.getElementById('form-concepto-compra').style.display='none';await cargarComprasCatalogos();
+}
+async function eliminarConceptoCompra(id){
+ if(!confirm('¿Desactivar este ítem de compra? Quedará conservado en el historial y no podrá utilizarse en nuevas operaciones.'))return;
+ const r=await fetchApi(API+'/api/compras/conceptos/'+id,{method:'DELETE'});
+ const d=await r.json();if(!r.ok){alert(d.error||'No se pudo desactivar.');return;}await cargarComprasCatalogos();
+}
+async function cargarCuentasArticulos(){
+ const el=document.getElementById('lista-cuentas-articulos');if(!el)return;
+ const r=await fetchApi(API+'/api/contabilidad/cuentas-articulos');
+ if(!r.ok){el.innerHTML='<div class="sin-datos">No se pudieron cargar los artículos.</div>';return;}
+ const rows=await r.json();
+ el.innerHTML='<table class="tabla"><thead><tr><th>Código</th><th>Descripción</th><th>Fecha creación</th><th>Unidad</th><th>Stock mín.</th><th>Estado</th><th>IVA</th><th>Concepto presupuestario *</th><th>Cuenta contable *</th><th>Estado contable</th><th>Acción</th></tr></thead><tbody>'+
+ rows.map(r=>{
+   const listo=!!(r.concepto_presupuestario&&r.cuenta_contable_id);
+   return '<tr><td>'+escapeHtml(r.codigo||'')+'</td><td>'+escapeHtml(r.descripcion||r.nombre||'')+'</td><td>'+escapeHtml(r.creado_en||'')+'</td><td>'+escapeHtml(r.unidad_medida||'')+'</td><td>'+escapeHtml(r.stock_minimo??0)+'</td><td>'+escapeHtml(Number(r.activo)!==0?'Activo':'Inactivo')+'</td><td>'+escapeHtml(Number(r.tasa_iva||0)+'% incluido')+'</td><td><input id="pres-'+r.id+'" value="'+escapeHtml(r.concepto_presupuestario||'')+'" placeholder="Concepto presupuestario" style="min-width:190px"></td><td><select id="cuenta-'+r.id+'" style="min-width:230px"><option value="">Seleccioná una cuenta *</option></select></td><td><span class="badge '+(listo?'aprobado':'pendiente')+'">'+(listo?'Habilitado':'Pendiente')+'</span></td><td><button class="btn btn-verde btn-pequeno" onclick="guardarAsignacionContableArticulo('+r.id+')">Guardar</button></td></tr>';
+ }).join('')+'</tbody></table>';
+ rows.forEach(r=>{
+   const sel=document.getElementById('cuenta-'+r.id);
+   if(sel){llenarSelectCuentasCompra(sel,r.cuenta_contable_id);}
+ });
+}
+async function guardarAsignacionContableArticulo(id){
+ const presupuesto=document.getElementById('pres-'+id)?.value.trim();
+ const cuenta=document.getElementById('cuenta-'+id)?.value;
+ if(!presupuesto||!cuenta){alert('Concepto presupuestario y cuenta contable son obligatorios.');return;}
+ const r=await fetchApi(API+'/api/contabilidad/cuentas-articulos/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({concepto_presupuestario:presupuesto,cuenta_contable_id:Number(cuenta)})});
+ const d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar la parametrización.');return;}
+ alert('Parametrización contable guardada. El ítem ya queda habilitado para Compras.');
+ await cargarCuentasArticulos();await cargarComprasCatalogos();
+}
 function abrirNuevaFormaPago(){
  formaPagoEditando=null;document.getElementById('fp-codigo').value='';document.getElementById('fp-nombre').value='';
  document.getElementById('fp-tipo').value='contado';llenarSelectCuentasCompra(document.getElementById('fp-cuenta'));
