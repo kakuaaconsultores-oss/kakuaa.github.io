@@ -1457,7 +1457,7 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             if (vista === 'facturacion') { prepararCatalogos(); cargarFacturacion(); }
             if (vista === 'tickets') cargarTickets();
             if (vista === 'usuarios') cargarUsuarios();
-            if (vista === 'articulos-compra') { cargarComprasCatalogos(); abrirNuevoConceptoCompra(); }
+            if (vista === 'articulos-compra') { cargarComprasCatalogos(); }
             if (vista === 'cuentas-articulos') { cargarComprasCatalogos(); cargarCuentasArticulos(); }
         }
 
