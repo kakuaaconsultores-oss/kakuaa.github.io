@@ -197,6 +197,31 @@
             border-radius:10px;padding:6px 9px;
         }
         .selector-cliente label { color:var(--texto-suave);font-size:.67rem;font-weight:700;white-space:nowrap; }
+        .selector-cliente button { border:0;background:transparent;color:var(--texto);font-weight:700;font-size:.72rem;cursor:pointer;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 0; }
+        .selector-cliente button:hover { color:var(--azul); }
+        .selector-cliente .selector-chevron { color:#9aa2af;font-size:.85rem; }
+        .cliente-overlay { position:fixed;inset:0;background:rgba(10,20,42,.62);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:22px;z-index:900; }
+        .cliente-overlay.visible { display:flex; }
+        .cliente-selector-card { width:min(620px,100%);background:#fff;border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.25);padding:30px; }
+        .cliente-selector-brand { text-align:center;margin-bottom:24px; }
+        .cliente-selector-brand .brand-mark-large { width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,#1f7ae8,#2e9e5b);color:#fff;display:grid;place-items:center;font-size:1.65rem;font-weight:900;margin:0 auto 12px; }
+        .cliente-selector-brand h2 { color:var(--azul);font-size:1.35rem;margin-bottom:5px; }
+        .cliente-selector-brand p { color:var(--texto-suave);font-size:.78rem; }
+        .cliente-selector-search { width:100%;padding:13px 14px;border:1px solid var(--gris-borde);border-radius:10px;font-size:.9rem;outline:none;margin-bottom:12px; }
+        .cliente-selector-search:focus { border-color:#8db5ee;box-shadow:0 0 0 3px rgba(31,122,232,.09); }
+        .cliente-selector-list { max-height:330px;overflow:auto;border:1px solid var(--gris-borde);border-radius:12px;background:#fbfcfe; }
+        .cliente-selector-item { width:100%;border:0;border-bottom:1px solid #e9edf3;background:#fff;padding:13px 15px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px; }
+        .cliente-selector-item:last-child { border-bottom:0; }
+        .cliente-selector-item:hover,.cliente-selector-item.selected { background:#eef5ff; }
+        .cliente-selector-avatar { width:38px;height:38px;border-radius:10px;background:#eaf2ff;color:var(--azul);display:grid;place-items:center;font-weight:800;flex:0 0 38px; }
+        .cliente-selector-info { min-width:0;flex:1; }
+        .cliente-selector-info strong { display:block;color:var(--texto);font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .cliente-selector-info span { display:block;color:var(--texto-suave);font-size:.7rem;margin-top:3px; }
+        .cliente-selector-check { color:var(--verde);font-size:1rem;font-weight:900; }
+        .cliente-selector-empty { padding:22px;text-align:center;color:var(--texto-suave);font-size:.78rem; }
+        .cliente-selector-footer { display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px; }
+        .cliente-selector-footer small { color:var(--texto-suave);font-size:.7rem; }
+        .cliente-selector-footer .btn { min-width:190px; }
         .selector-cliente select {
             border:0;background:transparent;color:var(--azul);font-weight:700;font-size:.78rem;max-width:260px;
             outline:none;cursor:pointer;
@@ -307,12 +332,11 @@
     </div>
     <div class="header-actions">
         <button class="top-action" type="button" title="Notificaciones" onclick="mostrarNotificacionERP('No hay nuevas notificaciones.')">🔔</button>
-        <div class="selector-cliente" title="Contexto activo del ERP">
+        <button class="selector-cliente" type="button" title="Cambiar cliente activo" onclick="abrirSelectorCliente()">
             <label>CLIENTE</label>
-            <select id="selector-cliente" onchange="cambiarClienteContexto(this.value)">
-                <option value="">Seleccionar Cliente</option>
-            </select>
-        </div>
+            <button id="selector-cliente" type="button" onclick="event.stopPropagation();abrirSelectorCliente()">Sin cliente seleccionado</button>
+            <span class="selector-chevron">⌄</span>
+        </button>
         <div class="usuario">
             <div class="avatar-mini" id="avatar-admin">A</div>
             <div class="usuario-datos"><strong id="usuario-header">Usuario</strong><span id="rol-header">SUPERADMIN</span></div>
@@ -320,6 +344,22 @@
         </div>
     </div>
 </header>
+
+    <div id="cliente-selector-overlay" class="cliente-overlay" role="dialog" aria-modal="true" aria-labelledby="cliente-selector-titulo">
+        <div class="cliente-selector-card">
+            <div class="cliente-selector-brand">
+                <div class="brand-mark-large">K</div>
+                <h2 id="cliente-selector-titulo">Seleccionar cliente</h2>
+                <p>Elegí el contribuyente con el que vas a trabajar en Kakuaa ERP.</p>
+            </div>
+            <input id="cliente-selector-busqueda" class="cliente-selector-search" type="search" placeholder="🔎 Buscar por RUC o razón social..." oninput="filtrarClientesSelector()">
+            <div id="cliente-selector-lista" class="cliente-selector-list"></div>
+            <div class="cliente-selector-footer">
+                <small id="cliente-selector-ayuda">Seleccioná un cliente para continuar.</small>
+                <button id="btn-ingresar-cliente" class="btn btn-azul" type="button" onclick="confirmarClienteSelector()" disabled>Ingresar al cliente</button>
+            </div>
+        </div>
+    </div>
 
     <div class="layout">
         <!-- ===== SIDEBAR ===== -->
@@ -1110,18 +1150,86 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
             return (cliente?.obligaciones || []).join(' · ') || 'Sin obligaciones cargadas';
         }
 
+        let clienteSelectorPendienteId = null;
+
         function actualizarSelectorCliente() {
-            const select = document.getElementById('selector-cliente');
-            if (!select) return;
-            const activoId = clienteActivoERP ? String(clienteActivoERP.id) : '';
-            select.innerHTML = '<option value="">Kakuaa Consultores · Catálogo maestro</option>' +
-                clientesERP.map(c => '<option value="' + c.id + '">' + escapeHtml(c.razon_social) + ' · ' + escapeHtml(c.ruc) + '</option>').join('');
-            select.value = activoId;
+            const boton = document.getElementById('selector-cliente');
+            if (boton) boton.textContent = clienteActivoERP ? clienteActivoERP.razon_social : 'Sin cliente seleccionado';
+            const el = document.getElementById('cliente-contexto-activo');
+            if (el) el.textContent = clienteActivoERP ? clienteActivoERP.razon_social : 'Sin cliente seleccionado';
+        }
+
+        function renderizarListaSelectorClientes() {
+            const lista=document.getElementById('cliente-selector-lista');
+            if(!lista)return;
+            const termino=(document.getElementById('cliente-selector-busqueda')?.value||'').trim().toLowerCase();
+            const filas=clientesERP.filter(c => {
+                const texto=((c.razon_social||'')+' '+(c.ruc||'')).toLowerCase();
+                return !termino || texto.includes(termino);
+            });
+            lista.innerHTML=filas.length ? filas.map(c => {
+                const seleccionado=String(c.id)===String(clienteSelectorPendienteId);
+                const inicial=(c.razon_social||'?').trim().charAt(0).toUpperCase();
+                return '<button type="button" class="cliente-selector-item '+(seleccionado?'selected':'')+'" onclick="seleccionarClienteEnSelector('+Number(c.id)+')">'
+                    +'<span class="cliente-selector-avatar">'+escapeHtml(inicial)+'</span>'
+                    +'<span class="cliente-selector-info"><strong>'+escapeHtml(c.razon_social||'Sin razón social')+'</strong><span>RUC '+escapeHtml(c.ruc||'—')+'</span></span>'
+                    +(seleccionado?'<span class="cliente-selector-check">✓</span>':'')
+                    +'</button>';
+            }).join('') : '<div class="cliente-selector-empty">No encontramos clientes con esa búsqueda.</div>';
+        }
+
+        function actualizarEstadoBotonSelector() {
+            const btn=document.getElementById('btn-ingresar-cliente');
+            const ayuda=document.getElementById('cliente-selector-ayuda');
+            if(!btn)return;
+            const elegido=clientesERP.find(c=>String(c.id)===String(clienteSelectorPendienteId));
+            btn.disabled=!elegido;
+            btn.textContent=elegido?'Ingresar al cliente':'Ingresar al cliente';
+            if(ayuda) ayuda.textContent=elegido ? 'Cliente seleccionado: '+elegido.razon_social : 'Seleccioná un cliente para continuar.';
+        }
+
+        function filtrarClientesSelector() {
+            renderizarListaSelectorClientes();
+        }
+
+        function seleccionarClienteEnSelector(clienteId) {
+            clienteSelectorPendienteId=String(clienteId);
+            renderizarListaSelectorClientes();
+            actualizarEstadoBotonSelector();
+        }
+
+        function abrirSelectorCliente() {
+            clienteSelectorPendienteId=clienteActivoERP ? String(clienteActivoERP.id) : null;
+            const overlay=document.getElementById('cliente-selector-overlay');
+            if(!overlay)return;
+            const buscador=document.getElementById('cliente-selector-busqueda');
+            if(buscador)buscador.value='';
+            renderizarListaSelectorClientes();
+            actualizarEstadoBotonSelector();
+            overlay.classList.add('visible');
+            setTimeout(()=>buscador?.focus(),50);
+        }
+
+        function cerrarSelectorCliente() {
+            const overlay=document.getElementById('cliente-selector-overlay');
+            if(overlay)overlay.classList.remove('visible');
+        }
+
+        async function confirmarClienteSelector() {
+            if(!clienteSelectorPendienteId)return;
+            const id=clienteSelectorPendienteId;
+            const elegido=clientesERP.find(c=>String(c.id)===String(id));
+            if(!elegido)return;
+            await cambiarClienteContexto(id);
+            if(clienteActivoERP && String(clienteActivoERP.id)===String(id)) {
+                cerrarSelectorCliente();
+                cambiarVista(esAdmin() ? 'dashboard' : 'tareas');
+            }
         }
 
         function actualizarContextoClienteUI() {
-            const select = document.getElementById('selector-cliente');
-            if (select) select.value = clienteActivoERP ? String(clienteActivoERP.id) : '';
+            const boton = document.getElementById('selector-cliente');
+            if (boton) boton.textContent = clienteActivoERP ? clienteActivoERP.razon_social : 'Sin cliente seleccionado';
             const el = document.getElementById('cliente-contexto-activo');
             if (el) el.textContent = clienteActivoERP ? clienteActivoERP.razon_social : 'Sin cliente seleccionado';
         }
@@ -2004,6 +2112,7 @@ function obtenerFormularioImpuestoActivo() {
             if (!await restaurarSesion()) return;
             configurarPanel(); actualizarCabeceraERP();
             await cargarClientesERP();
+            abrirSelectorCliente();
             if (esAdmin()) { cargarDashboard(); prepararCatalogos(); }
             cambiarVista(esAdmin() ? 'dashboard' : 'tareas');
         })();
