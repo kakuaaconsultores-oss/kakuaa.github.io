@@ -1,7 +1,151 @@
 
 let comprasCatalogosCache = {};
+let unidadesMedidaCache = [];
+let unidadMedidaEditando = null;
+
+async function cargarUnidadesMedida(){
+ try{
+   const r=await fetchApi(API+'/api/compras/unidades-medida');
+   if(!r.ok)return;
+   unidadesMedidaCache=await r.json();
+   const sel=document.getElementById('ccp-unidad');
+   if(sel && sel.tagName==='INPUT'){
+     const nuevo=document.createElement('select');
+     nuevo.id='ccp-unidad';
+     nuevo.title='Unidad de medida';
+     nuevo.innerHTML='<option value="">Seleccioná una unidad de medida *</option>';
+     sel.replaceWith(nuevo);
+   }
+   const selector=document.getElementById('ccp-unidad');
+   if(selector){
+     const actual=selector.value;
+     selector.innerHTML='<option value="">Seleccioná una unidad de medida *</option>';
+     unidadesMedidaCache.filter(x=>Number(x.activo)!==0).forEach(x=>{
+       const opt=document.createElement('option');
+       opt.value=x.id;
+       opt.textContent=(x.codigo||'')+' — '+(x.nombre||'');
+       selector.appendChild(opt);
+     });
+     if(actual)selector.value=actual;
+   }
+   renderUnidadesMedida();
+ }catch(e){console.error('No se pudieron cargar las unidades de medida',e);}
+}
+function renderUnidadesMedida(){
+ const el=document.getElementById('lista-unidades-medida');if(!el)return;
+ if(!unidadesMedidaCache.length){
+   el.innerHTML='<div class="sin-datos">No hay unidades de medida definidas.</div>';return;
+ }
+ el.innerHTML='<table class="tabla"><thead><tr><th>Código</th><th>Nombre</th><th>Abreviatura</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>'+
+ unidadesMedidaCache.map(x=>{
+   const activo=Number(x.activo)!==0;
+   return '<tr><td><strong>'+escapeHtml(x.codigo||'')+'</strong></td><td>'+escapeHtml(x.nombre||'')+'</td><td>'+escapeHtml(x.abreviatura||'')+'</td><td>'+escapeHtml(activo?'Activo':'Inactivo')+'</td><td>'+
+     '<button class="btn btn-gris btn-pequeno" onclick="editarUnidadMedida('+x.id+')">Editar</button> '+
+     '<button class="btn '+(activo?'btn-amarillo':'btn-verde')+' btn-pequeno" onclick="cambiarEstadoUnidadMedida('+x.id+','+(!activo)+')">'+(activo?'Inactivar':'Reactivar')+'</button> '+
+     '<button class="btn btn-rojo btn-pequeno" onclick="eliminarUnidadMedida('+x.id+')">Eliminar</button>'+
+     '</td></tr>';
+ }).join('')+'</tbody></table>';
+}
+function limpiarFormularioUnidadMedida(){
+ unidadMedidaEditando=null;
+ ['um-codigo','um-nombre','um-abreviatura'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+ const estado=document.getElementById('um-estado');if(estado)estado.value='activo';
+ const btn=document.getElementById('btn-guardar-unidad');if(btn)btn.textContent='＋ Guardar unidad';
+}
+function abrirNuevaUnidadMedida(){
+ limpiarFormularioUnidadMedida();
+ const form=document.getElementById('form-unidad-medida');if(form)form.style.display='block';
+ document.getElementById('um-codigo')?.focus();
+}
+function editarUnidadMedida(id){
+ const row=unidadesMedidaCache.find(x=>Number(x.id)===Number(id));if(!row)return;
+ unidadMedidaEditando=id;
+ document.getElementById('um-codigo').value=row.codigo||'';
+ document.getElementById('um-nombre').value=row.nombre||'';
+ document.getElementById('um-abreviatura').value=row.abreviatura||'';
+ document.getElementById('um-estado').value=Number(row.activo)!==0?'activo':'inactivo';
+ document.getElementById('btn-guardar-unidad').textContent='💾 Guardar cambios';
+ document.getElementById('form-unidad-medida').style.display='block';
+ document.getElementById('form-unidad-medida').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function cancelarUnidadMedida(){
+ limpiarFormularioUnidadMedida();
+ const form=document.getElementById('form-unidad-medida');if(form)form.style.display='none';
+}
+async function guardarUnidadMedida(){
+ const body={
+   codigo:document.getElementById('um-codigo').value.trim().toUpperCase(),
+   nombre:document.getElementById('um-nombre').value.trim(),
+   abreviatura:document.getElementById('um-abreviatura').value.trim(),
+   estado:document.getElementById('um-estado').value
+ };
+ if(!body.codigo||!body.nombre){alert('Código y nombre son obligatorios.');return;}
+ const url=API+'/api/compras/unidades-medida'+(unidadMedidaEditando?'/'+unidadMedidaEditando:'');
+ const r=await fetchApi(url,{method:unidadMedidaEditando?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const d=await r.json();
+ if(!r.ok){alert(d.error||'No se pudo guardar la unidad de medida.');return;}
+ cancelarUnidadMedida();
+ await cargarUnidadesMedida();
+ await cargarComprasCatalogos();
+}
+async function cambiarEstadoUnidadMedida(id,activo){
+ const accion=activo?'reactivar':'inactivar';
+ if(!confirm('¿Querés '+accion+' esta unidad de medida?'))return;
+ const r=await fetchApi(API+'/api/compras/unidades-medida/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({activo:activo,estado:activo?'activo':'inactivo'})});
+ const d=await r.json();if(!r.ok){alert(d.error||'No se pudo actualizar el estado.');return;}
+ await cargarUnidadesMedida();
+ await cargarComprasCatalogos();
+}
+async function eliminarUnidadMedida(id){
+ if(!confirm('¿Eliminar definitivamente esta unidad de medida? Solo será posible si no está asociada a ningún ítem.'))return;
+ const r=await fetchApi(API+'/api/compras/unidades-medida/'+id,{method:'DELETE'});
+ const d=await r.json();if(!r.ok){alert(d.error||'No se pudo eliminar.');return;}
+ await cargarUnidadesMedida();
+ await cargarComprasCatalogos();
+}
+function instalarDefinicionUnidadesMedida(){
+ if(document.getElementById('vista-unidades-medida'))return;
+ const main=document.querySelector('.contenido');
+ if(!main)return;
+ const section=document.createElement('section');
+ section.className='vista';
+ section.id='vista-unidades-medida';
+ section.innerHTML=
+   '<h2 class="titulo-seccion">Definición de Unidades de Medida</h2>'+
+   '<p class="subtitulo">Catálogo cerrado de unidades que podrán seleccionarse en los Conceptos / Ítems de Compra. El código queda definido por la empresa y luego podrá utilizarse para futuras integraciones de facturación electrónica.</p>'+
+   '<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn btn-azul" onclick="abrirNuevaUnidadMedida()">＋ Nueva unidad</button></div>'+
+   '<div id="form-unidad-medida" class="card" style="display:none;margin-bottom:16px">'+
+     '<div class="form-grid">'+
+       '<input id="um-codigo" maxlength="10" placeholder="Código * (ej. UNI, KG, G)">'+
+       '<input id="um-nombre" placeholder="Nombre / descripción *">'+
+       '<input id="um-abreviatura" placeholder="Abreviatura (opcional)">'+
+       '<select id="um-estado"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select>'+
+     '</div>'+
+     '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">'+
+       '<button id="btn-guardar-unidad" class="btn btn-verde" onclick="guardarUnidadMedida()">＋ Guardar unidad</button>'+
+       '<button class="btn btn-gris" onclick="cancelarUnidadMedida()">Cancelar</button>'+
+     '</div>'+
+   '</div>'+
+   '<div class="card"><div id="lista-unidades-medida"></div></div>';
+ main.insertBefore(section,document.getElementById('vista-proveedores')||null);
+
+ const navGroups=[...document.querySelectorAll('.nav-group')];
+ const comprasGroup=navGroups.find(g=>(g.querySelector('.nav-group-title')?.textContent||'').includes('Compras'));
+ const sub=comprasGroup?.querySelector('.nav-subitems');
+ if(sub){
+   const item=document.createElement('div');
+   item.className='nav-item nav-subitem';
+   item.dataset.vista='unidades-medida';
+   item.textContent='Definición de unidades de medida';
+   item.onclick=()=>cambiarVista('unidades-medida');
+   const concepto=[...sub.querySelectorAll('.nav-item')].find(x=>(x.textContent||'').includes('Conceptos / Ítems de compra'));
+   if(concepto)concepto.insertAdjacentElement('afterend',item); else sub.appendChild(item);
+ }
+}
+instalarDefinicionUnidadesMedida();
 async function cargarComprasCatalogos(){
  try{
+   await cargarUnidadesMedida();
    await cargarCuentasContablesCompra();
    const r=await fetchApi(API+'/api/compras/catalogos');if(!r.ok)return;comprasCatalogosCache=await r.json();
  const p=document.getElementById('comp-proveedor'),t=document.getElementById('comp-tipo'),cond=document.getElementById('comp-condicion');
@@ -232,12 +376,16 @@ function renderConceptosCompra(rows){
    const listo=Number(r.habilitado_compras)===1;
    const estado=Number(r.activo)!==0?'Activo':'Inactivo';
    const cuenta=r.cuenta_codigo&&r.cuenta_nombre?(r.cuenta_codigo+' - '+r.cuenta_nombre):(r.cuenta_contable_id?'Asignada':'Pendiente');
-   return '<tr><td>'+escapeHtml(r.codigo||'')+'</td><td>'+escapeHtml(r.descripcion||r.nombre||'')+'</td><td>'+escapeHtml(fmtFecha(r.creado_en))+'</td><td>'+escapeHtml(r.unidad_medida||'')+'</td><td>'+escapeHtml(r.stock_minimo??0)+'</td><td>'+escapeHtml(estado)+'</td><td>'+escapeHtml(Number(r.tasa_iva||0)+'% incluido')+'</td><td>'+escapeHtml(r.concepto_presupuestario||'Pendiente')+'</td><td>'+escapeHtml(cuenta)+'</td><td><span class="badge '+(listo?'aprobado':'pendiente')+'">'+(listo?'Disponible':'Bloqueado contable')+'</span></td><td><button class="btn btn-gris btn-pequeno" onclick="editarConceptoCompra('+r.id+')">Editar</button> <button class="btn btn-rojo btn-pequeno" onclick="eliminarConceptoCompra('+r.id+')">Desactivar</button></td></tr>';
+   const um=(unidadesMedidaCache||[]).find(x=>Number(x.id)===Number(r.unidad_medida_id));
+   const unidadTexto=um?((um.codigo||'')+' — '+(um.nombre||'')):(r.unidad_medida||'');
+   const activo=Number(r.activo)!==0;
+   return '<tr><td>'+escapeHtml(r.codigo||'')+'</td><td>'+escapeHtml(r.descripcion||r.nombre||'')+'</td><td>'+escapeHtml(fmtFecha(r.creado_en))+'</td><td>'+escapeHtml(unidadTexto)+'</td><td>'+escapeHtml(r.stock_minimo??0)+'</td><td>'+escapeHtml(estado)+'</td><td>'+escapeHtml(Number(r.tasa_iva||0)+'% incluido')+'</td><td>'+escapeHtml(r.concepto_presupuestario||'Pendiente')+'</td><td>'+escapeHtml(cuenta)+'</td><td><span class="badge '+(listo?'aprobado':'pendiente')+'">'+(listo?'Disponible':'Bloqueado contable')+'</span></td><td><button class="btn btn-gris btn-pequeno" onclick="editarConceptoCompra('+r.id+')">Editar</button> <button class="btn '+(activo?'btn-amarillo':'btn-verde')+' btn-pequeno" onclick="cambiarEstadoConceptoCompra('+r.id+','+(!activo)+')">'+(activo?'Inactivar':'Reactivar')+'</button> <button class="btn btn-rojo btn-pequeno" onclick="eliminarConceptoCompra('+r.id+')">Eliminar</button></td></tr>';
  }).join('')+'</tbody></table>';
 }
 function limpiarFormularioConceptoCompra(){
  conceptoCompraEditando=null;
- ['ccp-descripcion','ccp-unidad','ccp-stock'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+ ['ccp-descripcion','ccp-stock'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+ const um=document.getElementById('ccp-unidad');if(um)um.value='';
  const estado=document.getElementById('ccp-estado');if(estado)estado.value='activo';
  const iva=document.getElementById('ccp-iva');if(iva)iva.value='10';
  const codigo=document.getElementById('ccp-codigo');if(codigo){codigo.value='(automático)';codigo.readOnly=true;}
@@ -253,7 +401,14 @@ function editarConceptoCompra(id){
  document.getElementById('ccp-codigo').value=row.codigo||'';
  document.getElementById('ccp-fecha').value=row.creado_en?new Date(String(row.creado_en).replace(' ','T')).toLocaleDateString('es-PY'):'';
  document.getElementById('ccp-descripcion').value=row.descripcion||row.nombre||'';
- document.getElementById('ccp-unidad').value=row.unidad_medida||'';
+ const umSel=document.getElementById('ccp-unidad');
+ if(umSel){
+   umSel.value=row.unidad_medida_id?String(row.unidad_medida_id):'';
+   if(!umSel.value){
+     const legacy=(unidadesMedidaCache||[]).find(x=>String(x.nombre||'').toUpperCase()===String(row.unidad_medida||'').toUpperCase()||String(x.codigo||'').toUpperCase()===String(row.unidad_medida||'').toUpperCase());
+     if(legacy)umSel.value=String(legacy.id);
+   }
+ }
  document.getElementById('ccp-stock').value=row.stock_minimo??0;
  document.getElementById('ccp-estado').value=Number(row.activo)!==0?'activo':'inactivo';
  document.getElementById('ccp-iva').value=String(Number(row.tasa_iva??10));
@@ -269,8 +424,9 @@ function abrirNuevoConceptoCompra(){
  document.getElementById('form-concepto-compra').style.display='block';
 }
 async function crearConceptoCompra(){
- const body={descripcion:document.getElementById('ccp-descripcion').value.trim(),unidad_medida:document.getElementById('ccp-unidad').value.trim(),stock_minimo:Number(document.getElementById('ccp-stock').value||0),estado:document.getElementById('ccp-estado').value,tasa_iva:Number(document.getElementById('ccp-iva').value)};
- if(!body.descripcion||!body.unidad_medida){alert('Descripción y unidad de medida son obligatorias.');return;}
+ const unidadSel=document.getElementById('ccp-unidad');
+ const body={descripcion:document.getElementById('ccp-descripcion').value.trim(),unidad_medida_id:Number(unidadSel?.value||0),stock_minimo:Number(document.getElementById('ccp-stock').value||0),estado:document.getElementById('ccp-estado').value,tasa_iva:Number(document.getElementById('ccp-iva').value)};
+ if(!body.descripcion||!body.unidad_medida_id){alert('Descripción y unidad de medida son obligatorias.');return;}
  if(body.stock_minimo<0){alert('El stock mínimo no puede ser negativo.');return;}
  if(![0,5,10].includes(body.tasa_iva)){alert('Seleccioná un tipo de IVA válido.');return;}
  const url=API+'/api/compras/conceptos'+(conceptoCompraEditando?'/'+conceptoCompraEditando:'');
@@ -278,10 +434,16 @@ async function crearConceptoCompra(){
  const d=await r.json();if(!r.ok){alert(d.error||'No se pudo guardar el ítem.');return;}
  limpiarFormularioConceptoCompra();document.getElementById('form-concepto-compra').style.display='none';await cargarComprasCatalogos();
 }
+async function cambiarEstadoConceptoCompra(id,activo){
+ const accion=activo?'reactivar':'inactivar';
+ if(!confirm('¿Querés '+accion+' este ítem de compra?'))return;
+ const r=await fetchApi(API+'/api/compras/conceptos/'+id+'/estado',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({activo:activo})});
+ const d=await r.json();if(!r.ok){alert(d.error||'No se pudo actualizar el estado.');return;}await cargarComprasCatalogos();
+}
 async function eliminarConceptoCompra(id){
- if(!confirm('¿Desactivar este ítem de compra? Quedará conservado en el historial y no podrá utilizarse en nuevas operaciones.'))return;
+ if(!confirm('¿Eliminar definitivamente este ítem? Solo será posible si todavía no fue utilizado en una Orden de Compra o Factura.'))return;
  const r=await fetchApi(API+'/api/compras/conceptos/'+id,{method:'DELETE'});
- const d=await r.json();if(!r.ok){alert(d.error||'No se pudo desactivar.');return;}await cargarComprasCatalogos();
+ const d=await r.json();if(!r.ok){alert(d.error||'No se pudo eliminar. Si ya fue utilizado, inactivá el ítem.');return;}await cargarComprasCatalogos();
 }
 async function cargarCuentasArticulos(){
  const el=document.getElementById('lista-cuentas-articulos');if(!el)return;
@@ -357,7 +519,7 @@ async function guardarComprobanteCompra(){
 async function cargarComprobantesCompra(){const r=await fetchApi(API+'/api/compras/comprobantes');if(!r.ok)return;const rows=await r.json();const el=document.getElementById('lista-compras');if(el)el.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Comprobante</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td><td>'+(x.estado==='anulado'?'—':'<button class="btn btn-rojo btn-pequeno" onclick="anularCompra('+x.id+')">Anular</button>')+'</td></tr>').join('')+'</tbody></table>';const pend=document.getElementById('lista-compras-pendientes');if(pend)pend.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Número</th><th>Total</th><th>Estado</th></tr></thead><tbody>'+rows.filter(x=>x.estado==='pendiente_contabilizar').map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td></tr>').join('')+'</tbody></table>';}
 async function anularCompra(id){if(!confirm('¿Anular este comprobante?'))return;const r=await fetchApi(API+'/api/compras/comprobantes/'+id+'/estado',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'anulado'})});if(r.ok)await cargarComprobantesCompra();else alert('No se pudo anular.');}
 async function cargarReportesCompras(){const r1=await fetchApi(API+'/api/compras/reportes/proveedor');if(r1.ok){const rows=await r1.json();const e=document.getElementById('reporte-compras-proveedor');if(e)e.innerHTML='<table class="tabla"><thead><tr><th>Proveedor</th><th>Comprobantes</th><th>Total</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.proveedor)+'</td><td>'+x.comprobantes+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td></tr>').join('')+'</tbody></table>';}const r2=await fetchApi(API+'/api/compras/reportes/pendientes-pago');if(r2.ok){const rows=await r2.json();const e=document.getElementById('reporte-pendientes-pago');if(e)e.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Número</th><th>Total</th><th>Estado</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td></tr>').join('')+'</tbody></table>';}}
-async function prepararModuloCompras(){await cargarComprasCatalogos();await cargarComprobantesCompra();await cargarReportesCompras();document.getElementById('comp-timbrado')?.addEventListener('change',validarFacturaEnPantalla);}
+async function prepararModuloCompras(){instalarDefinicionUnidadesMedida();await cargarUnidadesMedida();await cargarComprasCatalogos();await cargarComprobantesCompra();await cargarReportesCompras();document.getElementById('comp-timbrado')?.addEventListener('change',validarFacturaEnPantalla);}
 
 setTimeout(()=>{if(typeof prepararModuloCompras==='function') prepararModuloCompras();},1200);
 
