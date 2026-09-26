@@ -534,4 +534,19 @@ async function mostrarCuotero(comprobanteId){
 }
 
 // Carga de módulos ERP adicionales
-(function(){['inventarios.js','activo_fijo.js','personas.js'].forEach(function(src){if(!document.querySelector('script[src="'+src+'"]')){var x=document.createElement('script');x.src=src;document.body.appendChild(x);}})})();
+(function(){
+  function cargarTodos(){
+    ['inventarios.js','activo_fijo.js','personas.js'].forEach(function(src){
+      if(document.querySelector('script[data-erp-modulo="'+src+'"]')) return;
+      var x=document.createElement('script');
+      x.src=src+'?v=20260926';
+      x.async=false;
+      x.dataset.erpModulo=src;
+      x.onload=function(){console.log('[Kakuaa] Módulo ERP cargado:',src);};
+      x.onerror=function(){console.error('[Kakuaa] No se pudo cargar el módulo ERP:',src);};
+      (document.head||document.body).appendChild(x);
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',cargarTodos,{once:true});
+  else cargarTodos();
+})();
