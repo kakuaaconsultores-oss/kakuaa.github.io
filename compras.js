@@ -532,3 +532,6 @@ async function mostrarCuotero(comprobanteId){
  rows.map(x=>'<tr><td>'+x.numero_cuota+'</td><td>'+escapeHtml(x.fecha_vencimiento)+'</td><td>'+Number(x.importe||0).toLocaleString('es-PY')+'</td><td>'+Number(x.saldo||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td></tr>').join('')+
  '</tbody></table>';
 }
+
+// Carga de módulos ERP adicionales
+(function(){['inventarios.js','activo_fijo.js','personas.js'].forEach(function(src){if(!document.querySelector('script[src="'+src+'"]')){var x=document.createElement('script');x.src=src;document.body.appendChild(x);}})})();
