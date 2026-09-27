@@ -103,46 +103,6 @@ async function eliminarUnidadMedida(id){
  await cargarUnidadesMedida();
  await cargarComprasCatalogos();
 }
-function instalarDefinicionUnidadesMedida(){
- if(document.getElementById('vista-unidades-medida'))return;
- const main=document.querySelector('.contenido');
- if(!main)return;
- const section=document.createElement('section');
- section.className='vista';
- section.id='vista-unidades-medida';
- section.innerHTML=
-   '<h2 class="titulo-seccion">Definición de Unidades de Medida</h2>'+
-   '<p class="subtitulo">Catálogo cerrado de unidades que podrán seleccionarse en los Conceptos / Ítems de Compra. El código queda definido por la empresa y luego podrá utilizarse para futuras integraciones de facturación electrónica.</p>'+
-   '<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn btn-azul" onclick="abrirNuevaUnidadMedida()">＋ Nueva unidad</button></div>'+
-   '<div id="form-unidad-medida" class="card" style="display:none;margin-bottom:16px">'+
-     '<div class="form-grid">'+
-       '<input id="um-codigo" maxlength="10" placeholder="Código * (ej. UNI, KG, G)">'+
-       '<input id="um-nombre" placeholder="Nombre / descripción *">'+
-       '<input id="um-abreviatura" placeholder="Abreviatura (opcional)">'+
-       '<select id="um-estado"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select>'+
-     '</div>'+
-     '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">'+
-       '<button id="btn-guardar-unidad" class="btn btn-verde" onclick="guardarUnidadMedida()">＋ Guardar unidad</button>'+
-       '<button class="btn btn-gris" onclick="cancelarUnidadMedida()">Cancelar</button>'+
-     '</div>'+
-   '</div>'+
-   '<div class="card"><div id="lista-unidades-medida"></div></div>';
- main.insertBefore(section,document.getElementById('vista-proveedores')||null);
-
- const navGroups=[...document.querySelectorAll('.nav-group')];
- const comprasGroup=navGroups.find(g=>(g.querySelector('.nav-group-title')?.textContent||'').includes('Compras'));
- const sub=comprasGroup?.querySelector('.nav-subitems');
- if(sub){
-   const item=document.createElement('div');
-   item.className='nav-item nav-subitem';
-   item.dataset.vista='unidades-medida';
-   item.textContent='Definición de unidades de medida';
-   item.onclick=()=>cambiarVista('unidades-medida');
-   const concepto=[...sub.querySelectorAll('.nav-item')].find(x=>(x.textContent||'').includes('Conceptos / Ítems de compra'));
-   if(concepto)concepto.insertAdjacentElement('afterend',item); else sub.appendChild(item);
- }
-}
-instalarDefinicionUnidadesMedida();
 async function cargarComprasCatalogos(){
  try{
    await cargarUnidadesMedida();
@@ -519,7 +479,7 @@ async function guardarComprobanteCompra(){
 async function cargarComprobantesCompra(){const r=await fetchApi(API+'/api/compras/comprobantes');if(!r.ok)return;const rows=await r.json();const el=document.getElementById('lista-compras');if(el)el.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Comprobante</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td><td>'+(x.estado==='anulado'?'—':'<button class="btn btn-rojo btn-pequeno" onclick="anularCompra('+x.id+')">Anular</button>')+'</td></tr>').join('')+'</tbody></table>';const pend=document.getElementById('lista-compras-pendientes');if(pend)pend.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Número</th><th>Total</th><th>Estado</th></tr></thead><tbody>'+rows.filter(x=>x.estado==='pendiente_contabilizar').map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td></tr>').join('')+'</tbody></table>';}
 async function anularCompra(id){if(!confirm('¿Anular este comprobante?'))return;const r=await fetchApi(API+'/api/compras/comprobantes/'+id+'/estado',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'anulado'})});if(r.ok)await cargarComprobantesCompra();else alert('No se pudo anular.');}
 async function cargarReportesCompras(){const r1=await fetchApi(API+'/api/compras/reportes/proveedor');if(r1.ok){const rows=await r1.json();const e=document.getElementById('reporte-compras-proveedor');if(e)e.innerHTML='<table class="tabla"><thead><tr><th>Proveedor</th><th>Comprobantes</th><th>Total</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.proveedor)+'</td><td>'+x.comprobantes+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td></tr>').join('')+'</tbody></table>';}const r2=await fetchApi(API+'/api/compras/reportes/pendientes-pago');if(r2.ok){const rows=await r2.json();const e=document.getElementById('reporte-pendientes-pago');if(e)e.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Número</th><th>Total</th><th>Estado</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td></tr>').join('')+'</tbody></table>';}}
-async function prepararModuloCompras(){instalarDefinicionUnidadesMedida();await cargarUnidadesMedida();await cargarComprasCatalogos();await cargarComprobantesCompra();await cargarReportesCompras();document.getElementById('comp-timbrado')?.addEventListener('change',validarFacturaEnPantalla);}
+async function prepararModuloCompras(){await cargarUnidadesMedida();await cargarComprasCatalogos();await cargarComprobantesCompra();await cargarReportesCompras();document.getElementById('comp-timbrado')?.addEventListener('change',validarFacturaEnPantalla);}
 
 setTimeout(()=>{if(typeof prepararModuloCompras==='function') prepararModuloCompras();},1200);
 
