@@ -804,7 +804,29 @@
 <section class="vista" id="vista-reporte-pendientes-pago"><h2 class="titulo-seccion">Facturas Pendientes de Pago</h2><div id="reporte-pendientes-pago"></div></section>
 <section class="vista" id="vista-reporte-cuenta-contable"><h2 class="titulo-seccion">Compras por Cuenta Contable</h2><div class="erp-placeholder"><div class="placeholder-box"><strong>Integración contable</strong><span>Se alimentará de las líneas y cuentas de compra.</span></div></div></section>
 <section class="vista" id="vista-costos"><h2 class="titulo-seccion">Costos y Márgenes</h2><p class="subtitulo">Rentabilidad por cliente, servicio y período.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Costos directos</strong><span>Horas y costos de personal.</span></div><div class="placeholder-box"><strong>Facturación</strong><span>Ingresos por cliente y servicio.</span></div><div class="placeholder-box"><strong>Margen</strong><span>Resultado y porcentaje de margen.</span></div></div></div></section>
-            <section class="vista" id="vista-centro-costos"><h2 class="titulo-seccion">Centro de Costos</h2><p class="subtitulo">Clasificación de costos por área, unidad o proyecto.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Estructura</strong><span>Centros y subcentros.</span></div><div class="placeholder-box"><strong>Asignación</strong><span>Distribución de costos.</span></div><div class="placeholder-box"><strong>Reportes</strong><span>Comparativos por período.</span></div></div></div></section>
+            <section class="vista" id="vista-centro-costos">
+<h2 class="titulo-seccion">Definición de Centros de Costos</h2>
+<p class="subtitulo">Definí las áreas, unidades o proyectos responsables de las operaciones. El centro de costo se selecciona en cada transacción y no queda ligado permanentemente al concepto presupuestario.</p>
+<div class="inv-panel">
+  <h3>Nuevo centro de costo</h3>
+  <div class="inv-note">📊 El centro de costo es independiente del concepto presupuestario. Una misma compra o venta puede asignarse a un centro distinto según la operación.</div>
+  <div class="inv-grid">
+    <div><label>Código *</label><input id="cc-codigo" maxlength="30" placeholder="Ej.: ADM"></div>
+    <div><label>Nombre *</label><input id="cc-nombre" placeholder="Ej.: Administración"></div>
+    <div><label>Centro padre</label><select id="cc-padre"><option value="">Sin centro padre</option></select></div>
+  </div>
+  <div class="inv-actions">
+    <button id="btn-guardar-centro-costo" class="btn btn-verde" onclick="guardarCentroCosto()">＋ Guardar centro de costo</button>
+    <button class="btn btn-gris" onclick="cancelarCentroCosto()">Cancelar</button>
+  </div>
+</div>
+<div class="inv-panel" style="margin-top:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div><h3>Centros de costos definidos</h3><p class="inv-help" style="margin:3px 0 0">Podés editar o inactivar/reactivar sin eliminar el historial.</p></div>
+  </div>
+  <div id="lista-centros-costos" class="inv-table-wrap" style="margin-top:14px"></div>
+</div>
+</section>
             <section class="vista" id="vista-presupuestos"><h2 class="titulo-seccion">Presupuestos</h2><p class="subtitulo">Planificación y seguimiento presupuestario.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Presupuesto</strong><span>Definición de ingresos y gastos.</span></div><div class="placeholder-box"><strong>Ejecución</strong><span>Real versus presupuestado.</span></div><div class="placeholder-box"><strong>Variaciones</strong><span>Alertas y análisis.</span></div></div></div></section>
             <section class="vista" id="vista-balance"><h2 class="titulo-seccion">Balance General</h2><p class="subtitulo">Vista estructurada de activos, pasivos y patrimonio.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Activos</strong><span>Disponibilidades, créditos y bienes.</span></div><div class="placeholder-box"><strong>Pasivos</strong><span>Obligaciones y cuentas por pagar.</span></div><div class="placeholder-box"><strong>Patrimonio</strong><span>Capital y resultados acumulados.</span></div></div></div></section>
             <section class="vista" id="vista-resultados"><h2 class="titulo-seccion">Estado de Resultados</h2><p class="subtitulo">Ingresos, costos, gastos y resultado del período.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Ingresos</strong><span>Facturación y otros ingresos.</span></div><div class="placeholder-box"><strong>Egresos</strong><span>Costos y gastos.</span></div><div class="placeholder-box"><strong>Resultado</strong><span>Resultado operativo y neto.</span></div></div></div></section>
