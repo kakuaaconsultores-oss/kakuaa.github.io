@@ -23,7 +23,7 @@ jobs:
           import subprocess
           import tempfile
 
-          files = list(Path(".").glob("*.html"))
+          files = list(Path(".").glob("*.html")) + list(Path(".").glob("*.js"))
           for path in files:
               text = path.read_text(encoding="utf-8")
               scripts = re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>", text, flags=re.S | re.I)
