@@ -528,11 +528,39 @@ function abrirConsultaPublicaDnit(){
     input?.focus();
     return;
   }
+
   const url="https://ekuatia.set.gov.py/consultas/";
-  window.open(url,"_blank","noopener,noreferrer");
   const resultado=document.getElementById("sifen-cdc-resultado");
-  if(resultado){
-    resultado.innerHTML='<div class="inv-note"><strong>Consulta pública DNIT abierta.</strong><br>Ingresá el CDC, completá el reCAPTCHA y consultá el documento directamente en el portal oficial. Luego podés volver a Kakuaa y cargar el XML recibido del proveedor.</div>';
+  const anterior=document.getElementById("modal-consulta-publica-dnit");
+  if(anterior) anterior.remove();
+
+  const wrap=document.createElement("div");
+  wrap.id="modal-consulta-publica-dnit";
+  wrap.innerHTML=
+    '<div style="position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px">'+
+      '<div style="background:#fff;border-radius:16px;width:min(1180px,96vw);height:min(850px,94vh);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.28)">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #e5e7eb">'+
+          '<div><strong style="font-size:17px">Consulta pública DNIT · e-Kuatia</strong><div style="font-size:12px;color:#667085;margin-top:3px">CDC preparado: '+escapeHtml(cdc)+'</div></div>'+
+          '<div style="display:flex;gap:8px;align-items:center">'+
+            '<button class="btn btn-gris btn-pequeno" type="button" onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\')">↗ Abrir en pestaña</button>'+
+            '<button class="btn btn-rojo btn-pequeno" type="button" onclick="document.getElementById(\'modal-consulta-publica-dnit\')?.remove()">Cerrar</button>'+
+          '</div>'+
+        '</div>'+
+        '<div style="padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e5e7eb;font-size:13px">'+
+          '<strong>1.</strong> Ingresá el CDC si el portal no lo completa · <strong>2.</strong> completá el reCAPTCHA · <strong>3.</strong> presioná Consultar.'+
+        '</div>'+
+        '<iframe title="Consulta pública e-Kuatia DNIT" src="'+url+'" style="border:0;flex:1;width:100%;background:#fff" referrerpolicy="strict-origin-when-cross-origin" allow="clipboard-read; clipboard-write"></iframe>'+
+        '<div style="padding:10px 16px;border-top:1px solid #e5e7eb;font-size:12px;color:#667085">'+
+          'Si DNIT impide mostrar la consulta dentro de Kakuaa, usá “Abrir en pestaña”. Después podés importar el XML del DTE desde la pantalla de Kakuaa.'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+
+  document.body.appendChild(wrap);
+
+  const resultadoActual=document.getElementById("sifen-cdc-resultado");
+  if(resultadoActual){
+    resultadoActual.innerHTML='<div class="inv-note"><strong>Consulta pública DNIT preparada.</strong><br>Kakuaa intenta mostrar el portal oficial dentro de la ventana. Si el navegador o DNIT bloquean el iframe, usá “Abrir en pestaña”. El reCAPTCHA debe ser completado manualmente.</div>';
   }
 }
 
