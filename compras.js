@@ -665,6 +665,29 @@ async function importarXmlSifen(input){
   }
 }
 
+async function cargarSifenConfiguracion(){
+ const estado=document.getElementById('sifen-config-estado'),detalle=document.getElementById('sifen-config-detalle');
+ try{
+  const r=await fetchApi(API+'/api/sifen/configuracion'),d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||'No se pudo consultar la configuración SIFEN.');
+  const amb=document.getElementById('sifen-ambiente'),act=document.getElementById('sifen-activo');
+  if(amb)amb.value=d.ambiente||'test';if(act)act.checked=!!d.activo;
+  ['sifen-cert-path','sifen-key-path','sifen-ca-bundle'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  if(detalle)detalle.innerHTML='<strong>Cliente:</strong> '+escapeHtml(d.razon_social||'—')+' · <strong>RUC:</strong> '+escapeHtml(d.ruc||'—')+'<br>Certificado: '+(d.certificado_configurado?'Sí':'No')+' · Clave privada: '+(d.clave_configurada?'Sí':'No');
+  if(estado)estado.innerHTML=d.configurado?'<span class="badge badge-verde">SIFEN CONFIGURADO</span>':'<span class="badge" style="background:#fff7e6;color:#a15c00">PENDIENTE DE CERTIFICADO</span>';
+ }catch(e){if(estado)estado.textContent='No disponible';if(detalle)detalle.textContent=e.message||'No se pudo cargar la configuración.';}
+}
+async function guardarSifenConfiguracion(){
+ const body={ambiente:document.getElementById('sifen-ambiente')?.value||'test',activo:!!document.getElementById('sifen-activo')?.checked,cert_path:document.getElementById('sifen-cert-path')?.value.trim()||'',key_path:document.getElementById('sifen-key-path')?.value.trim()||'',ca_bundle:document.getElementById('sifen-ca-bundle')?.value.trim()||''};
+ if(body.activo&&(!body.cert_path||!body.key_path)){alert('Para activar SIFEN necesitamos primero certificado y clave privada en el servidor.');return;}
+ try{const r=await fetchApi(API+'/api/sifen/configuracion',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok){alert(d.error||'No se pudo guardar.');return;}alert('Configuración SIFEN guardada.');await cargarSifenConfiguracion();}catch(e){alert(e.message||'No se pudo guardar.');}
+}
+async function diagnosticarSifen(){
+ const cdc=(document.getElementById('sifen-diagnostico-cdc')?.value||'').replace(/\s+/g,'');const out=document.getElementById('sifen-diagnostico-resultado');
+ if(!/^\d{44}$/.test(cdc)){if(out)out.innerHTML='<div class="inv-note">Ingresá un CDC válido de 44 dígitos.</div>';return;}
+ if(out)out.innerHTML='<div class="inv-note">Probando WS Consulta DE de SIFEN…</div>';
+ try{const r=await fetchApi(API+'/api/sifen/diagnostico',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cdc})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok){if(out)out.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)"><strong>Diagnóstico no completado</strong><br>'+escapeHtml(d.error||'No se pudo probar SIFEN.')+'</div>';return;}const s=d.resultado||{};if(out)out.innerHTML='<div class="inv-note" style="border-left:4px solid var(--verde,#2e9e5b)"><strong>✓ Conexión SIFEN operativa.</strong><br>Código: '+escapeHtml(s.codigo||'—')+'</div>';if(s.xml_de){const x=new DOMParser().parseFromString(s.xml_de,'application/xml');if(!x.getElementsByTagName('parsererror').length){_renderImportacionXmlSifen(x.documentElement);window.ultimoSifenConsulta=s;}}}catch(e){if(out)out.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)">'+escapeHtml(e.message||'Error de conexión.')+'</div>';}
+}
 async function consultarDteCache(cdc){
   try{
     const r=await fetchApi(API+"/api/compras/dte/"+encodeURIComponent(cdc));
