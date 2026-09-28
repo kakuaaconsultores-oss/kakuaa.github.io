@@ -389,7 +389,22 @@
             color: #176b3a;
         }
     </style>
-</head>
+<style>
+.oc-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.oc-kpi{background:#fff;border:1px solid var(--gris-borde);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.oc-kpi strong{font-size:1.45rem}.oc-kpi span{font-size:.78rem;color:var(--texto-suave)}
+.oc-toolbar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:center}
+.oc-form-head,.oc-detalle-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.oc-form-head h3,.oc-detalle-head h3{margin:0}.oc-form-head span{font-size:.78rem;color:var(--texto-suave)}
+.oc-total{text-align:right;font-size:1.1rem;font-weight:700;padding:16px 0;border-top:1px solid var(--gris-borde);margin-top:12px}
+.oc-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+.oc-info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.oc-info-grid div{background:#f8fafc;border-radius:10px;padding:12px}.oc-info-grid small{display:block;color:var(--texto-suave)}.oc-info-grid strong{display:block;margin-top:4px}
+.oc-progress{height:10px;background:#e5e7eb;border-radius:99px;overflow:hidden}.oc-progress span{display:block;height:100%;background:#1d8f65}
+.oc-recepcion-resumen{text-align:right;font-size:.78rem;color:var(--texto-suave);margin:6px 0 14px}
+.oc-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:.72rem;font-weight:600;background:#eef2f7}.oc-aprobada,.oc-recibida,.oc-cerrada{background:#e7f6ed;color:#16734b}.oc-parcialmente_recibida{background:#fff4d6;color:#8a6500}.oc-anulada{background:#fde8e8;color:#a22}
+.oc-note{margin-top:14px;padding:10px 12px;border-radius:8px;background:#f4f7fa;color:var(--texto-suave);font-size:.78rem}
+@media(max-width:1000px){.oc-toolbar{grid-template-columns:1fr 1fr}.oc-kpis{grid-template-columns:repeat(2,1fr)}.oc-info-grid{grid-template-columns:repeat(2,1fr)}} 
+</style></head>
 <body>
 
     <!-- ===== HEADER ===== -->
@@ -482,7 +497,7 @@
                 <div class="nav-item nav-subitem" data-vista="formas-pago-compra" onclick="cambiarVista('formas-pago-compra')">Formas de pago</div>
                 <div class="nav-item nav-subitem" data-vista="proveedores" onclick="cambiarVista('proveedores')">Proveedores</div>
                 <div class="nav-subgroup-label">Gestión</div>
-                <div class="nav-item nav-subitem" data-vista="orden-compra" onclick="cambiarVista('orden-compra')">Orden de Compra</div>
+                <div class="nav-item nav-subitem" data-vista="orden-compra" onclick="cambiarVista('orden-compra')">Órdenes de Compra</div>
                 <div class="nav-item nav-subitem" data-vista="compras" onclick="cambiarVista('compras')">Registrar Factura</div>
                 <div class="nav-item nav-subitem" data-vista="nota-credito-compra" onclick="cambiarVista('nota-credito-compra')">Registrar Nota de Crédito</div>
                 <div class="nav-item nav-subitem" data-vista="compras-pendientes" onclick="cambiarVista('compras-pendientes')">Compras pendientes de contabilización</div>
@@ -734,6 +749,11 @@
   <button type="button" class="btn btn-gris" onclick="cancelarEdicionProveedor()">Cancelar guardado</button>\n </div>
 </div>
 <div id="lista-proveedores-compra" style="margin-top:16px"></div>
+</section>
+<section class="vista" id="vista-orden-compra">
+<h2 class="titulo-seccion">Órdenes de Compra</h2>
+<p class="subtitulo">Gestioná las órdenes a proveedores y controlá lo pedido, recibido y pendiente. La OC no genera asiento contable ni ejecución presupuestaria.</p>
+<div id="oc-contenido"></div>
 </section>
 <section class="vista" id="vista-compras">
 <h2 class="titulo-seccion">Registrar Factura</h2><p class="subtitulo">Carga manual de comprobantes de compra.</p>
@@ -2283,5 +2303,6 @@ function obtenerFormularioImpuestoActivo() {
     </script>
     <script src="compras.js"></script>
     <script src="inventarios.js"></script>
+    <script src="ordenes_compra.js"></script>
 </body>
 </html>
