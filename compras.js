@@ -674,6 +674,10 @@ async function consultarSifenPorCdc(){
       if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)"><strong>Consulta no completada</strong><br>'+escapeHtml(msg)+'</div>';
       return;
     }
+    if(d.public_only){
+      if(resultado) resultado.innerHTML='<div class="inv-note"><strong>Modo público disponible</strong><br>'+escapeHtml(d.mensaje||"Esta instalación no tiene certificado SIFEN configurado.")+'<div class="inv-actions" style="margin-top:12px"><button class="btn btn-azul" onclick="abrirConsultaPublicaDnit()">🌐 Abrir consulta pública DNIT</button></div></div>';
+      return;
+    }
     const doc=d.documento||{};
     const xml=d.xml_de||"";
     if(resultado){
