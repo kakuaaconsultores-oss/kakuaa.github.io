@@ -510,3 +510,86 @@ async function mostrarCuotero(comprobanteId){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',cargarTodos,{once:true});
   else cargarTodos();
 })();
+
+
+let sifenConsultaEnCurso=false;
+function limpiarResultadoSifen(){
+  const el=document.getElementById("sifen-cdc-resultado");
+  if(el) el.innerHTML="";
+}
+async function consultarSifenPorCdc(){
+  const input=document.getElementById("sifen-cdc");
+  const resultado=document.getElementById("sifen-cdc-resultado");
+  const btn=document.getElementById("btn-consultar-sifen");
+  const cdc=(input?.value||"").replace(/\s+/g,"");
+  if(!/^\d{44}$/.test(cdc)){
+    if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)">El CDC debe contener exactamente 44 dígitos numéricos.</div>';
+    input?.focus();
+    return;
+  }
+  if(sifenConsultaEnCurso)return;
+  sifenConsultaEnCurso=true;
+  if(btn){btn.disabled=true;btn.textContent="Consultando SIFEN…";}
+  if(resultado) resultado.innerHTML='<div class="inv-note">Conectando con SIFEN y verificando el CDC…</div>';
+  try{
+    const r=await fetchApi(API+"/api/sifen/consulta-cdc",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cdc:cdc})
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){
+      const msg=d.error||"No se pudo consultar el CDC en SIFEN.";
+      if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)"><strong>Consulta no completada</strong><br>'+escapeHtml(msg)+'</div>';
+      return;
+    }
+    const doc=d.documento||{};
+    const xml=d.xml_de||"";
+    if(resultado){
+      resultado.innerHTML=
+        '<div class="card" style="margin-top:14px">'+
+          '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">'+
+            '<div><strong>✓ Documento encontrado en SIFEN</strong><div class="inv-help">Código de respuesta: '+escapeHtml(d.codigo||"0422")+'</div></div>'+
+            '<span class="badge badge-verde">ENCONTRADO</span>'+
+          '</div>'+
+          '<div class="form-grid" style="margin-top:14px">'+
+            '<input value="'+escapeHtml(doc.ruc_emisor||"")+'" readonly placeholder="RUC emisor">'+
+            '<input value="'+escapeHtml(doc.razon_social_emisor||"")+'" readonly placeholder="Razón social">'+
+            '<input value="'+escapeHtml(doc.fecha_emision||"")+'" readonly placeholder="Fecha de emisión">'+
+            '<input value="'+escapeHtml(doc.timbrado||"")+'" readonly placeholder="Timbrado">'+
+            '<input value="'+escapeHtml(doc.establecimiento||"")+'" readonly placeholder="Establecimiento">'+
+            '<input value="'+escapeHtml(doc.punto_expedicion||"")+'" readonly placeholder="Punto de expedición">'+
+            '<input value="'+escapeHtml(doc.numero_documento||"")+'" readonly placeholder="Número">'+
+            '<input value="'+escapeHtml(doc.total||"")+'" readonly placeholder="Total">'+
+            '<input value="'+escapeHtml(doc.total_iva||"")+'" readonly placeholder="IVA">'+
+            '<input class="full" value="'+escapeHtml(cdc)+'" readonly placeholder="CDC">'+
+          '</div>'+
+          '<div class="inv-actions" style="margin-top:14px">'+
+            '<button class="btn btn-verde" onclick="prepararImportacionSifen()">↓ Preparar importación a Compras</button>'+
+          '</div>'+
+          '<details style="margin-top:14px"><summary>Ver XML recibido de SIFEN</summary><pre style="white-space:pre-wrap;max-height:360px;overflow:auto;margin-top:10px">'+escapeHtml(xml||"SIFEN no devolvió el XML del DE.")+'</pre></details>'+
+        '</div>';
+      window.ultimoSifenConsulta=d;
+    }
+  }catch(e){
+    console.error(e);
+    if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)">Error de conexión con Kakuaa/SIFEN.</div>';
+  }finally{
+    sifenConsultaEnCurso=false;
+    if(btn){btn.disabled=false;btn.textContent="Consultar SIFEN";}
+  }
+}
+function prepararImportacionSifen(){
+  const d=window.ultimoSifenConsulta;
+  if(!d?.documento){alert("Primero consultá un CDC válido.");return;}
+  const doc=d.documento;
+  const mapa={
+    "comp-cdc":d.cdc||"",
+    "comp-fecha":(doc.fecha_emision||"").slice(0,10),
+    "comp-total":doc.total||""
+  };
+  Object.entries(mapa).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&value)el.value=value;});
+  if(typeof cambiarVista==="function")cambiarVista("compras");
+  setTimeout(()=>document.getElementById("comp-cdc")?.focus(),150);
+  alert("Datos básicos del DTE preparados. El proveedor y los ítems se incorporarán en la siguiente capa de importación, una vez validemos el mapeo contra los maestros de Kakuaa.");
+}
