@@ -694,16 +694,58 @@ async function consultarDteCache(cdc){
     if(r.status===404)return false;
     const d=await r.json().catch(()=>({}));
     if(!r.ok||!d.found)return false;
-    window.ultimoSifenConsulta={ok:true,cdc:d.documento?.cdc||cdc,documento:d.documento||{},xml_de:d.xml_de||"",fuente:d.fuente||"KAKUAA"};
+    window.ultimoSifenConsulta={
+      ok:true,
+      cdc:d.documento?.cdc||cdc,
+      documento:d.documento||{},
+      xml_de:d.xml_de||"",
+      fuente:d.fuente||"KAKUAA"
+    };
     if(d.xml_de){
       const doc=new DOMParser().parseFromString(d.xml_de,"application/xml");
-      if(!doc.getElementsByTagName("parsererror").length)_renderImportacionXmlSifen(doc.documentElement);
+      if(!doc.getElementsByTagName("parsererror").length){
+        const root=doc.documentElement;
+        const get=(names)=>_xmlText(root,names);
+        const items=_xmlItems(root).map(x=>({
+          codigoInterno:x.codigo,
+          descripcion:x.descripcion,
+          cantidad:x.cantidad,
+          precioUnitario:x.precio_unitario,
+          tasaIva:x.iva,
+          totalOperacionItem:x.subtotal
+        }));
+        window.ultimoSifenConsulta.CDC=d.documento?.cdc||cdc;
+        window.ultimoSifenConsulta.fechaEmision=get(["dFeEmiDE"]);
+        window.ultimoSifenConsulta.emisor={
+          ruc:get(["dRucEm"]),
+          razonSocial:get(["dNomEmi","dRazSocEm"])
+        };
+        window.ultimoSifenConsulta.receptor={
+          ruc:get(["dRucRec"]),
+          razonSocial:get(["dNomRec"])
+        };
+        window.ultimoSifenConsulta.timbrado={
+          numeroTimbrado:get(["dNumTim"]),
+          establecimiento:get(["dEst"]),
+          puntoExpedicion:get(["dPunExp"]),
+          numeroDocumento:get(["dNumDoc"])
+        };
+        window.ultimoSifenConsulta.totalDocumento={
+          totalNeto:get(["dTotGralOpe"]),
+          totalIva:get(["dLiqTotIVA","dTotIVA"]),
+          iva05:get(["dIVA5"]),
+          iva10:get(["dIVA10"])
+        };
+        window.ultimoSifenConsulta.detalleFactura=items;
+        window.ultimoSifenConsulta.moneda=get(["cMoneOpe"]);
+      }
     }
+    _renderSifenNormalizado(window.ultimoSifenConsulta);
     const resultado=document.getElementById("sifen-cdc-resultado");
     if(resultado){
       const nota=document.createElement("div");
       nota.className="inv-note";
-      nota.innerHTML="<strong>✓ DTE recuperado desde Kakuaa.</strong><br>No fue necesario consultar nuevamente a DNIT ni resolver CAPTCHA.";
+      nota.innerHTML="<strong>✓ DTE recuperado desde Kakuaa.</strong><br>No fue necesario consultar nuevamente a DNIT.";
       resultado.insertBefore(nota,resultado.firstChild);
     }
     return true;
@@ -713,55 +755,6 @@ async function consultarDteCache(cdc){
   }
 }
 
-function _renderSifenNormalizado(d){
-  const resultado=document.getElementById("sifen-cdc-resultado");
-  if(!resultado)return;
-  const doc=d?.documento||{};
-  const em=d?.emisor||{};
-  const rec=d?.receptor||{};
-  const tot=d?.totalDocumento||{};
-  const tim=d?.timbrado||{};
-  const pagos=Array.isArray(d?.formasPago)?d.formasPago:[];
-  const items=Array.isArray(d?.detalleFactura)?d.detalleFactura:[];
-  const cdc=d?.CDC||d?.cdc||doc.cdc||"";
-  window.ultimoSifenConsulta=Object.assign({},d,{ok:true,cdc,documento:doc,items,xml_de:d.xml_de||""});
-  const esc=x=>escapeHtml(x==null?"":String(x));
-  resultado.innerHTML=
-    '<div class="card" style="margin-top:14px">'+
-      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">'+
-        '<div><strong>✓ Documento encontrado en SIFEN</strong><div class="inv-help">Datos oficiales del DTE · Código '+esc(d.codigo||"0422")+'</div></div>'+
-        '<span class="badge badge-verde">SIFEN</span>'+
-      '</div>'+
-      '<div class="form-grid" style="margin-top:14px">'+
-        '<input value="'+esc(em.ruc)+'-'+esc(em.digitoVerificador)+'" readonly placeholder="RUC emisor">'+
-        '<input value="'+esc(em.razonSocial)+'" readonly placeholder="Razón social emisor">'+
-        '<input value="'+esc(d.fechaEmision||doc.fecha_emision)+'" readonly placeholder="Fecha de emisión">'+
-        '<input value="'+esc(tim.numeroTimbrado||doc.timbrado)+'" readonly placeholder="Timbrado">'+
-        '<input value="'+esc(tim.establecimiento||doc.establecimiento)+'" readonly placeholder="Establecimiento">'+
-        '<input value="'+esc(tim.puntoExpedicion||doc.punto_expedicion)+'" readonly placeholder="Punto de expedición">'+
-        '<input value="'+esc(tim.numeroDocumento||doc.numero_documento)+'" readonly placeholder="Número">'+
-        '<input value="'+esc(tot.totalNeto||doc.total)+'" readonly placeholder="Total">'+
-        '<input value="'+esc(tot.totalIva||doc.total_iva)+'" readonly placeholder="IVA total">'+
-        '<input value="'+esc(d.moneda||doc.moneda)+'" readonly placeholder="Moneda">'+
-        '<input value="'+esc(rec.ruc)+'-'+esc(rec.digitoVerificador)+'" readonly placeholder="RUC receptor">'+
-        '<input value="'+esc(rec.razonSocial)+'" readonly placeholder="Razón social receptor">'+
-        '<input class="full" value="'+esc(cdc)+'" readonly placeholder="CDC">'+
-      '</div>'+
-      '<div class="inv-note" style="margin-top:12px"><strong>Condición:</strong> '+esc(d.tipoOperacion?.tipoOperacion||"—")+
-        ' · <strong>IVA 5%:</strong> '+esc(tot.iva05||"0")+
-        ' · <strong>IVA 10%:</strong> '+esc(tot.iva10||"0")+'</div>'+
-      '<div class="inv-actions" style="margin-top:14px">'+
-        '<button class="btn btn-verde" onclick="prepararImportacionSifen()">↓ Preparar importación a Compras</button>'+
-      '</div>'+
-      '<details style="margin-top:14px"><summary>Ver ítems detectados ('+items.length+')</summary><div style="overflow:auto;margin-top:10px"><table class="tabla"><thead><tr><th>Código</th><th>Descripción</th><th>Cantidad</th><th>Precio</th><th>IVA</th><th>Total</th></tr></thead><tbody>'+
-        (items.length?items.map(x=>'<tr><td>'+esc(x.codigoInterno)+'</td><td>'+esc(x.descripcion)+'</td><td>'+esc(x.cantidad)+'</td><td>'+esc(x.precioUnitario)+'</td><td>'+esc(x.tasaIva)+'</td><td>'+esc(x.totalOperacionItem||x.totalBruto)+'</td></tr>').join(""):'<tr><td colspan="6">No se detectaron ítems.</td></tr>')+
-      '</tbody></table></div></details>'+
-      '<details style="margin-top:14px"><summary>Formas de pago ('+pagos.length+')</summary><div style="overflow:auto;margin-top:10px"><table class="tabla"><thead><tr><th>Código</th><th>Forma</th><th>Monto</th><th>Moneda</th></tr></thead><tbody>'+
-        (pagos.length?pagos.map(x=>'<tr><td>'+esc(x.idFormaPago)+'</td><td>'+esc(x.formaPago)+'</td><td>'+esc(x.monto)+'</td><td>'+esc(x.moneda)+'</td></tr>').join(""):'<tr><td colspan="4">No informado.</td></tr>')+
-      '</tbody></table></div></details>'+
-      (d.qr?'<details style="margin-top:14px"><summary>QR del DTE</summary><div class="inv-note" style="word-break:break-all">'+esc(d.qr)+'</div></details>':'')+
-    '</div>';
-}
 async function consultarSifenPorCdc(){
   const input=document.getElementById("sifen-cdc");
   const resultado=document.getElementById("sifen-cdc-resultado");
