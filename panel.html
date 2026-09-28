@@ -842,16 +842,25 @@ input,select,textarea,button{max-width:100%;box-sizing:border-box}
 <section class="vista" id="vista-carga-manual-compra"><h2 class="titulo-seccion">Carga Manual</h2><button class="btn btn-azul" onclick="cambiarVista('compras')">Abrir registro de factura</button></section>
 <section class="vista" id="vista-carga-cdc">
 <h2 class="titulo-seccion">Carga desde CDC / DTE</h2>
-<p class="subtitulo">Consultá un Documento Electrónico directamente en SIFEN mediante su CDC de 44 dígitos. La consulta requiere que el backend de Kakuaa tenga configurado el certificado digital habilitado para SIFEN.</p>
+<p class="subtitulo">Disponible para cualquier contribuyente. Podés validar el DTE por la consulta pública de DNIT o importar directamente el XML recibido del proveedor. No necesitás ser facturador electrónico ni tener certificado digital.</p>
 <div class="card">
   <div class="form-grid">
     <input id="sifen-cdc" class="full" maxlength="44" inputmode="numeric" autocomplete="off" placeholder="Ingresá el CDC de 44 dígitos">
   </div>
   <div class="inv-actions" style="margin-top:12px">
-    <button id="btn-consultar-sifen" class="btn btn-azul" onclick="consultarSifenPorCdc()">Consultar SIFEN</button>
+    <button id="btn-consulta-publica-dnit" class="btn btn-azul" onclick="abrirConsultaPublicaDnit()">🌐 Consulta pública DNIT</button>
+    <button id="btn-consultar-sifen" class="btn btn-gris" onclick="consultarSifenPorCdc()">Consulta SIFEN (WS)</button>
     <button class="btn btn-gris" onclick="document.getElementById('sifen-cdc').value='';limpiarResultadoSifen()">Limpiar</button>
   </div>
-  <div class="inv-note" style="margin-top:12px">SIFEN consulta el DE por CDC mediante su Web Service oficial. Si el documento es encontrado, Kakuaa recibe el XML del DE y muestra una previsualización antes de importarlo.</div>
+  <div class="inv-note" style="margin-top:12px">
+    <strong>Consulta pública:</strong> la DNIT permite verificar el DTE por CDC y requiere completar el reCAPTCHA en su sitio oficial. Kakuaa no automatiza ni evade ese control; podés completarlo manualmente en la ventana oficial.
+    <br><br>
+    <strong>Importación:</strong> si el proveedor te entrega el XML, podés cargarlo abajo y Kakuaa leerá los datos del DTE sin certificado digital.
+  </div>
+  <div style="margin-top:14px">
+    <label for="sifen-xml-file"><strong>Importar XML del DTE</strong></label>
+    <input id="sifen-xml-file" type="file" accept=".xml,text/xml,application/xml" onchange="importarXmlSifen(this)" style="display:block;margin-top:8px">
+  </div>
 </div>
 <div id="sifen-cdc-resultado"></div>
 </section>
