@@ -795,22 +795,16 @@ async function consultarSifenPorCdc(){
     if(btn){btn.disabled=false;btn.textContent="Consultar SIFEN";}
   }
 }
-function prepararImportacionSifen(){
-  const d=window.ultimoSifenConsulta;
-  if(!d?.documento){alert("Primero consultá un CDC válido.");return;}
-  const doc=d.documento;
-  const mapa={
-    "comp-cdc":d.cdc||"",
-    "comp-fecha":(doc.fecha_emision||"").slice(0,10),
-    "comp-total":doc.total||""
-  };
-  Object.entries(mapa).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&value)el.value=value;});
-  if(typeof cambiarVista==="function")cambiarVista("compras");
-  setTimeout(()=>document.getElementById("comp-cdc")?.focus(),150);
-  alert("Datos básicos del DTE preparados. El proveedor y los ítems se incorporarán en la siguiente capa de importación, una vez validemos el mapeo contra los maestros de Kakuaa.");
+async function prepararImportacionSifen(){
+ const d=window.ultimoSifenConsulta;if(!d?.documento){alert('Primero consultá un CDC válido.');return;}
+ const doc=d.documento;if(typeof cambiarVista==='function')cambiarVista('compras');await cargarComprasCatalogos();
+ const mapa={'comp-cdc':d.cdc||'','comp-fecha':(doc.fecha_emision||'').slice(0,10),'comp-numero':doc.numero_documento||'','comp-total':doc.total||''};
+ Object.entries(mapa).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&value!=='')el.value=value;});
+ const proveedores=comprasCatalogosCache.proveedores||[],ruc=String(doc.ruc_emisor||'').trim().toUpperCase(),proveedor=proveedores.find(x=>String(x.ruc||'').trim().toUpperCase()===ruc);
+ if(proveedor){const sel=document.getElementById('comp-proveedor');if(sel){sel.value=String(proveedor.id);await cargarTimbradosProveedor(proveedor.id);const tims=document.getElementById('comp-timbrado')?._timbrados||[];const tim=tims.find(x=>String(x.numero_timbrado||'')===String(doc.timbrado||''))||tims.find(x=>String(x.numero_timbrado||'')===String(doc.timbrado||''));if(tim)document.getElementById('comp-timbrado').value=String(tim.id);}}
+ const resultado=document.getElementById('sifen-cdc-resultado');if(resultado){const n=document.createElement('div');n.className='inv-note';n.style.marginTop='10px';n.innerHTML='<strong>✓ DTE preparado para Compras.</strong><br>Se vincularon los datos disponibles y el proveedor cuando ya existe en Kakuaa. Ítems detectados: '+((d.items||[]).length)+'.';resultado.appendChild(n);}
+ setTimeout(()=>document.getElementById('comp-cdc')?.focus(),150);
 }
-
-
 function abrirConfiguracionSifenDesdeCompras(){
   if(typeof cambiarVista==='function'){
     const posibles=['configuracion','config','facturacion-electronica','sifen'];
