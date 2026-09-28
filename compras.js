@@ -724,12 +724,21 @@ async function consultarSifenPorCdc(){
       return;
     }
     if(d.public_only){
-      if(resultado) resultado.innerHTML='<div class="inv-note"><strong>Modo público disponible</strong><br>'+escapeHtml(d.mensaje||"Esta instalación no tiene certificado SIFEN configurado.")+'<div class="inv-actions" style="margin-top:12px"><button class="btn btn-azul" onclick="abrirConsultaPublicaDnit()">🌐 Abrir consulta pública DNIT</button></div></div>';
+      if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--amarillo,#b7791f)"><strong>⚠ Consulta automática SIFEN no configurada</strong><br>'+escapeHtml(d.mensaje||"Kakuaa necesita un certificado digital habilitado para utilizar el WS Consulta DE de SIFEN.")+'<div style="margin-top:10px">El CDC no se enviará automáticamente fuera de Kakuaa. Primero debemos configurar y probar la conexión SIFEN de este cliente.</div><div class="inv-actions" style="margin-top:12px"><button class="btn btn-verde" onclick="abrirConfiguracionSifenDesdeCompras()">⚙ Configurar conexión SIFEN</button></div></div>';
       return;
     }
     const doc=d.documento||{};
     const xml=d.xml_de||"";
-    if(resultado){
+    if(xml){
+      try{
+        const docXml=new DOMParser().parseFromString(xml,"application/xml");
+        if(!docXml.getElementsByTagName("parsererror").length){
+          _renderImportacionXmlSifen(docXml.documentElement);
+          window.ultimoSifenConsulta=d;
+        }
+      }catch(e){ console.warn("No se pudo renderizar el XML DTE de SIFEN:",e); }
+    }
+    if(resultado && !xml){
       resultado.innerHTML=
         '<div class="card" style="margin-top:14px">'+
           '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">'+
@@ -776,4 +785,16 @@ function prepararImportacionSifen(){
   if(typeof cambiarVista==="function")cambiarVista("compras");
   setTimeout(()=>document.getElementById("comp-cdc")?.focus(),150);
   alert("Datos básicos del DTE preparados. El proveedor y los ítems se incorporarán en la siguiente capa de importación, una vez validemos el mapeo contra los maestros de Kakuaa.");
+}
+
+
+function abrirConfiguracionSifenDesdeCompras(){
+  if(typeof cambiarVista==='function'){
+    const posibles=['configuracion','config','facturacion-electronica','sifen'];
+    for(const v of posibles){
+      try{ cambiarVista(v); return; }catch(e){}
+    }
+  }
+  const el=document.getElementById('sifen-cdc-resultado');
+  if(el)el.insertAdjacentHTML('beforeend','<div class="inv-note" style="margin-top:10px">La conexión WS SIFEN requiere certificado digital y clave privada configurados en el backend de este cliente. Cuando estén configurados, esta misma pantalla consultará el CDC y traerá automáticamente el DTE/XML sin salir de Kakuaa.</div>');
 }
