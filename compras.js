@@ -640,11 +640,53 @@ async function importarXmlSifen(input){
       const inputCdc=document.getElementById("sifen-cdc");
       if(inputCdc)inputCdc.value=cdc;
     }
+    const formData=new FormData();
+    formData.append("xml",archivo,archivo.name);
+    const subida=await fetchApi(API+"/api/compras/dte/importar-xml",{method:"POST",body:formData});
+    const subidaData=await subida.json().catch(()=>({}));
+    if(subida.ok){
+      window.ultimoSifenConsulta=subidaData;
+      const box=document.getElementById("sifen-cdc-resultado");
+      if(box){
+        const aviso=document.createElement("div");
+        aviso.className="inv-note";
+        aviso.style.marginTop="10px";
+        aviso.innerHTML="<strong>✓ DTE guardado en Kakuaa.</strong><br>Las próximas consultas de este CDC se resolverán desde la base local, sin CAPTCHA.";
+        box.appendChild(aviso);
+      }
+    }else{
+      console.warn("XML leído pero no quedó guardado en Kakuaa:",subidaData.error||"error");
+    }
   }catch(e){
     console.error(e);
     if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)"><strong>No se pudo leer el XML.</strong><br>'+escapeHtml(e.message||"Archivo inválido.")+'</div>';
   }finally{
     if(input)input.value="";
+  }
+}
+
+async function consultarDteCache(cdc){
+  try{
+    const r=await fetchApi(API+"/api/compras/dte/"+encodeURIComponent(cdc));
+    if(r.status===404)return false;
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.found)return false;
+    window.ultimoSifenConsulta={ok:true,cdc:d.documento?.cdc||cdc,documento:d.documento||{},xml_de:d.xml_de||"",fuente:d.fuente||"KAKUAA"};
+    if(d.xml_de){
+      const doc=new DOMParser().parseFromString(d.xml_de,"application/xml");
+      if(!doc.getElementsByTagName("parsererror").length)_renderImportacionXmlSifen(doc.documentElement);
+    }
+    const resultado=document.getElementById("sifen-cdc-resultado");
+    if(resultado){
+      const nota=document.createElement("div");
+      nota.className="inv-note";
+      nota.innerHTML="<strong>✓ DTE recuperado desde Kakuaa.</strong><br>No fue necesario consultar nuevamente a DNIT ni resolver CAPTCHA.";
+      resultado.insertBefore(nota,resultado.firstChild);
+    }
+    return true;
+  }catch(e){
+    console.error("No se pudo consultar el cache DTE",e);
+    return false;
   }
 }
 
@@ -660,6 +702,13 @@ async function consultarSifenPorCdc(){
   }
   if(sifenConsultaEnCurso)return;
   sifenConsultaEnCurso=true;
+  if(resultado) resultado.innerHTML='<div class="inv-note">Buscando primero en la biblioteca de DTE de Kakuaa…</div>';
+  const encontrado=await consultarDteCache(cdc);
+  if(encontrado){
+    sifenConsultaEnCurso=false;
+    if(btn){btn.disabled=false;btn.textContent="Consultar SIFEN";}
+    return;
+  }
   if(btn){btn.disabled=true;btn.textContent="Consultando SIFEN…";}
   if(resultado) resultado.innerHTML='<div class="inv-note">Conectando con SIFEN WS… Si Kakuaa no tiene certificado digital configurado, la consulta pública DNIT sigue disponible y podés importar el XML directamente.</div>';
   try{
