@@ -840,7 +840,21 @@ input,select,textarea,button{max-width:100%;box-sizing:border-box}
 <section class="vista" id="vista-anulacion-compras"><h2 class="titulo-seccion">Anulación de Comprobantes</h2><div id="lista-anulacion-compras"></div></section>
 <section class="vista" id="vista-anticipos-proveedor"><h2 class="titulo-seccion">Anticipo de Proveedores</h2><div class="erp-placeholder"><div class="placeholder-box"><strong>Anticipos</strong><span>Proveedor, monto, saldo y aplicación.</span></div></div></section>
 <section class="vista" id="vista-carga-manual-compra"><h2 class="titulo-seccion">Carga Manual</h2><button class="btn btn-azul" onclick="cambiarVista('compras')">Abrir registro de factura</button></section>
-<section class="vista" id="vista-carga-cdc"><h2 class="titulo-seccion">Carga desde CDC / DTE</h2><div class="erp-placeholder"><div class="placeholder-box"><strong>CDC / DTE</strong><span>Base preparada para integración estructurada.</span></div></div></section>
+<section class="vista" id="vista-carga-cdc">
+<h2 class="titulo-seccion">Carga desde CDC / DTE</h2>
+<p class="subtitulo">Consultá un Documento Electrónico directamente en SIFEN mediante su CDC de 44 dígitos. La consulta requiere que el backend de Kakuaa tenga configurado el certificado digital habilitado para SIFEN.</p>
+<div class="card">
+  <div class="form-grid">
+    <input id="sifen-cdc" class="full" maxlength="44" inputmode="numeric" autocomplete="off" placeholder="Ingresá el CDC de 44 dígitos">
+  </div>
+  <div class="inv-actions" style="margin-top:12px">
+    <button id="btn-consultar-sifen" class="btn btn-azul" onclick="consultarSifenPorCdc()">Consultar SIFEN</button>
+    <button class="btn btn-gris" onclick="document.getElementById('sifen-cdc').value='';limpiarResultadoSifen()">Limpiar</button>
+  </div>
+  <div class="inv-note" style="margin-top:12px">SIFEN consulta el DE por CDC mediante su Web Service oficial. Si el documento es encontrado, Kakuaa recibe el XML del DE y muestra una previsualización antes de importarlo.</div>
+</div>
+<div id="sifen-cdc-resultado"></div>
+</section>
 <section class="vista" id="vista-importacion-compras"><h2 class="titulo-seccion">Importación Masiva</h2><div class="erp-placeholder"><div class="erp-placeholder"><div class="placeholder-box"><strong>Excel / CSV</strong><span>Validación transaccional en la siguiente etapa.</span></div></div></div></section>
 <section class="vista" id="vista-consulta-comprobantes"><h2 class="titulo-seccion">Consulta de Comprobante</h2><p class="subtitulo">Listado de comprobantes registrados.</p><div id="consulta-compras"></div></section>
 <section class="vista" id="vista-reporte-compras-proveedor"><h2 class="titulo-seccion">Compras por Proveedor</h2><div id="reporte-compras-proveedor"></div></section>
