@@ -516,7 +516,138 @@ let sifenConsultaEnCurso=false;
 function limpiarResultadoSifen(){
   const el=document.getElementById("sifen-cdc-resultado");
   if(el) el.innerHTML="";
+  window.ultimoSifenConsulta=null;
 }
+
+function abrirConsultaPublicaDnit(){
+  const input=document.getElementById("sifen-cdc");
+  const cdc=(input?.value||"").replace(/\s+/g,"");
+  if(!/^\d{44}$/.test(cdc)){
+    const resultado=document.getElementById("sifen-cdc-resultado");
+    if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)">Ingresá primero un CDC válido de 44 dígitos.</div>';
+    input?.focus();
+    return;
+  }
+  const url="https://ekuatia.set.gov.py/consultas/";
+  window.open(url,"_blank","noopener,noreferrer");
+  const resultado=document.getElementById("sifen-cdc-resultado");
+  if(resultado){
+    resultado.innerHTML='<div class="inv-note"><strong>Consulta pública DNIT abierta.</strong><br>Ingresá el CDC, completá el reCAPTCHA y consultá el documento directamente en el portal oficial. Luego podés volver a Kakuaa y cargar el XML recibido del proveedor.</div>';
+  }
+}
+
+function _xmlLocalName(node){
+  return String(node?.localName || node?.nodeName || "").split(":").pop();
+}
+function _xmlText(root,names){
+  const wanted=new Set((Array.isArray(names)?names:[names]).map(x=>String(x)));
+  const nodes=root?.getElementsByTagName("*")||[];
+  for(const n of nodes){
+    if(wanted.has(_xmlLocalName(n))){
+      const value=(n.textContent||"").trim();
+      if(value)return value;
+    }
+  }
+  return "";
+}
+function _xmlItems(root){
+  const nodes=root?.getElementsByTagName("*")||[];
+  const items=[];
+  for(const n of nodes){
+    if(_xmlLocalName(n)!=="gCamItem")continue;
+    const get=(names)=>_xmlText(n,names);
+    items.push({
+      codigo:get(["dCodInt"]),
+      descripcion:get(["dDesProSer"]),
+      cantidad:get(["dCantProSer"]),
+      unidad:get(["dDesUniMed"]),
+      precio_unitario:get(["dPUniProSer"]),
+      iva:get(["dTasaIVA"]),
+      subtotal:get(["dTotOpeItem"])
+    });
+  }
+  return items;
+}
+function _renderImportacionXmlSifen(doc){
+  const resultado=document.getElementById("sifen-cdc-resultado");
+  if(!resultado)return;
+  const campos={
+    cdc:_xmlText(doc,["DE"]),
+    fecha_emision:_xmlText(doc,["dFeEmiDE"]),
+    ruc_emisor:_xmlText(doc,["dRucEm"]),
+    razon_social_emisor:_xmlText(doc,["dNomEmi","dRazSocEm"]),
+    ruc_receptor:_xmlText(doc,["dRucRec"]),
+    razon_social_receptor:_xmlText(doc,["dNomRec","dNomRec"]),
+    moneda:_xmlText(doc,["cMoneOpe"]),
+    total:_xmlText(doc,["dTotGralOpe"]),
+    total_iva:_xmlText(doc,["dTotIVA"]),
+    timbrado:_xmlText(doc,["dNumTim"]),
+    establecimiento:_xmlText(doc,["dEst"]),
+    punto_expedicion:_xmlText(doc,["dPunExp"]),
+    numero_documento:_xmlText(doc,["dNumDoc"])
+  };
+  let cdc=campos.cdc;
+  if(!/^\d{44}$/.test(cdc)){
+    const deNodes=doc.getElementsByTagName("*");
+    for(const n of deNodes){
+      const id=n.getAttribute?.("Id")||"";
+      if(/^\d{44}$/.test(id)){cdc=id;break;}
+    }
+  }
+  campos.cdc=cdc;
+  const items=_xmlItems(doc);
+  window.ultimoSifenConsulta={ok:true,cdc:cdc,documento:campos,items:items,xml_de:new XMLSerializer().serializeToString(doc)};
+  resultado.innerHTML=
+    '<div class="card" style="margin-top:14px">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">'+
+        '<div><strong>✓ XML DTE leído correctamente</strong><div class="inv-help">Importación local · sin certificado digital</div></div>'+
+        '<span class="badge badge-verde">XML VÁLIDO</span>'+
+      '</div>'+
+      '<div class="form-grid" style="margin-top:14px">'+
+        '<input value="'+escapeHtml(campos.ruc_emisor||"")+'" readonly placeholder="RUC emisor">'+
+        '<input value="'+escapeHtml(campos.razon_social_emisor||"")+'" readonly placeholder="Razón social">'+
+        '<input value="'+escapeHtml(campos.fecha_emision||"")+'" readonly placeholder="Fecha de emisión">'+
+        '<input value="'+escapeHtml(campos.timbrado||"")+'" readonly placeholder="Timbrado">'+
+        '<input value="'+escapeHtml(campos.establecimiento||"")+'" readonly placeholder="Establecimiento">'+
+        '<input value="'+escapeHtml(campos.punto_expedicion||"")+'" readonly placeholder="Punto de expedición">'+
+        '<input value="'+escapeHtml(campos.numero_documento||"")+'" readonly placeholder="Número">'+
+        '<input value="'+escapeHtml(campos.total||"")+'" readonly placeholder="Total">'+
+        '<input value="'+escapeHtml(campos.total_iva||"")+'" readonly placeholder="IVA">'+
+        '<input class="full" value="'+escapeHtml(cdc||"")+'" readonly placeholder="CDC">'+
+      '</div>'+
+      '<div class="inv-actions" style="margin-top:14px">'+
+        '<button class="btn btn-verde" onclick="prepararImportacionSifen()">↓ Preparar importación a Compras</button>'+
+      '</div>'+
+      '<details style="margin-top:14px"><summary>Ver ítems detectados ('+items.length+')</summary><div style="overflow:auto;margin-top:10px"><table class="tabla"><thead><tr><th>Código</th><th>Descripción</th><th>Cantidad</th><th>Unidad</th><th>Precio</th><th>IVA</th></tr></thead><tbody>'+
+        (items.length?items.map(x=>'<tr><td>'+escapeHtml(x.codigo||"")+'</td><td>'+escapeHtml(x.descripcion||"")+'</td><td>'+escapeHtml(x.cantidad||"")+'</td><td>'+escapeHtml(x.unidad||"")+'</td><td>'+escapeHtml(x.precio_unitario||"")+'</td><td>'+escapeHtml(x.iva||"")+'</td></tr>').join(""):'<tr><td colspan="6">No se detectaron ítems con la estructura esperada.</td></tr>')+
+      '</tbody></table></div></details>'+
+    '</div>';
+}
+async function importarXmlSifen(input){
+  const archivo=input?.files?.[0];
+  if(!archivo)return;
+  const resultado=document.getElementById("sifen-cdc-resultado");
+  try{
+    const texto=await archivo.text();
+    const parser=new DOMParser();
+    const doc=parser.parseFromString(texto,"application/xml");
+    if(doc.getElementsByTagName("parsererror").length)throw new Error("El archivo no contiene XML válido.");
+    const root=doc.documentElement;
+    if(!root)throw new Error("El XML está vacío.");
+    _renderImportacionXmlSifen(root);
+    const cdc=(window.ultimoSifenConsulta?.cdc||"").replace(/\s+/g,"");
+    if(cdc&&/^\d{44}$/.test(cdc)){
+      const inputCdc=document.getElementById("sifen-cdc");
+      if(inputCdc)inputCdc.value=cdc;
+    }
+  }catch(e){
+    console.error(e);
+    if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)"><strong>No se pudo leer el XML.</strong><br>'+escapeHtml(e.message||"Archivo inválido.")+'</div>';
+  }finally{
+    if(input)input.value="";
+  }
+}
+
 async function consultarSifenPorCdc(){
   const input=document.getElementById("sifen-cdc");
   const resultado=document.getElementById("sifen-cdc-resultado");
@@ -530,7 +661,7 @@ async function consultarSifenPorCdc(){
   if(sifenConsultaEnCurso)return;
   sifenConsultaEnCurso=true;
   if(btn){btn.disabled=true;btn.textContent="Consultando SIFEN…";}
-  if(resultado) resultado.innerHTML='<div class="inv-note">Conectando con SIFEN y verificando el CDC…</div>';
+  if(resultado) resultado.innerHTML='<div class="inv-note">Conectando con SIFEN WS… Si Kakuaa no tiene certificado digital configurado, la consulta pública DNIT sigue disponible y podés importar el XML directamente.</div>';
   try{
     const r=await fetchApi(API+"/api/sifen/consulta-cdc",{
       method:"POST",
