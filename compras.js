@@ -713,83 +713,97 @@ async function consultarDteCache(cdc){
   }
 }
 
+function _renderSifenNormalizado(d){
+  const resultado=document.getElementById("sifen-cdc-resultado");
+  if(!resultado)return;
+  const doc=d?.documento||{};
+  const em=d?.emisor||{};
+  const rec=d?.receptor||{};
+  const tot=d?.totalDocumento||{};
+  const tim=d?.timbrado||{};
+  const pagos=Array.isArray(d?.formasPago)?d.formasPago:[];
+  const items=Array.isArray(d?.detalleFactura)?d.detalleFactura:[];
+  const cdc=d?.CDC||d?.cdc||doc.cdc||"";
+  window.ultimoSifenConsulta=Object.assign({},d,{ok:true,cdc,documento:doc,items,xml_de:d.xml_de||""});
+  const esc=x=>escapeHtml(x==null?"":String(x));
+  resultado.innerHTML=
+    '<div class="card" style="margin-top:14px">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">'+
+        '<div><strong>✓ Documento encontrado en SIFEN</strong><div class="inv-help">Datos oficiales del DTE · Código '+esc(d.codigo||"0422")+'</div></div>'+
+        '<span class="badge badge-verde">SIFEN</span>'+
+      '</div>'+
+      '<div class="form-grid" style="margin-top:14px">'+
+        '<input value="'+esc(em.ruc)+'-'+esc(em.digitoVerificador)+'" readonly placeholder="RUC emisor">'+
+        '<input value="'+esc(em.razonSocial)+'" readonly placeholder="Razón social emisor">'+
+        '<input value="'+esc(d.fechaEmision||doc.fecha_emision)+'" readonly placeholder="Fecha de emisión">'+
+        '<input value="'+esc(tim.numeroTimbrado||doc.timbrado)+'" readonly placeholder="Timbrado">'+
+        '<input value="'+esc(tim.establecimiento||doc.establecimiento)+'" readonly placeholder="Establecimiento">'+
+        '<input value="'+esc(tim.puntoExpedicion||doc.punto_expedicion)+'" readonly placeholder="Punto de expedición">'+
+        '<input value="'+esc(tim.numeroDocumento||doc.numero_documento)+'" readonly placeholder="Número">'+
+        '<input value="'+esc(tot.totalNeto||doc.total)+'" readonly placeholder="Total">'+
+        '<input value="'+esc(tot.totalIva||doc.total_iva)+'" readonly placeholder="IVA total">'+
+        '<input value="'+esc(d.moneda||doc.moneda)+'" readonly placeholder="Moneda">'+
+        '<input value="'+esc(rec.ruc)+'-'+esc(rec.digitoVerificador)+'" readonly placeholder="RUC receptor">'+
+        '<input value="'+esc(rec.razonSocial)+'" readonly placeholder="Razón social receptor">'+
+        '<input class="full" value="'+esc(cdc)+'" readonly placeholder="CDC">'+
+      '</div>'+
+      '<div class="inv-note" style="margin-top:12px"><strong>Condición:</strong> '+esc(d.tipoOperacion?.tipoOperacion||"—")+
+        ' · <strong>IVA 5%:</strong> '+esc(tot.iva05||"0")+
+        ' · <strong>IVA 10%:</strong> '+esc(tot.iva10||"0")+'</div>'+
+      '<div class="inv-actions" style="margin-top:14px">'+
+        '<button class="btn btn-verde" onclick="prepararImportacionSifen()">↓ Preparar importación a Compras</button>'+
+      '</div>'+
+      '<details style="margin-top:14px"><summary>Ver ítems detectados ('+items.length+')</summary><div style="overflow:auto;margin-top:10px"><table class="tabla"><thead><tr><th>Código</th><th>Descripción</th><th>Cantidad</th><th>Precio</th><th>IVA</th><th>Total</th></tr></thead><tbody>'+
+        (items.length?items.map(x=>'<tr><td>'+esc(x.codigoInterno)+'</td><td>'+esc(x.descripcion)+'</td><td>'+esc(x.cantidad)+'</td><td>'+esc(x.precioUnitario)+'</td><td>'+esc(x.tasaIva)+'</td><td>'+esc(x.totalOperacionItem||x.totalBruto)+'</td></tr>').join(""):'<tr><td colspan="6">No se detectaron ítems.</td></tr>')+
+      '</tbody></table></div></details>'+
+      '<details style="margin-top:14px"><summary>Formas de pago ('+pagos.length+')</summary><div style="overflow:auto;margin-top:10px"><table class="tabla"><thead><tr><th>Código</th><th>Forma</th><th>Monto</th><th>Moneda</th></tr></thead><tbody>'+
+        (pagos.length?pagos.map(x=>'<tr><td>'+esc(x.idFormaPago)+'</td><td>'+esc(x.formaPago)+'</td><td>'+esc(x.monto)+'</td><td>'+esc(x.moneda)+'</td></tr>').join(""):'<tr><td colspan="4">No informado.</td></tr>')+
+      '</tbody></table></div></details>'+
+      (d.qr?'<details style="margin-top:14px"><summary>QR del DTE</summary><div class="inv-note" style="word-break:break-all">'+esc(d.qr)+'</div></details>':'')+
+    '</div>';
+}
 async function consultarSifenPorCdc(){
   const input=document.getElementById("sifen-cdc");
   const resultado=document.getElementById("sifen-cdc-resultado");
   const btn=document.getElementById("btn-consultar-sifen");
   const cdc=(input?.value||"").replace(/\s+/g,"");
   if(!/^\d{44}$/.test(cdc)){
-    if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)">El CDC debe contener exactamente 44 dígitos numéricos.</div>';
-    input?.focus();
-    return;
+    if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)">El CDC debe contener exactamente 44 dígitos numéricos.</div>';
+    input?.focus(); return;
   }
   if(sifenConsultaEnCurso)return;
   sifenConsultaEnCurso=true;
-  if(resultado) resultado.innerHTML='<div class="inv-note">Buscando primero en la biblioteca de DTE de Kakuaa…</div>';
-  const encontrado=await consultarDteCache(cdc);
-  if(encontrado){
-    sifenConsultaEnCurso=false;
-    if(btn){btn.disabled=false;btn.textContent="Consultar SIFEN";}
-    return;
-  }
-  if(btn){btn.disabled=true;btn.textContent="Consultando SIFEN…";}
-  if(resultado) resultado.innerHTML='<div class="inv-note">Conectando con SIFEN WS… Si Kakuaa no tiene certificado digital configurado, la consulta pública DNIT sigue disponible y podés importar el XML directamente.</div>';
+  if(resultado)resultado.innerHTML='<div class="inv-note">Buscando primero en la biblioteca de DTE de Kakuaa…</div>';
   try{
+    const encontrado=await consultarDteCache(cdc);
+    if(encontrado){
+      if(window.ultimoSifenConsulta?.CDC||window.ultimoSifenConsulta?.emisor){
+        _renderSifenNormalizado(window.ultimoSifenConsulta);
+      }
+      return;
+    }
+    if(btn){btn.disabled=true;btn.textContent="Consultando SIFEN…";}
+    if(resultado)resultado.innerHTML='<div class="inv-note">Consultando el WS oficial de SIFEN…</div>';
     const r=await fetchApi(API+"/api/sifen/consulta-cdc",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({cdc:cdc})
+      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cdc})
     });
     const d=await r.json().catch(()=>({}));
     if(!r.ok){
-      const msg=d.error||"No se pudo consultar el CDC en SIFEN.";
-      if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)"><strong>Consulta no completada</strong><br>'+escapeHtml(msg)+'</div>';
+      if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)"><strong>Consulta no completada</strong><br>'+escapeHtml(d.error||"No se pudo consultar el CDC en SIFEN.")+'</div>';
       return;
     }
     if(d.public_only){
-      if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--amarillo,#b7791f)"><strong>⚠ Consulta automática SIFEN no configurada</strong><br>'+escapeHtml(d.mensaje||"Kakuaa necesita un certificado digital habilitado para utilizar el WS Consulta DE de SIFEN.")+'<div style="margin-top:10px">El CDC no se enviará automáticamente fuera de Kakuaa. Primero debemos configurar y probar la conexión SIFEN de este cliente.</div><div class="inv-actions" style="margin-top:12px"><button class="btn btn-verde" onclick="abrirConfiguracionSifenDesdeCompras()">⚙ Configurar conexión SIFEN</button></div></div>';
+      if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--amarillo,#b7791f)"><strong>Consulta automática no configurada</strong><br>'+escapeHtml(d.mensaje||"Configurá el certificado digital SIFEN para este cliente.")+'</div>';
       return;
     }
-    const doc=d.documento||{};
-    const xml=d.xml_de||"";
-    if(xml){
-      try{
-        const docXml=new DOMParser().parseFromString(xml,"application/xml");
-        if(!docXml.getElementsByTagName("parsererror").length){
-          _renderImportacionXmlSifen(docXml.documentElement);
-          window.ultimoSifenConsulta=d;
-        }
-      }catch(e){ console.warn("No se pudo renderizar el XML DTE de SIFEN:",e); }
-    }
-    if(resultado && !xml){
-      resultado.innerHTML=
-        '<div class="card" style="margin-top:14px">'+
-          '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">'+
-            '<div><strong>✓ Documento encontrado en SIFEN</strong><div class="inv-help">Código de respuesta: '+escapeHtml(d.codigo||"0422")+'</div></div>'+
-            '<span class="badge badge-verde">ENCONTRADO</span>'+
-          '</div>'+
-          '<div class="form-grid" style="margin-top:14px">'+
-            '<input value="'+escapeHtml(doc.ruc_emisor||"")+'" readonly placeholder="RUC emisor">'+
-            '<input value="'+escapeHtml(doc.razon_social_emisor||"")+'" readonly placeholder="Razón social">'+
-            '<input value="'+escapeHtml(doc.fecha_emision||"")+'" readonly placeholder="Fecha de emisión">'+
-            '<input value="'+escapeHtml(doc.timbrado||"")+'" readonly placeholder="Timbrado">'+
-            '<input value="'+escapeHtml(doc.establecimiento||"")+'" readonly placeholder="Establecimiento">'+
-            '<input value="'+escapeHtml(doc.punto_expedicion||"")+'" readonly placeholder="Punto de expedición">'+
-            '<input value="'+escapeHtml(doc.numero_documento||"")+'" readonly placeholder="Número">'+
-            '<input value="'+escapeHtml(doc.total||"")+'" readonly placeholder="Total">'+
-            '<input value="'+escapeHtml(doc.total_iva||"")+'" readonly placeholder="IVA">'+
-            '<input class="full" value="'+escapeHtml(cdc)+'" readonly placeholder="CDC">'+
-          '</div>'+
-          '<div class="inv-actions" style="margin-top:14px">'+
-            '<button class="btn btn-verde" onclick="prepararImportacionSifen()">↓ Preparar importación a Compras</button>'+
-          '</div>'+
-          '<details style="margin-top:14px"><summary>Ver XML recibido de SIFEN</summary><pre style="white-space:pre-wrap;max-height:360px;overflow:auto;margin-top:10px">'+escapeHtml(xml||"SIFEN no devolvió el XML del DE.")+'</pre></details>'+
-        '</div>';
-      window.ultimoSifenConsulta=d;
+    if(d.xml_de || d.CDC || d.emisor || d.detalleFactura){
+      _renderSifenNormalizado(d);
+    }else{
+      if(resultado)resultado.innerHTML='<div class="inv-note">SIFEN respondió correctamente, pero no se pudo normalizar el DTE.</div>';
     }
   }catch(e){
     console.error(e);
-    if(resultado) resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)">Error de conexión con Kakuaa/SIFEN.</div>';
+    if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)">Error de conexión con Kakuaa/SIFEN.</div>';
   }finally{
     sifenConsultaEnCurso=false;
     if(btn){btn.disabled=false;btn.textContent="Consultar SIFEN";}
