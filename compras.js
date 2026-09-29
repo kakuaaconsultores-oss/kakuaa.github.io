@@ -817,51 +817,82 @@ function _normalizarRespuestaConsultaMe(d, cdc){
   return n;
 }
 
-function _renderSifenNormalizado(d){
-  const box=document.getElementById("sifen-cdc-resultado");
-  if(!box)return;
-  const doc=d?.documento||{};
-  const td=d?.totalDocumento||{};
-  const items=Array.isArray(d?.items)?d.items:[];
-  const fmt=(v)=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString("es-PY",{minimumFractionDigits:2,maximumFractionDigits:2}):String(v??"—");};
-  const esc=(v)=>escapeHtml(String(v??""));
-  const fecha=doc.fecha_emision?String(doc.fecha_emision).slice(0,10):"";
-  box.innerHTML=
-    '<div class="card" style="margin-top:14px">'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
-      '<div><strong>✓ DTE encontrado</strong><div class="inv-help">Previsualización antes de cargar a Registrar Factura</div></div>'+
-      '<span class="badge badge-verde">DTE DISPONIBLE</span>'+
-    '</div>'+
-    '<div class="form-grid" style="margin-top:14px">'+
-      '<div><small>CDC</small><input value="'+esc(d.CDC||d.cdc||"")+'" readonly></div>'+
-      '<div><small>Fecha de emisión</small><input value="'+esc(fecha)+'" readonly></div>'+
-      '<div><small>RUC emisor</small><input value="'+esc(doc.ruc_emisor)+'" readonly></div>'+
-      '<div><small>Razón social</small><input value="'+esc(doc.razon_social_emisor)+'" readonly></div>'+
-      '<div><small>Timbrado</small><input value="'+esc(doc.timbrado)+'" readonly></div>'+
-      '<div><small>Documento</small><input value="'+esc((doc.establecimiento||"")+"-"+(doc.punto_expedicion||"")+"-"+(doc.numero_documento||""))+'" readonly></div>'+
-      '<div><small>RUC receptor</small><input value="'+esc(doc.ruc_receptor)+'" readonly></div>'+
-      '<div><small>Receptor</small><input value="'+esc(doc.razon_social_receptor)+'" readonly></div>'+
-    '</div>'+
-    '<h4 style="margin:18px 0 8px">Totales del DTE</h4>'+
-    '<div class="form-grid">'+
-      '<input value="Exento: '+esc(fmt(td.subtotalExcenta))+'" readonly>'+
-      '<input value="Gravado 5%: '+esc(fmt(td.subTotal05))+'" readonly>'+
-      '<input value="Gravado 10%: '+esc(fmt(td.subTotal10))+'" readonly>'+
-      '<input value="IVA 5%: '+esc(fmt(td.iva05))+'" readonly>'+
-      '<input value="IVA 10%: '+esc(fmt(td.iva10))+'" readonly>'+
-      '<input value="IVA total: '+esc(fmt(td.totalIva))+'" readonly>'+
-      '<input class="full" value="TOTAL DTE: '+esc(fmt(td.totalNeto))+'" readonly style="font-weight:700">'+
-    '</div>'+
-    '<h4 style="margin:18px 0 8px">Ítems del DTE ('+items.length+')</h4>'+
-    '<div style="overflow:auto"><table class="tabla"><thead><tr><th>Código</th><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th><th>IVA</th><th>Total</th></tr></thead><tbody>'+
-      (items.length?items.map(x=>'<tr><td>'+esc(x.codigoInterno||x.codigo||"")+'</td><td>'+esc(x.descripcion||x.descripcionProducto||"")+'</td><td>'+esc(x.cantidad||"")+'</td><td>'+esc(fmt(x.precioUnitario??x.precio_unitario))+'</td><td>'+esc((x.tasaIva??x.iva??"")+"%")+'</td><td>'+esc(fmt(x.totalOperacionItem??x.totalBruto??x.subtotal))+'</td></tr>').join(""):'<tr><td colspan="6">Sin ítems detectados.</td></tr>')+
-    '</tbody></table></div>'+
-    '<div class="inv-actions" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">'+
-      '<button class="btn btn-verde" onclick="prepararImportacionSifen()">✓ Cargar en Registrar Factura</button>'+
-      '<button class="btn btn-gris" onclick="document.getElementById("sifen-cdc-resultado").innerHTML=""">Cancelar</button>'+
-    '</div>'+
-    '</div>';
+async function sifenAgregarProveedorDesdeDte(){
+  const d=window.ultimoSifenConsulta||{}, doc=d.documento||{};
+  const ruc=String(doc.ruc_emisor||'').trim();
+  if(!ruc){alert('El DTE no contiene un RUC de emisor válido.');return;}
+  const razon=String(doc.razon_social_emisor||'').trim();
+  const existente=(comprasCatalogosCache.proveedores||[]).find(x=>String(x.ruc||'').trim().toUpperCase()===ruc.toUpperCase());
+  if(existente){alert('El proveedor ya está registrado en Kakuaa.');return;}
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML='<div class="card" style="width:min(620px,100%);max-height:90vh;overflow:auto;padding:20px"><h3 style="margin-top:0">Agregar proveedor desde DTE</h3><p class="inv-help">Kakuaa encontró un proveedor que todavía no está registrado. Los datos fiscales del DTE se precargan para evitar doble carga.</p><div class="form-grid"><div><small>RUC</small><input id="sif-prov-ruc" value="'+escapeHtml(ruc)+'" readonly></div><div><small>Razón social</small><input id="sif-prov-razon" value="'+escapeHtml(razon)+'" readonly></div><div><small>Nombre comercial</small><input id="sif-prov-nombre" value="'+escapeHtml(razon)+'"></div><div><small>Teléfono</small><input id="sif-prov-tel" value="'+escapeHtml(doc.telefono||'')+'"></div><div><small>Correo</small><input id="sif-prov-email" value="'+escapeHtml(doc.email||'')+'"></div><div class="full"><small>Dirección</small><input id="sif-prov-dir" value="'+escapeHtml(doc.direccion||'')+'"></div></div><div class="inv-actions"><button class="btn btn-gris" onclick="this.closest(\'div[style*=fixed]\').remove()">Cancelar</button><button class="btn btn-verde" id="sif-prov-guardar">✓ Agregar proveedor</button></div></div>';
+  document.body.appendChild(modal);
+  modal.querySelector('#sif-prov-guardar').onclick=async()=>{
+    const btn=modal.querySelector('#sif-prov-guardar');btn.disabled=true;btn.textContent='Guardando…';
+    try{
+      const body={ruc,razon_social:razon,nombre_comercial:modal.querySelector('#sif-prov-nombre').value.trim(),documento:ruc,correo:modal.querySelector('#sif-prov-email').value.trim(),telefono:modal.querySelector('#sif-prov-tel').value.trim(),direccion:modal.querySelector('#sif-prov-dir').value.trim()};
+      const rr=await fetchApi(API+'/api/compras/proveedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const dd=await rr.json().catch(()=>({}));if(!rr.ok)throw Error(dd.error||'No se pudo agregar el proveedor.');
+      modal.remove();await cargarComprasCatalogos();
+      if(typeof prepararImportacionSifen==='function')await prepararImportacionSifen();
+      alert('✓ Proveedor agregado a Kakuaa.');
+    }catch(e){alert(e.message||'No se pudo agregar el proveedor.');btn.disabled=false;btn.textContent='✓ Agregar proveedor';}
+  };
 }
+
+async function sifenAgregarArticuloDesdeDte(itemIndex){
+  const d=window.ultimoSifenConsulta||{}, item=(d.items||[])[itemIndex];
+  if(!item)return;
+  try{
+    const unidades=await (async()=>{const rr=await fetchApi(API+'/api/compras/unidades-medida');if(!rr.ok)throw Error('No se pudieron cargar las unidades de medida.');return await rr.json();})();
+    const inv=await (async()=>{const rr=await fetchApi(API+'/api/inventarios/items');if(!rr.ok)throw Error('No se pudo consultar Inventarios.');return await rr.json();})();
+    const maxCodigo=inv.reduce((m,x)=>{const n=Number(String(x.codigo||'').replace(/\D/g,''));return Number.isFinite(n)?Math.max(m,n):m},0);
+    const iva=Number(item.tasaIva??item.iva??0);
+    const descripcion=String(item.descripcion||item.descripcionProducto||'').trim();
+    const modal=document.createElement('div');
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML='<div class="card" style="width:min(700px,100%);max-height:90vh;overflow:auto;padding:20px"><h3 style="margin-top:0">Agregar artículo desde DTE</h3><p class="inv-help">El código interno de Kakuaa se genera automáticamente. El código del proveedor no se usa como código interno.</p><div class="form-grid"><div><small>Código interno Kakuaa</small><input value="'+(maxCodigo+1)+'" readonly></div><div><small>Descripción</small><input id="sif-art-desc" value="'+escapeHtml(descripcion)+'"></div><div><small>Unidad de medida *</small><select id="sif-art-um"><option value="">Seleccioná una unidad</option>'+(unidades||[]).filter(x=>Number(x.activo)!==0).map(x=>'<option value="'+x.id+'">'+escapeHtml((x.codigo||'')+' — '+(x.nombre||''))+'</option>').join('')+'</select></div><div><small>IVA</small><select id="sif-art-iva"><option value="0" '+(iva===0?'selected':'')+'>Exento 0%</option><option value="5" '+(iva===5?'selected':'')+'>5%</option><option value="10" '+(iva===10?'selected':'')+'>10%</option></select></div><div><small>Método de costeo</small><select id="sif-art-cost"><option value="PPP">PPP — Precio Promedio Ponderado</option><option value="PEPS">PEPS — Primero en Entrar, Primero en Salir</option></select></div><div><small>Stock mínimo</small><input id="sif-art-min" type="number" min="0" value="0"></div></div><div class="inv-actions"><button class="btn btn-gris" onclick="this.closest(\'div[style*=fixed]\').remove()">Cancelar</button><button class="btn btn-verde" id="sif-art-guardar">✓ Agregar a Inventarios</button></div></div>';
+    document.body.appendChild(modal);
+    modal.querySelector('#sif-art-guardar').onclick=async()=>{
+      const btn=modal.querySelector('#sif-art-guardar');
+      const um=modal.querySelector('#sif-art-um').value;
+      if(!um){alert('Seleccioná una unidad de medida.');return;}
+      btn.disabled=true;btn.textContent='Guardando…';
+      try{
+        const u=(unidades||[]).find(x=>Number(x.id)===Number(um));
+        const body={codigo:String(maxCodigo+1),nombre:modal.querySelector('#sif-art-desc').value.trim(),unidad_medida_id:Number(um),unidad_codigo:u?.codigo||'',tipo_iva:Number(modal.querySelector('#sif-art-iva').value),metodo_costeo:modal.querySelector('#sif-art-cost').value,stock_minimo:Number(modal.querySelector('#sif-art-min').value||0),precio_base:Number(item.precioUnitario??item.precio_unitario??0),descripcion:descripcion,inventariable:1};
+        if(!body.nombre)throw Error('La descripción es obligatoria.');
+        const rr=await fetchApi(API+'/api/inventarios/items',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const dd=await rr.json().catch(()=>({}));if(!rr.ok)throw Error(dd.error||'No se pudo agregar el artículo.');
+        modal.remove();alert('✓ Artículo agregado a Inventarios.');await cargarComprasCatalogos();_renderSifenNormalizado(window.ultimoSifenConsulta);
+      }catch(e){alert(e.message||'No se pudo agregar el artículo.');btn.disabled=false;btn.textContent='✓ Agregar a Inventarios';}
+    };
+  }catch(e){alert(e.message||'No se pudo preparar el alta del artículo.');}
+}
+
+function _renderSifenNormalizado(d){
+  const box=document.getElementById("sifen-cdc-resultado");if(!box)return;
+  const doc=d?.documento||{},td=d?.totalDocumento||{},items=Array.isArray(d?.items)?d.items:[];
+  const fmt=v=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString("es-PY",{minimumFractionDigits:2,maximumFractionDigits:2}):String(v??"—")};
+  const esc=v=>escapeHtml(String(v??"")),fecha=doc.fecha_emision?String(doc.fecha_emision).slice(0,10):"";
+  const provExiste=(comprasCatalogosCache.proveedores||[]).some(x=>String(x.ruc||"").trim().toUpperCase()===String(doc.ruc_emisor||"").trim().toUpperCase());
+  const invPromise=items.map(async(item,i)=>{try{const rr=await fetchApi(API+"/api/inventarios/items");if(!rr.ok)return false;const rows=await rr.json();const desc=String(item.descripcion||item.descripcionProducto||"").trim().toLowerCase();return rows.some(x=>String(x.nombre||"").trim().toLowerCase()===desc)}catch(_){return false}});
+  Promise.all(invPromise).then(found=>{
+    const articleActions=items.map((x,i)=>found[i]?'✓ Artículo registrado':'<button class="btn btn-azul btn-pequeno" onclick="sifenAgregarArticuloDesdeDte('+i+')">＋ Agregar a Inventarios</button>').join('<br>');
+    box.innerHTML=
+      '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><strong>✓ DTE encontrado</strong><div class="inv-help">Previsualización antes de cargar a Registrar Factura</div></div><span class="badge badge-verde">DTE DISPONIBLE</span></div>'+
+      '<div class="form-grid" style="margin-top:14px">'+
+      '<div><small>CDC</small><input value="'+esc(d.CDC||d.cdc||"")+'" readonly></div><div><small>Fecha de emisión</small><input value="'+esc(fecha)+'" readonly></div><div><small>RUC emisor</small><input value="'+esc(doc.ruc_emisor)+'" readonly></div><div><small>Razón social</small><input value="'+esc(doc.razon_social_emisor)+'" readonly></div><div><small>Timbrado</small><input value="'+esc(doc.timbrado)+'" readonly></div><div><small>Documento</small><input value="'+esc((doc.establecimiento||"")+"-"+(doc.punto_expedicion||"")+"-"+(doc.numero_documento||""))+'" readonly></div><div><small>RUC receptor</small><input value="'+esc(doc.ruc_receptor)+'" readonly></div><div><small>Receptor</small><input value="'+esc(doc.razon_social_receptor)+'" readonly></div></div>'+
+      '<h4 style="margin:18px 0 8px">Totales del DTE</h4><div class="form-grid"><input value="Exento: '+esc(fmt(td.subtotalExcenta))+'" readonly><input value="Gravado 5%: '+esc(fmt(td.subTotal05))+'" readonly><input value="Gravado 10%: '+esc(fmt(td.subTotal10))+'" readonly><input value="IVA 5%: '+esc(fmt(td.iva05))+'" readonly><input value="IVA 10%: '+esc(fmt(td.iva10))+'" readonly><input value="IVA total: '+esc(fmt(td.totalIva))+'" readonly><input class="full" value="TOTAL DTE: '+esc(fmt(td.totalNeto))+'" readonly style="font-weight:700"></div>'+
+      '<h4 style="margin:18px 0 8px">Proveedor</h4><div class="inv-note">'+(provExiste?'✓ Este proveedor ya está registrado en Kakuaa.':'⚠ Este proveedor todavía no está registrado en Kakuaa.')+'</div>'+
+      (!provExiste?'<button class="btn btn-azul" onclick="sifenAgregarProveedorDesdeDte()">＋ Agregar proveedor</button>':'')+
+      '<h4 style="margin:18px 0 8px">Ítems del DTE ('+items.length+')</h4><div style="overflow:auto"><table class="tabla"><thead><tr><th>Código proveedor</th><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th><th>IVA</th><th>Total</th><th>Inventarios</th></tr></thead><tbody>'+
+      (items.length?items.map((x,i)=>'<tr><td>'+esc(x.codigoInterno||x.codigo||"")+'</td><td>'+esc(x.descripcion||x.descripcionProducto||"")+'</td><td>'+esc(x.cantidad||"")+'</td><td>'+esc(fmt(x.precioUnitario??x.precio_unitario))+'</td><td>'+esc((x.tasaIva??x.iva??"")+"%")+'</td><td>'+esc(fmt(x.totalOperacionItem??x.totalBruto??x.subtotal))+'</td><td>'+articleActions.split('<br>')[i]+'</td></tr>').join(""):'<tr><td colspan="7">Sin ítems detectados.</td></tr>')+
+      '</tbody></table></div><div class="inv-actions" style="margin-top:16px"><button class="btn btn-verde" onclick="prepararImportacionSifen()">✓ Cargar en Registrar Factura</button><button class="btn btn-gris" onclick="document.getElementById(\'sifen-cdc-resultado\').innerHTML=\'\'">Cancelar</button></div></div>';
+  });
+}
+
 async function consultarSifenPorCdc(){
   const input=document.getElementById("sifen-cdc");
   const resultado=document.getElementById("sifen-cdc-resultado");
