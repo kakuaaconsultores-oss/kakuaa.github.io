@@ -768,7 +768,7 @@ function _normalizarRespuestaConsultaMe(d, cdc){
     x=siguiente;
   }
   const pick=(...ks)=>{for(const k of ks){if(x[k]!==undefined&&x[k]!==null&&x[k]!=="")return x[k];if(d?.[k]!==undefined&&d[k]!==null&&d[k]!=="")return d[k];}return "";};
-  const items=x.items||x.detalleFactura||x.detalle||x.detalles||[];
+  const items=x.items||x.detalleFactura||x.detalle||x.detalles||x.detalleItems||x.lineas||[];
   const doc=x.documento&&typeof x.documento==="object"?x.documento:{};
   const n={
     ...d,
@@ -788,8 +788,8 @@ function _normalizarRespuestaConsultaMe(d, cdc){
       punto_expedicion:pick("punto_expedicion","puntoExpedicion","dPunExp")||"",
       numero_documento:pick("numero_documento","numeroDocumento","dNumDoc")||"",
       total:pick("total","totalDocumento","dTotGralOpe","totalGeneral")||"",
-      total_iva:pick("total_iva","totalIva","dLiqTotIVA","dTotIVA")||"",
-      moneda:pick("moneda","currency","cMoneOpe")||"PYG"
+      total_iva:pick("total_iva","totalIva","dLiqTotIVA","dTotIVA","ivaTotal")||"",
+      moneda:pick("moneda","currency","cMoneOpe","monedaOperacion")||"PYG"
     },
     items:Array.isArray(items)?items:[]
   };
@@ -835,7 +835,7 @@ async function consultarSifenPorCdc(){
       if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--amarillo,#b7791f)"><strong>Consulta automática no disponible</strong><br>'+escapeHtml(d.mensaje||"No fue posible obtener el DTE automáticamente.")+'</div>';
       return;
     }
-    if(d.xml_de || d.CDC || d.cdc || d.emisor || d.detalleFactura || d.items || d.documento){
+    if(d.xml_de || d.CDC || d.cdc || d.emisor || d.detalleFactura || d.items || d.documento || d.data || d.document || d.result || d.resultado){
       const normalizado=_normalizarRespuestaConsultaMe(d,cdc);
       window.ultimoSifenConsulta=normalizado;
       if(typeof _renderSifenNormalizado==="function") _renderSifenNormalizado(normalizado);
@@ -845,7 +845,7 @@ async function consultarSifenPorCdc(){
         try{ await prepararImportacionSifen(); }catch(e){ console.error("No se pudo estirar el DTE a Compras",e); }
       }
     }else{
-      if(resultado)resultado.innerHTML='<div class="inv-note">La API externa respondió, pero no reconocimos la estructura del DTE.</div>';
+      if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)"><strong>Consulta realizada, pero sin DTE reconocible.</strong><br>Estado: '+escapeHtml(String(d.estado||d.status||"SIN_DATOS"))+(d.proveedor_http?" · HTTP "+escapeHtml(String(d.proveedor_http)):"")+'<br>'+escapeHtml(d.mensaje||"La respuesta no contiene campos reconocibles del documento.")+'</div>';
     }
   }catch(e){
     console.error(e);
