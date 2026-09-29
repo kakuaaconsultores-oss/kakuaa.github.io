@@ -770,6 +770,9 @@ function _normalizarRespuestaConsultaMe(d, cdc){
   const pick=(...ks)=>{for(const k of ks){if(x[k]!==undefined&&x[k]!==null&&x[k]!=="")return x[k];if(d?.[k]!==undefined&&d[k]!==null&&d[k]!=="")return d[k];}return "";};
   const items=x.items||x.detalleFactura||x.detalle||x.detalles||x.detalleItems||x.lineas||[];
   const doc=x.documento&&typeof x.documento==="object"?x.documento:{};
+  const em=(x.emisor&&typeof x.emisor==="object")?x.emisor:{};
+  const rec=(x.receptor&&typeof x.receptor==="object")?x.receptor:{};
+  const tim=(x.timbrado&&typeof x.timbrado==="object")?x.timbrado:{};
   const n={
     ...d,
     ...x,
@@ -779,14 +782,14 @@ function _normalizarRespuestaConsultaMe(d, cdc){
       ...doc,
       cdc:pick("cdc","CDC")||cdc,
       fecha_emision:pick("fecha_emision","fechaEmision","dFeEmiDE","fecha")||"",
-      ruc_emisor:pick("ruc_emisor","rucEmisor","dRucEm","rucEmisor")||"",
-      razon_social_emisor:pick("razon_social_emisor","razonSocialEmisor","dNomEmi","razonSocial")||"",
-      ruc_receptor:pick("ruc_receptor","rucReceptor","dRucRec")||"",
-      razon_social_receptor:pick("razon_social_receptor","razonSocialReceptor","dNomRec")||"",
-      timbrado:pick("timbrado","numeroTimbrado","dNumTim")||"",
-      establecimiento:pick("establecimiento","dEst")||"",
-      punto_expedicion:pick("punto_expedicion","puntoExpedicion","dPunExp")||"",
-      numero_documento:pick("numero_documento","numeroDocumento","dNumDoc")||"",
+      ruc_emisor:pick("ruc_emisor","rucEmisor","dRucEm","rucEmisor")||em.ruc||em.rucEmisor||"",
+      razon_social_emisor:pick("razon_social_emisor","razonSocialEmisor","dNomEmi","razonSocial")||em.razonSocial||em.razon_social||em.nombre||"",
+      ruc_receptor:pick("ruc_receptor","rucReceptor","dRucRec")||rec.ruc||rec.rucReceptor||"",
+      razon_social_receptor:pick("razon_social_receptor","razonSocialReceptor","dNomRec")||rec.razonSocial||rec.razon_social||rec.nombre||"",
+      timbrado:pick("timbrado","numeroTimbrado","dNumTim")||tim.numeroTimbrado||tim.numero_timbrado||"",
+      establecimiento:pick("establecimiento","dEst")||tim.establecimiento||"",
+      punto_expedicion:pick("punto_expedicion","puntoExpedicion","dPunExp")||tim.puntoExpedicion||"",
+      numero_documento:pick("numero_documento","numeroDocumento","dNumDoc")||tim.numeroDocumento||"",
       total:pick("total","totalDocumento","dTotGralOpe","totalGeneral")||"",
       total_iva:pick("total_iva","totalIva","dLiqTotIVA","dTotIVA","ivaTotal")||"",
       moneda:pick("moneda","currency","cMoneOpe","monedaOperacion")||"PYG"
