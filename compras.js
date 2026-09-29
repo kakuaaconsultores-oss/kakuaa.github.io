@@ -796,7 +796,23 @@ function _normalizarRespuestaConsultaMe(d, cdc){
   n.emisor={ruc:n.documento.ruc_emisor,razonSocial:n.documento.razon_social_emisor};
   n.receptor={ruc:n.documento.ruc_receptor,razonSocial:n.documento.razon_social_receptor};
   n.timbrado={numeroTimbrado:n.documento.timbrado,establecimiento:n.documento.establecimiento,puntoExpedicion:n.documento.punto_expedicion,numeroDocumento:n.documento.numero_documento};
-  n.totalDocumento={totalNeto:n.documento.total,totalIva:n.documento.total_iva};
+  // Conservamos la estructura real de ConsultaMe Factura y, además,
+  // dejamos valores simples para que el formulario de Compras pueda cargarlos.
+  const td=(x&&typeof x.totalDocumento==="object")?x.totalDocumento:{};
+  n.totalDocumento={
+    ...td,
+    totalNeto:td.totalNeto??td.totalNetoOperacion??n.documento.total??"",
+    totalIva:td.totalIva??td.ivaTotal??n.documento.total_iva??"",
+    iva05:td.iva05??td.iva5??"",
+    iva10:td.iva10??td.iva10??"",
+    totalGravada05:td.totalGravada05??td.gravada05??"",
+    totalGravada10:td.totalGravada10??td.gravada10??"",
+    subtotalExcenta:td.subtotalExcenta??td.subtotalExenta??td.exento??"",
+    subTotal05:td.subTotal05??td.subtotal05??"",
+    subTotal10:td.subTotal10??td.subtotal10??""
+  };
+  n.documento.total=n.totalDocumento.totalNeto;
+  n.documento.total_iva=n.totalDocumento.totalIva;
   n.detalleFactura=n.items;
   return n;
 }
@@ -863,7 +879,18 @@ async function consultarSifenPorCdc(){
 async function prepararImportacionSifen(){
  const d=window.ultimoSifenConsulta;if(!d?.documento){alert('Primero consultá un CDC válido.');return;}
  const doc=d.documento;if(typeof cambiarVista==='function')cambiarVista('compras');await cargarComprasCatalogos();
- const mapa={'comp-cdc':d.cdc||'','comp-fecha':(doc.fecha_emision||'').slice(0,10),'comp-numero':doc.numero_documento||'','comp-total':doc.total||''};
+ const td=d.totalDocumento||{};
+ const mapa={
+   'comp-cdc':d.cdc||d.CDC||'',
+   'comp-fecha':(doc.fecha_emision||'').slice(0,10),
+   'comp-numero':doc.numero_documento||'',
+   'comp-grav10':td.subTotal10??'',
+   'comp-grav5':td.subTotal05??'',
+   'comp-exento':td.subtotalExcenta??'',
+   'comp-iva10':td.iva10??'',
+   'comp-iva5':td.iva05??'',
+   'comp-total':td.totalNeto??doc.total??''
+ };
  Object.entries(mapa).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&value!=='')el.value=value;});
  const proveedores=comprasCatalogosCache.proveedores||[],ruc=String(doc.ruc_emisor||'').trim().toUpperCase(),proveedor=proveedores.find(x=>String(x.ruc||'').trim().toUpperCase()===ruc);
  if(proveedor){const sel=document.getElementById('comp-proveedor');if(sel){sel.value=String(proveedor.id);await cargarTimbradosProveedor(proveedor.id);const tims=document.getElementById('comp-timbrado')?._timbrados||[];const tim=tims.find(x=>String(x.numero_timbrado||'')===String(doc.timbrado||''))||tims.find(x=>String(x.numero_timbrado||'')===String(doc.timbrado||''));if(tim)document.getElementById('comp-timbrado').value=String(tim.id);}}
