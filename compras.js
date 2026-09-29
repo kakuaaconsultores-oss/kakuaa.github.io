@@ -817,6 +817,51 @@ function _normalizarRespuestaConsultaMe(d, cdc){
   return n;
 }
 
+function _renderSifenNormalizado(d){
+  const box=document.getElementById("sifen-cdc-resultado");
+  if(!box)return;
+  const doc=d?.documento||{};
+  const td=d?.totalDocumento||{};
+  const items=Array.isArray(d?.items)?d.items:[];
+  const fmt=(v)=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString("es-PY",{minimumFractionDigits:2,maximumFractionDigits:2}):String(v??"—");};
+  const esc=(v)=>escapeHtml(String(v??""));
+  const fecha=doc.fecha_emision?String(doc.fecha_emision).slice(0,10):"";
+  box.innerHTML=
+    '<div class="card" style="margin-top:14px">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
+      '<div><strong>✓ DTE encontrado</strong><div class="inv-help">Previsualización antes de cargar a Registrar Factura</div></div>'+
+      '<span class="badge badge-verde">DTE DISPONIBLE</span>'+
+    '</div>'+
+    '<div class="form-grid" style="margin-top:14px">'+
+      '<div><small>CDC</small><input value="'+esc(d.CDC||d.cdc||"")+'" readonly></div>'+
+      '<div><small>Fecha de emisión</small><input value="'+esc(fecha)+'" readonly></div>'+
+      '<div><small>RUC emisor</small><input value="'+esc(doc.ruc_emisor)+'" readonly></div>'+
+      '<div><small>Razón social</small><input value="'+esc(doc.razon_social_emisor)+'" readonly></div>'+
+      '<div><small>Timbrado</small><input value="'+esc(doc.timbrado)+'" readonly></div>'+
+      '<div><small>Documento</small><input value="'+esc((doc.establecimiento||"")+"-"+(doc.punto_expedicion||"")+"-"+(doc.numero_documento||""))+'" readonly></div>'+
+      '<div><small>RUC receptor</small><input value="'+esc(doc.ruc_receptor)+'" readonly></div>'+
+      '<div><small>Receptor</small><input value="'+esc(doc.razon_social_receptor)+'" readonly></div>'+
+    '</div>'+
+    '<h4 style="margin:18px 0 8px">Totales del DTE</h4>'+
+    '<div class="form-grid">'+
+      '<input value="Exento: '+esc(fmt(td.subtotalExcenta))+'" readonly>'+
+      '<input value="Gravado 5%: '+esc(fmt(td.subTotal05))+'" readonly>'+
+      '<input value="Gravado 10%: '+esc(fmt(td.subTotal10))+'" readonly>'+
+      '<input value="IVA 5%: '+esc(fmt(td.iva05))+'" readonly>'+
+      '<input value="IVA 10%: '+esc(fmt(td.iva10))+'" readonly>'+
+      '<input value="IVA total: '+esc(fmt(td.totalIva))+'" readonly>'+
+      '<input class="full" value="TOTAL DTE: '+esc(fmt(td.totalNeto))+'" readonly style="font-weight:700">'+
+    '</div>'+
+    '<h4 style="margin:18px 0 8px">Ítems del DTE ('+items.length+')</h4>'+
+    '<div style="overflow:auto"><table class="tabla"><thead><tr><th>Código</th><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th><th>IVA</th><th>Total</th></tr></thead><tbody>'+
+      (items.length?items.map(x=>'<tr><td>'+esc(x.codigoInterno||x.codigo||"")+'</td><td>'+esc(x.descripcion||x.descripcionProducto||"")+'</td><td>'+esc(x.cantidad||"")+'</td><td>'+esc(fmt(x.precioUnitario??x.precio_unitario))+'</td><td>'+esc((x.tasaIva??x.iva??"")+"%")+'</td><td>'+esc(fmt(x.totalOperacionItem??x.totalBruto??x.subtotal))+'</td></tr>').join(""):'<tr><td colspan="6">Sin ítems detectados.</td></tr>')+
+    '</tbody></table></div>'+
+    '<div class="inv-actions" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">'+
+      '<button class="btn btn-verde" onclick="prepararImportacionSifen()">✓ Cargar en Registrar Factura</button>'+
+      '<button class="btn btn-gris" onclick="document.getElementById("sifen-cdc-resultado").innerHTML=""">Cancelar</button>'+
+    '</div>'+
+    '</div>';
+}
 async function consultarSifenPorCdc(){
   const input=document.getElementById("sifen-cdc");
   const resultado=document.getElementById("sifen-cdc-resultado");
