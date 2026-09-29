@@ -829,7 +829,8 @@ async function consultarSifenPorCdc(){
     const d=await r.json().catch(()=>({}));
     console.info("[Kakuaa][SIFEN][CDC]", {
       http:r.status, ok:d.ok, estado:d.estado, fuente:d.fuente,
-      proveedor_http:d.proveedor_http, claves:Object.keys(d||{})
+      proveedor_http:d.proveedor_http, claves:Object.keys(d||{}),
+      diagnostico:d._kakuaa_diagnostico||null
     });
     if(!r.ok){
       if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)"><strong>Consulta no completada</strong><br>'+escapeHtml(d.error||"No se pudo consultar el CDC en SIFEN.")+'</div>';
