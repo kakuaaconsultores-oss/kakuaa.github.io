@@ -835,7 +835,7 @@ async function sifenAgregarProveedorDesdeDte(){
       const rr=await fetchApi(API+'/api/compras/proveedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       const dd=await rr.json().catch(()=>({}));if(!rr.ok)throw Error(dd.error||'No se pudo agregar el proveedor.');
       modal.remove();await cargarComprasCatalogos();
-      if(typeof prepararImportacionSifen==='function')await prepararImportacionSifen();
+      _renderSifenNormalizado(window.ultimoSifenConsulta);
       alert('✓ Proveedor agregado a Kakuaa.');
     }catch(e){alert(e.message||'No se pudo agregar el proveedor.');btn.disabled=false;btn.textContent='✓ Agregar proveedor';}
   };
