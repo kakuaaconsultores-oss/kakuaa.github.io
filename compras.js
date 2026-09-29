@@ -804,7 +804,7 @@ async function consultarSifenPorCdc(){
       return;
     }
     if(btn){btn.disabled=true;btn.textContent="Consultando SIFEN…";}
-    if(resultado)resultado.innerHTML='<div class="inv-note">Consultando el WS oficial de SIFEN…</div>';
+    if(resultado)resultado.innerHTML='<div class="inv-note">Consultando el DTE por CDC…</div>';
     const r=await fetchApi(API+"/api/sifen/consulta-cdc",{
       method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cdc})
     });
@@ -814,7 +814,7 @@ async function consultarSifenPorCdc(){
       return;
     }
     if(d.public_only){
-      if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--amarillo,#b7791f)"><strong>Consulta automática no configurada</strong><br>'+escapeHtml(d.mensaje||"Configurá el certificado digital SIFEN para este cliente.")+'</div>';
+      if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--amarillo,#b7791f)"><strong>Consulta automática no disponible</strong><br>'+escapeHtml(d.mensaje||"No fue posible obtener el DTE automáticamente.")+'</div>';
       return;
     }
     if(d.xml_de || d.CDC || d.emisor || d.detalleFactura){
@@ -827,7 +827,7 @@ async function consultarSifenPorCdc(){
     if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--rojo,#b42318)">Error de conexión con Kakuaa/SIFEN.</div>';
   }finally{
     sifenConsultaEnCurso=false;
-    if(btn){btn.disabled=false;btn.textContent="Consultar SIFEN";}
+    if(btn){btn.disabled=false;btn.textContent="Consultar DTE por CDC";}
   }
 }
 async function prepararImportacionSifen(){
@@ -848,5 +848,5 @@ function abrirConfiguracionSifenDesdeCompras(){
     }
   }
   const el=document.getElementById('sifen-cdc-resultado');
-  if(el)el.insertAdjacentHTML('beforeend','<div class="inv-note" style="margin-top:10px">La conexión WS SIFEN requiere certificado digital y clave privada configurados en el backend de este cliente. Cuando estén configurados, esta misma pantalla consultará el CDC y traerá automáticamente el DTE/XML sin salir de Kakuaa.</div>');
+  if(el)el.insertAdjacentHTML('beforeend','<div class="inv-note" style="margin-top:10px">Actualmente Kakuaa consulta el DTE por CDC mediante la API externa configurada. Cuando esté disponible el .p12 de KAKUAA CONSULTORES E.A.S., esta consulta pasará automáticamente al WS oficial de SIFEN usando exclusivamente ese certificado.</div>');
 }
