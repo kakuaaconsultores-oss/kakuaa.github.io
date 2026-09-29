@@ -783,6 +783,42 @@ async function consultarDteCache(cdc){
   }
 }
 
+function _normalizarRespuestaConsultaMe(d, cdc){
+  const x=(d&&typeof d==="object")?(d.data||d.document||d.documento||d.result||d.resultado||d):{};
+  const pick=(...ks)=>{for(const k of ks){if(x[k]!==undefined&&x[k]!==null&&x[k]!=="")return x[k];if(d?.[k]!==undefined&&d[k]!==null&&d[k]!=="")return d[k];}return "";};
+  const items=x.items||x.detalleFactura||x.detalle||x.detalles||[];
+  const doc=x.documento&&typeof x.documento==="object"?x.documento:{};
+  const n={
+    ...d,
+    ...x,
+    cdc:pick("cdc","CDC")||cdc,
+    CDC:pick("CDC","cdc")||cdc,
+    documento:{
+      ...doc,
+      cdc:pick("cdc","CDC")||cdc,
+      fecha_emision:pick("fecha_emision","fechaEmision","dFeEmiDE","fecha")||"",
+      ruc_emisor:pick("ruc_emisor","rucEmisor","dRucEm","rucEmisor")||"",
+      razon_social_emisor:pick("razon_social_emisor","razonSocialEmisor","dNomEmi","razonSocial")||"",
+      ruc_receptor:pick("ruc_receptor","rucReceptor","dRucRec")||"",
+      razon_social_receptor:pick("razon_social_receptor","razonSocialReceptor","dNomRec")||"",
+      timbrado:pick("timbrado","numeroTimbrado","dNumTim")||"",
+      establecimiento:pick("establecimiento","dEst")||"",
+      punto_expedicion:pick("punto_expedicion","puntoExpedicion","dPunExp")||"",
+      numero_documento:pick("numero_documento","numeroDocumento","dNumDoc")||"",
+      total:pick("total","totalDocumento","dTotGralOpe","totalGeneral")||"",
+      total_iva:pick("total_iva","totalIva","dLiqTotIVA","dTotIVA")||"",
+      moneda:pick("moneda","currency","cMoneOpe")||"PYG"
+    },
+    items:Array.isArray(items)?items:[]
+  };
+  n.emisor={ruc:n.documento.ruc_emisor,razonSocial:n.documento.razon_social_emisor};
+  n.receptor={ruc:n.documento.ruc_receptor,razonSocial:n.documento.razon_social_receptor};
+  n.timbrado={numeroTimbrado:n.documento.timbrado,establecimiento:n.documento.establecimiento,puntoExpedicion:n.documento.punto_expedicion,numeroDocumento:n.documento.numero_documento};
+  n.totalDocumento={totalNeto:n.documento.total,totalIva:n.documento.total_iva};
+  n.detalleFactura=n.items;
+  return n;
+}
+
 async function consultarSifenPorCdc(){
   const input=document.getElementById("sifen-cdc");
   const resultado=document.getElementById("sifen-cdc-resultado");
@@ -817,10 +853,17 @@ async function consultarSifenPorCdc(){
       if(resultado)resultado.innerHTML='<div class="inv-note" style="border-left:4px solid var(--amarillo,#b7791f)"><strong>Consulta automática no disponible</strong><br>'+escapeHtml(d.mensaje||"No fue posible obtener el DTE automáticamente.")+'</div>';
       return;
     }
-    if(d.xml_de || d.CDC || d.emisor || d.detalleFactura){
-      _renderSifenNormalizado(d);
+    if(d.xml_de || d.CDC || d.cdc || d.emisor || d.detalleFactura || d.items || d.documento){
+      const normalizado=_normalizarRespuestaConsultaMe(d,cdc);
+      window.ultimoSifenConsulta=normalizado;
+      if(typeof _renderSifenNormalizado==="function") _renderSifenNormalizado(normalizado);
+      // Carga automática en Compras: no obligamos al usuario a volver a copiar
+      // los datos del DTE manualmente.
+      if(normalizado.documento?.ruc_emisor || normalizado.documento?.total || normalizado.items?.length){
+        try{ await prepararImportacionSifen(); }catch(e){ console.error("No se pudo estirar el DTE a Compras",e); }
+      }
     }else{
-      if(resultado)resultado.innerHTML='<div class="inv-note">SIFEN respondió correctamente, pero no se pudo normalizar el DTE.</div>';
+      if(resultado)resultado.innerHTML='<div class="inv-note">La API externa respondió, pero no reconocimos la estructura del DTE.</div>';
     }
   }catch(e){
     console.error(e);
