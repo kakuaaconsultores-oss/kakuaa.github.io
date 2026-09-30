@@ -468,18 +468,147 @@ async function validarFacturaEnPantalla(){
  if(okFmt&&enRango&&estOk&&puntoOk&&inicio&&venc){estado.textContent='✓ Número, rango, talonario y vigencia correctos.';estado.style.color='#15803d';return true;}
  estado.textContent='⚠ El número no coincide con el rango, establecimiento/punto o vigencia del timbrado.';estado.style.color='#b42318';return false;
 }
+let detalleFacturaCompra=[];
+let facturaCompraItemsCache=[];
+let facturaCompraDepositosCache=[];
+let facturaCompraConceptosCache=[];
+let facturaCompraOrdenesCache=[];
+
+async function cargarDatosRegistrarFactura(){
+ try{
+  const [ri,rd,rc,ro]=await Promise.all([
+   fetchApi(API+'/api/inventarios/items'),
+   fetchApi(API+'/api/inventarios/depositos'),
+   fetchApi(API+'/api/compras/conceptos/disponibles'),
+   fetchApi(API+'/api/compras/ordenes')
+  ]);
+  facturaCompraItemsCache=ri.ok?await ri.json():[];
+  facturaCompraDepositosCache=rd.ok?await rd.json():[];
+  facturaCompraConceptosCache=rc.ok?await rc.json():[];
+  facturaCompraOrdenesCache=ro.ok?await ro.json():[];
+  const sel=document.getElementById('comp-orden');
+  if(sel){
+   sel.innerHTML='<option value="">Orden de Compra (opcional)</option>';
+   facturaCompraOrdenesCache.filter(x=>!['cerrada','anulada'].includes(String(x.estado||'').toLowerCase())).forEach(x=>{
+    const o=document.createElement('option');o.value=x.id;
+    o.textContent=(x.numero||('OC #'+x.id))+' · '+(x.proveedor||'')+' · '+Number(x.total||0).toLocaleString('es-PY')+' · '+(x.estado||'');
+    sel.appendChild(o);
+   });
+  }
+  renderDetalleFacturaCompra();
+ }catch(e){console.error('No se pudieron cargar datos de Registrar Factura',e);}
+}
+
+function _opcionesItemFactura(valor){
+ let h='<option value="">— Artículo de Inventarios —</option>';
+ facturaCompraItemsCache.filter(x=>Number(x.activo)!==0).forEach(x=>{
+  h+='<option value="'+x.id+'" '+(Number(valor)===Number(x.id)?'selected':'')+'>'+escapeHtml((x.codigo||'')+' — '+(x.nombre||''))+'</option>';
+ });
+ return h;
+}
+function _opcionesConceptoFactura(valor){
+ let h='<option value="">— Concepto de compra —</option>';
+ facturaCompraConceptosCache.forEach(x=>{
+  h+='<option value="'+x.id+'" '+(Number(valor)===Number(x.id)?'selected':'')+'>'+escapeHtml((x.codigo||'')+' — '+(x.descripcion||x.nombre||''))+'</option>';
+ });
+ return h;
+}
+function _opcionesDepositoFactura(valor){
+ let h='<option value="">— Depósito —</option>';
+ facturaCompraDepositosCache.filter(x=>Number(x.activo)!==0).forEach(x=>{
+  h+='<option value="'+x.id+'" '+(Number(valor)===Number(x.id)?'selected':'')+'>'+escapeHtml((x.codigo||'')+' — '+(x.nombre||''))+'</option>';
+ });
+ return h;
+}
+function _opcionesCentroFactura(valor){
+ const centros=(typeof centrosCostosCache!=='undefined'?centrosCostosCache:[]);
+ let h='<option value="">— Centro de costo —</option>';
+ centros.filter(x=>Number(x.activo)!==0).forEach(x=>{
+  h+='<option value="'+x.id+'" '+(Number(valor)===Number(x.id)?'selected':'')+'>'+escapeHtml((x.codigo||'')+' — '+(x.nombre||''))+'</option>';
+ });
+ return h;
+}
+function agregarLineaFacturaCompra(data){
+ const x=data||{item_id:'',concepto_id:'',descripcion:'',cantidad:1,precio_unitario:0,iva_tasa:10,deposito_id:'',centro_costo_id:document.getElementById('comp-centro-costo')?.value||''};
+ detalleFacturaCompra.push({...x});
+ renderDetalleFacturaCompra();
+}
+function eliminarLineaFacturaCompra(i){detalleFacturaCompra.splice(i,1);renderDetalleFacturaCompra();}
+function actualizarLineaFacturaCompra(i,campo,valor){
+ if(!detalleFacturaCompra[i])return;
+ detalleFacturaCompra[i][campo]=valor;
+ if(campo==='item_id'&&valor){
+  const art=facturaCompraItemsCache.find(x=>Number(x.id)===Number(valor));
+  if(art){
+   detalleFacturaCompra[i].descripcion=art.nombre||'';
+   detalleFacturaCompra[i].iva_tasa=Number(art.tipo_iva??10);
+  }
+ }
+ renderDetalleFacturaCompra();
+}
+function _numeroLineaFactura(v){return Number(v||0).toLocaleString('es-PY',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function _recalcularTotalesFacturaCompra(){
+ let g10=0,g5=0,ex=0,iva10=0,iva5=0,total=0;
+ detalleFacturaCompra.forEach(x=>{
+  const sub=Number(x.cantidad||0)*Number(x.precio_unitario||0);
+  const iva=Number(x.iva_tasa||0);
+  if(iva===10){g10+=sub;iva10+=sub*10/110;}
+  else if(iva===5){g5+=sub;iva5+=sub*5/105;}
+  else ex+=sub;
+  total+=sub;
+ });
+ const set=(id,v)=>{const e=document.getElementById(id);if(e){e.value=v.toFixed(2);}};
+ set('comp-grav10',g10);set('comp-grav5',g5);set('comp-exento',ex);set('comp-iva10',iva10);set('comp-iva5',iva5);set('comp-total',total);
+ const box=document.getElementById('comp-totales-resumen');
+ if(box)box.innerHTML='<div style="display:flex;gap:18px;justify-content:flex-end;flex-wrap:wrap;font-size:.9rem"><span>Grav. 10%: <strong>'+_numeroLineaFactura(g10)+'</strong></span><span>Grav. 5%: <strong>'+_numeroLineaFactura(g5)+'</strong></span><span>Exento: <strong>'+_numeroLineaFactura(ex)+'</strong></span><span>IVA: <strong>'+_numeroLineaFactura(iva10+iva5)+'</strong></span><span>Total: <strong>'+_numeroLineaFactura(total)+'</strong></span></div>';
+}
+function renderDetalleFacturaCompra(){
+ const wrap=document.getElementById('comp-detalle-wrap');if(!wrap)return;
+ if(!detalleFacturaCompra.length){wrap.innerHTML='<div class="sin-datos">No hay líneas. Agregá una línea o cargá una Orden de Compra.</div>';_recalcularTotalesFacturaCompra();return;}
+ let h='<div style="overflow:auto"><table class="tabla"><thead><tr><th>Artículo Inventarios</th><th>Concepto</th><th>Descripción</th><th>Cantidad</th><th>Precio</th><th>IVA</th><th>Depósito</th><th>Centro de costo</th><th>Subtotal</th><th></th></tr></thead><tbody>';
+ detalleFacturaCompra.forEach((x,i)=>{
+  const sub=Number(x.cantidad||0)*Number(x.precio_unitario||0);
+  h+='<tr><td><select onchange="actualizarLineaFacturaCompra('+i+',\'item_id\',this.value)">'+_opcionesItemFactura(x.item_id)+'</select></td>'+
+   '<td><select onchange="actualizarLineaFacturaCompra('+i+',\'concepto_id\',this.value)">'+_opcionesConceptoFactura(x.concepto_id)+'</select></td>'+
+   '<td><input value="'+escapeHtml(x.descripcion||'')+'" onchange="actualizarLineaFacturaCompra('+i+',\'descripcion\',this.value)" placeholder="Descripción"></td>'+
+   '<td><input type="number" step="0.0001" min="0.0001" value="'+Number(x.cantidad||1)+'" onchange="actualizarLineaFacturaCompra('+i+',\'cantidad\',this.value)"></td>'+
+   '<td><input type="number" step="0.01" min="0" value="'+Number(x.precio_unitario||0)+'" onchange="actualizarLineaFacturaCompra('+i+',\'precio_unitario\',this.value)"></td>'+
+   '<td><select onchange="actualizarLineaFacturaCompra('+i+',\'iva_tasa\',this.value)"><option value="0" '+(Number(x.iva_tasa)===0?'selected':'')+'>Exento</option><option value="5" '+(Number(x.iva_tasa)===5?'selected':'')+'>5%</option><option value="10" '+(Number(x.iva_tasa)===10?'selected':'')+'>10%</option></select></td>'+
+   '<td><select onchange="actualizarLineaFacturaCompra('+i+',\'deposito_id\',this.value)">'+_opcionesDepositoFactura(x.deposito_id)+'</select></td>'+
+   '<td><select onchange="actualizarLineaFacturaCompra('+i+',\'centro_costo_id\',this.value)">'+_opcionesCentroFactura(x.centro_costo_id)+'</select></td>'+
+   '<td>'+_numeroLineaFactura(sub)+'</td><td><button type="button" class="btn btn-rojo btn-pequeno" onclick="eliminarLineaFacturaCompra('+i+')">✕</button></td></tr>';
+ });
+ wrap.innerHTML=h+'</tbody></table></div>';
+ _recalcularTotalesFacturaCompra();
+}
+async function cargarOrdenEnFactura(){
+ const id=Number(document.getElementById('comp-orden')?.value||0);
+ if(!id){alert('Seleccioná una Orden de Compra.');return;}
+ const r=await fetchApi(API+'/api/compras/ordenes/'+id);const d=await r.json().catch(()=>({}));
+ if(!r.ok){alert(d.error||'No se pudo cargar la Orden de Compra.');return;}
+ const oc=d.orden||{},det=d.detalle||[];
+ const prov=document.getElementById('comp-proveedor');if(prov&&oc.proveedor_id){prov.value=String(oc.proveedor_id);await cargarTimbradosProveedor(Number(oc.proveedor_id));}
+ const cond=document.getElementById('comp-condicion');if(cond&&oc.condicion_id)cond.value=String(oc.condicion_id);
+ const cc=document.getElementById('comp-centro-costo');if(cc&&oc.centro_costo_id)cc.value=String(oc.centro_costo_id);
+ detalleFacturaCompra=det.map(x=>({item_id:x.item_id||'',concepto_id:x.concepto_id||'',descripcion:x.descripcion||x.item_nombre||'',cantidad:Math.max(0,Number(x.cantidad||0)-Number(x.cantidad_recibida||0)),precio_unitario:Number(x.precio_unitario||0),iva_tasa:Number(x.iva_tasa||10),deposito_id:x.deposito_id||'',centro_costo_id:x.centro_costo_id||oc.centro_costo_id||''})).filter(x=>x.cantidad>0);
+ renderDetalleFacturaCompra();
+}
 async function guardarComprobanteCompra(){
- const body={proveedor_id:Number(document.getElementById('comp-proveedor').value),tipo_comprobante_id:Number(document.getElementById('comp-tipo').value)||null,timbrado_id:Number(document.getElementById('comp-timbrado').value)||null,condicion_id:Number(document.getElementById('comp-condicion').value)||null,centro_costo_id:Number(document.getElementById('comp-centro-costo').value)||null,numero:document.getElementById('comp-numero').value.trim(),cdc:document.getElementById('comp-cdc').value.trim(),fecha:document.getElementById('comp-fecha').value,gravado_10:Number(document.getElementById('comp-grav10').value||0),gravado_5:Number(document.getElementById('comp-grav5').value||0),exento:Number(document.getElementById('comp-exento').value||0),iva_10:Number(document.getElementById('comp-iva10').value||0),iva_5:Number(document.getElementById('comp-iva5').value||0),total:Number(document.getElementById('comp-total').value||0),observacion:document.getElementById('comp-observacion').value.trim(),origen:'MANUAL'};
+ _recalcularTotalesFacturaCompra();
+ const body={proveedor_id:Number(document.getElementById('comp-proveedor').value),tipo_comprobante_id:Number(document.getElementById('comp-tipo').value)||null,timbrado_id:Number(document.getElementById('comp-timbrado').value)||null,condicion_id:Number(document.getElementById('comp-condicion').value)||null,forma_pago_id:Number(document.getElementById('comp-forma-pago').value)||null,centro_costo_id:Number(document.getElementById('comp-centro-costo').value)||null,orden_compra_id:Number(document.getElementById('comp-orden').value)||null,numero:document.getElementById('comp-numero').value.trim(),cdc:document.getElementById('comp-cdc').value.trim(),fecha:document.getElementById('comp-fecha').value,gravado_10:Number(document.getElementById('comp-grav10').value||0),gravado_5:Number(document.getElementById('comp-grav5').value||0),exento:Number(document.getElementById('comp-exento').value||0),iva_10:Number(document.getElementById('comp-iva10').value||0),iva_5:Number(document.getElementById('comp-iva5').value||0),total:Number(document.getElementById('comp-total').value||0),observacion:document.getElementById('comp-observacion').value.trim(),origen:'MANUAL',detalle:detalleFacturaCompra.map(x=>({...x,item_id:Number(x.item_id)||null,concepto_id:Number(x.concepto_id)||null,deposito_id:Number(x.deposito_id)||null,centro_costo_id:Number(x.centro_costo_id)||null,cantidad:Number(x.cantidad||0),precio_unitario:Number(x.precio_unitario||0),iva_tasa:Number(x.iva_tasa||0),subtotal:Number(x.cantidad||0)*Number(x.precio_unitario||0)}))};
  if(!body.proveedor_id||!body.tipo_comprobante_id||!body.timbrado_id||!body.centro_costo_id||!body.numero||!body.fecha||!body.total){alert('Proveedor, tipo, timbrado, centro de costo, número, fecha y total son obligatorios.');return;}
+ if(!body.detalle.length){alert('Agregá al menos una línea a la factura.');return;}
+ for(const [i,x] of body.detalle.entries()){if(!x.descripcion){alert('La línea '+(i+1)+' necesita una descripción.');return;}if(!x.item_id&&!x.concepto_id){alert('La línea '+(i+1)+' debe vincularse a un artículo de Inventarios o a un concepto de compra.');return;}if(x.item_id&&!x.deposito_id){alert('La línea '+(i+1)+' tiene artículo de Inventarios y necesita un depósito.');return;}if(x.cantidad<=0){alert('La cantidad de la línea '+(i+1)+' debe ser mayor que cero.');return;}}
  const valido=await validarFacturaEnPantalla();
  if(valido===false){const estado=document.getElementById('comp-timbrado-estado');alert(estado?.textContent||'El comprobante no coincide con el timbrado.');return;}
  const r=await fetchApi(API+'/api/compras/comprobantes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
- if(!r.ok){const d=await r.json();alert(d.error||'No se pudo registrar');return;}const d=await r.json();await cargarComprobantesCompra();if(d.id)await mostrarCuotero(d.id);
+ if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'No se pudo registrar');return;}
+ const d=await r.json();alert('Factura registrada correctamente.');detalleFacturaCompra=[];renderDetalleFacturaCompra();document.getElementById('comp-orden').value='';await cargarComprobantesCompra();if(d.id)await mostrarCuotero(d.id);
 }
 async function cargarComprobantesCompra(){const r=await fetchApi(API+'/api/compras/comprobantes');if(!r.ok)return;const rows=await r.json();const el=document.getElementById('lista-compras');if(el)el.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Comprobante</th><th>Centro de costo</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+escapeHtml((x.centro_costo_codigo||'')+(x.centro_costo_nombre?' — '+x.centro_costo_nombre:''))+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td><td>'+(x.estado==='anulado'?'—':'<button class="btn btn-rojo btn-pequeno" onclick="anularCompra('+x.id+')">Anular</button>')+'</td></tr>').join('')+'</tbody></table>';const pend=document.getElementById('lista-compras-pendientes');if(pend)pend.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Número</th><th>Total</th><th>Estado</th></tr></thead><tbody>'+rows.filter(x=>x.estado==='pendiente_contabilizar').map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td></tr>').join('')+'</tbody></table>';}
 async function anularCompra(id){if(!confirm('¿Anular este comprobante?'))return;const r=await fetchApi(API+'/api/compras/comprobantes/'+id+'/estado',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'anulado'})});if(r.ok)await cargarComprobantesCompra();else alert('No se pudo anular.');}
 async function cargarReportesCompras(){const r1=await fetchApi(API+'/api/compras/reportes/proveedor');if(r1.ok){const rows=await r1.json();const e=document.getElementById('reporte-compras-proveedor');if(e)e.innerHTML='<table class="tabla"><thead><tr><th>Proveedor</th><th>Comprobantes</th><th>Total</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.proveedor)+'</td><td>'+x.comprobantes+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td></tr>').join('')+'</tbody></table>';}const r2=await fetchApi(API+'/api/compras/reportes/pendientes-pago');if(r2.ok){const rows=await r2.json();const e=document.getElementById('reporte-pendientes-pago');if(e)e.innerHTML='<table class="tabla"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Número</th><th>Total</th><th>Estado</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+escapeHtml(x.fecha)+'</td><td>'+escapeHtml(x.proveedor)+'</td><td>'+escapeHtml(x.numero)+'</td><td>'+Number(x.total||0).toLocaleString('es-PY')+'</td><td>'+escapeHtml(x.estado)+'</td></tr>').join('')+'</tbody></table>';}}
-async function prepararModuloCompras(){await cargarUnidadesMedida();await cargarComprasCatalogos();if(typeof cargarCentrosCostos==='function')await cargarCentrosCostos();await cargarComprobantesCompra();await cargarReportesCompras();document.getElementById('comp-timbrado')?.addEventListener('change',validarFacturaEnPantalla);}
+async function prepararModuloCompras(){await cargarUnidadesMedida();await cargarComprasCatalogos();if(typeof cargarCentrosCostos==='function')await cargarCentrosCostos();await cargarDatosRegistrarFactura();await cargarComprobantesCompra();await cargarReportesCompras();document.getElementById('comp-timbrado')?.addEventListener('change',validarFacturaEnPantalla);}
 
 setTimeout(()=>{if(typeof prepararModuloCompras==='function') prepararModuloCompras();},1200);
 
