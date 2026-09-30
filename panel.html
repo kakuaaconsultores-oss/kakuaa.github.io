@@ -780,20 +780,53 @@ input,select,textarea,button{max-width:100%;box-sizing:border-box}
 <div id="oc-contenido"></div>
 </section>
 <section class="vista" id="vista-compras">
-<h2 class="titulo-seccion">Registrar Factura</h2><p class="subtitulo">Carga manual de comprobantes de compra.</p>
-<div class="card"><div class="form-grid">
-<select id="comp-proveedor"><option value="">Proveedor *</option></select>
-<select id="comp-tipo"><option value="">Tipo de comprobante *</option></select>
-<select id="comp-timbrado"><option value="">Timbrado *</option></select>
-<select id="comp-condicion"><option value="">Condición de compra</option></select>
-<select id="comp-centro-costo"><option value="">Centro de costo *</option></select>
-<input id="comp-numero" placeholder="Número (001-001-0000001) *"><input id="comp-cdc" placeholder="CDC / DTE"><input id="comp-fecha" type="date">
-<div id="comp-timbrado-estado" class="full" style="font-size:.78rem;color:var(--texto-suave)">Seleccioná proveedor, tipo, timbrado, número y fecha para validar.</div>
-<input id="comp-grav10" type="number" placeholder="Gravado 10%"><input id="comp-grav5" type="number" placeholder="Gravado 5%">
-<input id="comp-exento" type="number" placeholder="Exento"><input id="comp-iva10" type="number" placeholder="IVA 10%"><input id="comp-iva5" type="number" placeholder="IVA 5%">
-<input id="comp-total" type="number" placeholder="Total *"><input id="comp-observacion" placeholder="Observación">
-</div><button class="btn btn-azul" onclick="guardarComprobanteCompra()">＋ Registrar factura</button></div>
-<div id="cuotero-generado" style="margin-top:16px"></div><div id="lista-compras" style="margin-top:16px"></div></section>
+<h2 class="titulo-seccion">Registrar Factura</h2>
+<p class="subtitulo">Registrá la factura del proveedor y vinculala, cuando corresponda, con una Orden de Compra, Inventarios, Centro de Costos y la futura contabilización.</p>
+<div class="card">
+ <div class="form-grid">
+  <select id="comp-proveedor"><option value="">Proveedor *</option></select>
+  <select id="comp-tipo"><option value="">Tipo de comprobante *</option></select>
+  <select id="comp-timbrado"><option value="">Timbrado *</option></select>
+  <select id="comp-condicion"><option value="">Condición de compra</option></select>
+  <select id="comp-forma-pago"><option value="">Forma de pago</option></select>
+  <select id="comp-centro-costo"><option value="">Centro de costo *</option></select>
+  <select id="comp-orden"><option value="">Orden de Compra (opcional)</option></select>
+  <input id="comp-numero" placeholder="Número (001-001-0000001) *">
+  <input id="comp-cdc" placeholder="CDC / DTE">
+  <input id="comp-fecha" type="date">
+  <div id="comp-timbrado-estado" class="full" style="font-size:.78rem;color:var(--texto-suave)">Seleccioná proveedor, tipo, timbrado, número y fecha para validar.</div>
+ </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+  <div><h3 style="margin:0">Detalle de la factura</h3><small style="color:var(--texto-suave)">Cada línea puede asociarse a un artículo de Inventarios, depósito y Centro de Costos.</small></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+   <button type="button" class="btn btn-gris" onclick="cargarOrdenEnFactura()">↳ Cargar Orden de Compra</button>
+   <button type="button" class="btn btn-azul" onclick="agregarLineaFacturaCompra()">＋ Agregar línea</button>
+  </div>
+ </div>
+ <div id="comp-detalle-wrap" style="margin-top:14px"></div>
+ <div id="comp-totales-resumen" style="margin-top:14px"></div>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <div class="form-grid">
+  <input id="comp-grav10" type="number" step="0.01" placeholder="Gravado 10%">
+  <input id="comp-grav5" type="number" step="0.01" placeholder="Gravado 5%">
+  <input id="comp-exento" type="number" step="0.01" placeholder="Exento">
+  <input id="comp-iva10" type="number" step="0.01" placeholder="IVA 10%">
+  <input id="comp-iva5" type="number" step="0.01" placeholder="IVA 5%">
+  <input id="comp-total" type="number" step="0.01" placeholder="Total *">
+  <input id="comp-observacion" class="full" placeholder="Observación">
+ </div>
+ <div style="display:flex;justify-content:flex-end;margin-top:12px">
+  <button class="btn btn-verde" onclick="guardarComprobanteCompra()">✓ Registrar factura</button>
+ </div>
+</div>
+<div id="cuotero-generado" style="margin-top:16px"></div>
+<div id="lista-compras" style="margin-top:16px"></div>
+</section>
 <section class="vista" id="vista-pagos"><h2 class="titulo-seccion">Orden de Pago</h2><p class="subtitulo">Estructura preparada para aplicación contra facturas y futura integración con Banca.</p><div class="erp-placeholder"><div class="placeholder-grid"><div class="placeholder-box"><strong>Orden de Pago</strong><span>Proveedor y documentos a cancelar.</span></div><div class="placeholder-box"><strong>Aplicación</strong><span>Aplicación parcial o total.</span></div></div></div></section>
 <section class="vista" id="vista-estado-proveedores"><h2 class="titulo-seccion">Estado de Cuenta de Proveedor</h2><div id="reporte-estado-proveedor"></div></section>
 <section class="vista" id="vista-tipos-comprobante-compra">
@@ -2349,7 +2382,7 @@ function obtenerFormularioImpuestoActivo() {
             cambiarVista(esAdmin() ? 'dashboard' : 'tareas');
         })();
     </script>
-    <script src="compras.js?v=9-consultame-v7"></script>
+    <script src="compras.js?v=10-registrar-factura"></script>
     <script src="inventarios.js"></script>
     <script src="ordenes_compra.js"></script>
 </body>
