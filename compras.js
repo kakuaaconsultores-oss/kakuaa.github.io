@@ -114,6 +114,8 @@ async function cargarComprasCatalogos(){
  if(document.getElementById('comp-tipo'))document.getElementById('comp-tipo').onchange=validarFacturaEnPantalla;
  ['comp-numero','comp-fecha'].forEach(id=>document.getElementById(id)?.addEventListener('input',validarFacturaEnPantalla));
  if(t){t.innerHTML='<option value="">Tipo de comprobante</option>';(comprasCatalogosCache.tipos_comprobante||[]).filter(x=>Number(x.activo)!==0).forEach(x=>t.innerHTML+='<option value="'+x.id+'">'+escapeHtml(x.nombre)+'</option>');} if(cond){cond.innerHTML='<option value="">Condición de compra</option>';(comprasCatalogosCache.condiciones||[]).filter(x=>Number(x.activo)!==0).forEach(x=>cond.innerHTML+='<option value="'+x.id+'">'+escapeHtml(x.nombre)+'</option>');}
+ const fp=document.getElementById('comp-forma-pago');
+ if(fp){fp.innerHTML='<option value="">Forma de pago</option>';(comprasCatalogosCache.formas_pago||[]).filter(x=>Number(x.activo)!==0).forEach(x=>fp.innerHTML+='<option value="'+x.id+'">'+escapeHtml(x.nombre)+'</option>');}
  renderConceptosCompra(comprasCatalogosCache.conceptos||[]);
  renderCatalogoCompra('lista-condiciones-compra',comprasCatalogosCache.condiciones||[],['codigo','nombre','tipo','dias_credito','cuotas']);
  renderCatalogoCompra('lista-formas-pago-compra',comprasCatalogosCache.formas_pago||[],['codigo','nombre','tipo','cuenta_contable_nombre']);
