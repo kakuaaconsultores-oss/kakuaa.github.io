@@ -70,13 +70,13 @@
     <section class="card">
       <span class="badge">DNIT</span>
       <h2>🔎 Consulta RUC DNIT</h2>
-      <p>Consultá los datos públicos disponibles de un contribuyente por su RUC.</p>
+      <p>Buscá un contribuyente por número de RUC, cédula o por nombre/razón social, como en TuRuc.</p>
       <div class="form">
-        <input id="ruc" maxlength="12" placeholder="Ej.: 80012345-6" autocomplete="off">
+        <input id="ruc" maxlength="120" placeholder="RUC, cédula o nombre / razón social" autocomplete="off">
         <button id="ruc-btn" onclick="consultarRuc()">Consultar</button>
       </div>
       <div id="ruc-result" class="resultado" aria-live="polite"></div>
-      <p class="hint">La consulta utiliza el servicio público disponible para RUC.</p>
+      <p class="hint">Los resultados se basan en información pública del padrón de contribuyentes de la DNIT. Para una verificación tributaria definitiva, contrastá con la fuente oficial de DNIT.</p>
     </section>
 
     <section class="card">
@@ -129,24 +129,58 @@ function escapar(v){const d=document.createElement('div');d.textContent=String(v
 function normalizarRuc(v){return v.trim().replace(/\s+/g,'').toUpperCase()}
 async function consultarRuc(){
   const input=document.getElementById('ruc'),btn=document.getElementById('ruc-btn'),out=document.getElementById('ruc-result');
-  const ruc=normalizarRuc(input.value);
-  if(!/^\d{5,8}-\d$/.test(ruc)){out.innerHTML='<div class="error">Ingresá un RUC válido, por ejemplo <strong>80012345-6</strong>.</div>';return}
-  out.innerHTML='<div class="loading">Consultando DNIT…</div>';btn.disabled=true;
+  const termino=input.value.trim();
+  if(termino.length<3){
+    out.innerHTML='<div class="error">Ingresá al menos 3 caracteres para buscar.</div>';
+    return;
+  }
+  out.innerHTML='<div class="loading">Consultando información pública de DNIT…</div>';btn.disabled=true;
   try{
-    const resp=await fetch('https://backend-ruc-1.onrender.com/api/ruc?ruc='+encodeURIComponent(ruc));
+    const pareceRuc=/^\\d{5,8}(?:-\\d)?$/.test(termino.replace(/\\s+/g,''));
+    const endpoint=pareceRuc
+      ? 'https://backend-ruc-1.onrender.com/api/ruc?ruc='+encodeURIComponent(termino.replace(/\\s+/g,''))
+      : 'https://backend-ruc-1.onrender.com/api/ruc/search?search='+encodeURIComponent(termino)+'&page=0';
+    const resp=await fetch(endpoint);
     const json=await resp.json();
-    if(!resp.ok||json.error)throw new Error(json.error||'No se pudo consultar el RUC.');
-    const d=json.data||json;
-    out.innerHTML='<div class="success" style="margin-bottom:10px">Consulta realizada correctamente.</div><div class="datos">'+
-      '<div class="dato"><small>RUC</small><strong>'+escapar(d.ruc||ruc)+'</strong></div>'+
-      '<div class="dato"><small>Razón Social</small><strong>'+escapar(d.razonSocial||'-')+'</strong></div>'+
-      '<div class="dato"><small>Estado</small><strong>'+escapar(d.estado||'-')+'</strong></div>'+
-      '<div class="dato"><small>Documento</small><strong>'+escapar(d.doc||'-')+'</strong></div>'+
-      '<div class="dato"><small>Tipo</small><strong>'+(d.esPersonaJuridica===true?'Persona jurídica':d.esPersonaJuridica===false?'Persona física':'-')+'</strong></div>'+
-      '<div class="dato"><small>Dígito verificador</small><strong>'+escapar(d.dv??'-')+'</strong></div>'+
-      '</div>';
-  }catch(e){out.innerHTML='<div class="error">'+escapar(e.message||'No se pudo conectar al servicio.')+'</div>'}
-  finally{btn.disabled=false}
+    if(!resp.ok||json.error)throw new Error(json.error||'No se pudo realizar la consulta.');
+
+    if(pareceRuc){
+      const d=json.data||json;
+      out.innerHTML='<div class="success" style="margin-bottom:10px">Contribuyente encontrado.</div><div class="datos">'+
+        '<div class="dato"><small>RUC</small><strong>'+escapar(d.ruc||termino)+'</strong></div>'+
+        '<div class="dato"><small>Razón Social</small><strong>'+escapar(d.razonSocial||'-')+'</strong></div>'+
+        '<div class="dato"><small>Estado</small><strong>'+escapar(d.estado||'-')+'</strong></div>'+
+        '<div class="dato"><small>Documento</small><strong>'+escapar(d.doc||'-')+'</strong></div>'+
+        '<div class="dato"><small>Tipo</small><strong>'+(d.esPersonaJuridica===true?'Persona jurídica':d.esPersonaJuridica===false?'Persona física':'-')+'</strong></div>'+
+        '<div class="dato"><small>Dígito verificador</small><strong>'+escapar(d.dv??'-')+'</strong></div>'+
+        '</div>';
+      return;
+    }
+
+    const resultados=Array.isArray(json)?json:(json.data||json.resultados||json.results||json.contribuyentes||[]);
+    if(!Array.isArray(resultados)||!resultados.length){
+      out.innerHTML='<div class="error">No encontramos coincidencias para <strong>'+escapar(termino)+'</strong>. Probá con menos palabras, sin acentos o con una parte del nombre.</div>';
+      return;
+    }
+
+    out.innerHTML='<div class="success" style="margin-bottom:10px">'+resultados.length+' coincidencia(s) encontrada(s).</div>'+
+      '<div style="display:grid;gap:10px">'+resultados.slice(0,10).map((d,i)=>{
+        const ruc=d.ruc||d.rucDv||d.ruc_dv||d.documento||'-';
+        const nombre=d.razonSocial||d.razon_social||d.nombre||d.nombreCompleto||d.nombre_completo||'-';
+        const estado=d.estado||d.situacion||'-';
+        return '<div class="ips-box" style="margin-top:0"><strong>'+escapar(nombre)+'</strong>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;color:#687773;font-size:.86rem">'+
+          '<span><b>RUC:</b> '+escapar(ruc)+'</span><span><b>Estado:</b> '+escapar(estado)+'</span></div>'+
+          '<button type="button" style="margin-top:10px;width:100%" onclick="consultarRucExacto('+JSON.stringify(String(ruc).replace(/"/g,''))+')">Ver ficha</button></div>';
+      }).join('')+'</div>';
+  }catch(e){
+    out.innerHTML='<div class="error">'+escapar(e.message||'No se pudo conectar al servicio.')+'</div>';
+  }finally{btn.disabled=false}
+}
+async function consultarRucExacto(ruc){
+  const input=document.getElementById('ruc');
+  input.value=ruc;
+  await consultarRuc();
 }
 function abrirIps(url){
   const modal=document.getElementById('ips-modal'),frame=document.getElementById('ips-frame');
