@@ -126,37 +126,13 @@
   </section>
 
   <section id="gratuitos">
-    <h2>Servicios Gratuitos</h2>
-    <div class="gratuitos-grid">
-      <div class="buscador">
-        <h3>Consulta de RUC</h3>
-        <p>Ingresá el RUC (ej: 80012345-6) y consultá los datos públicos disponibles del contribuyente.</p>
-        <form onsubmit="event.preventDefault(); consultarRUC();">
-          <input type="text" id="ruc-input" placeholder="Ej: 80012345-6" autocomplete="off" maxlength="12">
-          <button id="consultar-btn" type="submit">Consultar</button>
-        </form>
-        <div style="margin-top:18px;padding-top:18px;border-top:1px solid #e5ecea;">
-          <div style="font-weight:600;color:#1a2a5e;margin-bottom:8px;">¿No tenés el RUC?</div>
-          <div style="display:flex;gap:10px;">
-            <input type="text" id="nombre-input" placeholder="Buscar por nombre o razón social" autocomplete="off" maxlength="50">
-            <button type="button" id="buscar-nombre-btn" onclick="buscarPorNombre(0)">Buscar nombre</button>
-          </div>
-        </div>
-        <div id="resultado-nombre" aria-live="polite"></div>
-        <div id="resultado" aria-live="polite"></div>
-      </div>
-
-      <div class="buscador ips-card">
-        <div class="ips-badge">Servicio oficial IPS</div>
-        <h3>Consulta de Número Patronal IPS</h3>
-        <p>Consultá si un empleador está registrado en el IPS utilizando su <strong>RUC</strong> o su <strong>Número de Empleador</strong>.</p>
-        <div class="ips-options">
-          <div class="ips-option"><strong>Por RUC</strong><span>RUC completo del empleador.</span></div>
-          <div class="ips-option"><strong>Por número patronal</strong><span>Zona + Actividad + Número.</span></div>
-        </div>
-        <a class="ips-launch" href="https://servicios.ips.gov.py/constancias_aop/index.php?constancia=consultaempleador" target="_blank" rel="noopener noreferrer">Consultar en IPS ↗</a>
-        <p class="ips-note">Consulta realizada en el portal oficial del Instituto de Previsión Social. KAKUAA no solicita ni almacena credenciales de IPS.</p>
-      </div>
+    <h2>Consultas Gratuitas</h2>
+    <div class="buscador" style="max-width:920px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:#e8f5ee;color:#247447;font-size:.78rem;font-weight:700;margin-bottom:12px;">Servicio gratuito de KAKUAA</div>
+      <h3 style="font-size:1.5rem;">Consultas rápidas, en un solo lugar</h3>
+      <p>Consultá RUC DNIT, Número Patronal IPS y validación de Constancias IPS desde nuestro nuevo portal.</p>
+      <a href="consultas.html" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;padding:13px 24px;background:#1a2a5e;color:#fff;border-radius:8px;font-weight:700;">Abrir Portal de Consultas →</a>
+      <p style="margin-top:12px;margin-bottom:0;font-size:.78rem;color:#71807c;">Las consultas y validaciones corresponden a información de los organismos oficiales DNIT e IPS.</p>
     </div>
   </section>
 
