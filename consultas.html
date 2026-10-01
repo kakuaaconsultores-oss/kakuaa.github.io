@@ -136,9 +136,9 @@ async function consultarRuc(){
   }
   out.innerHTML='<div class="loading">Consultando información pública de DNIT…</div>';btn.disabled=true;
   try{
-    const pareceRuc=/^\\d{5,8}(?:-\\d)?$/.test(termino.replace(/\\s+/g,''));
+    const pareceRuc=/^\d{5,8}(?:-\d)?$/.test(termino.replace(/\s+/g,''));
     const endpoint=pareceRuc
-      ? 'https://backend-ruc-1.onrender.com/api/ruc?ruc='+encodeURIComponent(termino.replace(/\\s+/g,''))
+      ? 'https://backend-ruc-1.onrender.com/api/ruc?ruc='+encodeURIComponent(termino.replace(/\s+/g,''))
       : 'https://backend-ruc-1.onrender.com/api/ruc/search?search='+encodeURIComponent(termino)+'&page=0';
     const resp=await fetch(endpoint);
     const json=await resp.json();
