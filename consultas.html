@@ -142,6 +142,14 @@ async function consultarRuc(){
       : 'https://backend-ruc-1.onrender.com/api/ruc/search?search='+encodeURIComponent(termino)+'&page=0';
     const resp=await fetch(endpoint);
     const json=await resp.json();
+
+    if(resp.status===202 && json.estado==='cargando'){
+      out.innerHTML='<div class="loading">'+escapar(json.mensaje||'Estamos preparando la base pública de DNIT…')+'<br><small>Esta primera carga puede tardar un poco. No cierres la página.</small></div>';
+      btn.disabled=false;
+      setTimeout(()=>consultarRuc(),4000);
+      return;
+    }
+
     if(!resp.ok||json.error)throw new Error(json.error||'No se pudo realizar la consulta.');
 
     if(pareceRuc){
