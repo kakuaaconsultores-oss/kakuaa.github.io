@@ -1360,8 +1360,8 @@ function fetchApi(input, init={}) { const headers=new Headers(init.headers||{});
         }
 
 
-        let clientesERP = [];
-        let clienteActivoERP = null;
+        window.clientesERP = [];
+        window.clienteActivoERP = null;
 
         function perfilClienteTexto(cliente) {
             if (!cliente) return 'Sin cliente';
@@ -2382,6 +2382,7 @@ function obtenerFormularioImpuestoActivo() {
             cambiarVista(esAdmin() ? 'dashboard' : 'tareas');
         })();
     </script>
+    <script src="perfil_cliente.js"></script>
     <script src="compras.js?v=10-registrar-factura"></script>
     <script src="inventarios.js"></script>
     <script src="ordenes_compra.js"></script>
